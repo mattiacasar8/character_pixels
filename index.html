@@ -9,48 +9,58 @@
 <body>
     <div class="container">
         <aside class="controls">
-            <h2>Parameters</h2>
-            
+            <h2>Character Generator</h2>
+
             <div class="section">
-                <h3>Torso</h3>
+                <h3>Canvas</h3>
                 <div class="control-group">
                     <label>
-                        Top Width: <span id="torsoTopWidthValue">12</span>px
-                        <input type="range" id="torsoTopWidth" min="8" max="16" value="12" step="0.5">
-                    </label>
-                </div>
-                <div class="control-group">
-                    <label>
-                        Bottom Width: <span id="torsoBottomWidthValue">10</span>px
-                        <input type="range" id="torsoBottomWidth" min="6" max="14" value="10" step="0.5">
-                    </label>
-                </div>
-                <div class="control-group">
-                    <label>
-                        Height: <span id="torsoHeightValue">20</span>px
-                        <input type="range" id="torsoHeight" min="15" max="25" value="20" step="1">
+                        Grid Size: <span id="canvasSizeValue">50</span>px
+                        <input type="range" id="canvasSize" min="30" max="100" value="50" step="5">
                     </label>
                 </div>
             </div>
 
             <div class="section">
-                <h3>Head & Neck</h3>
+                <h3>Body</h3>
                 <div class="control-group">
                     <label>
-                        Head Size: <span id="headWidthValue">9</span>px
-                        <input type="range" id="headWidth" min="6" max="12" value="9" step="0.5">
+                        Torso Width (Top): <span id="torsoTopWidthValue">24</span>%
+                        <input type="range" id="torsoTopWidth" min="16" max="32" value="24" step="1">
                     </label>
                 </div>
                 <div class="control-group">
                     <label>
-                        Neck Width: <span id="neckWidthValue">3</span>px
-                        <input type="range" id="neckWidth" min="2" max="5" value="3" step="0.5">
+                        Torso Width (Bottom): <span id="torsoBottomWidthValue">20</span>%
+                        <input type="range" id="torsoBottomWidth" min="12" max="28" value="20" step="1">
                     </label>
                 </div>
                 <div class="control-group">
                     <label>
-                        Neck Height: <span id="neckHeightValue">3</span>px
-                        <input type="range" id="neckHeight" min="2" max="6" value="3" step="0.5">
+                        Torso Height: <span id="torsoHeightValue">30</span>%
+                        <input type="range" id="torsoHeight" min="24" max="36" value="30" step="1">
+                    </label>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>Head</h3>
+                <div class="control-group">
+                    <label>
+                        Head Size: <span id="headWidthValue">18</span>%
+                        <input type="range" id="headWidth" min="12" max="24" value="18" step="1">
+                    </label>
+                </div>
+                <div class="control-group">
+                    <label>
+                        Neck Width: <span id="neckWidthValue">6</span>%
+                        <input type="range" id="neckWidth" min="4" max="10" value="6" step="1">
+                    </label>
+                </div>
+                <div class="control-group">
+                    <label>
+                        Neck Height: <span id="neckHeightValue">6</span>%
+                        <input type="range" id="neckHeight" min="4" max="12" value="6" step="1">
                     </label>
                 </div>
             </div>
@@ -59,20 +69,20 @@
                 <h3>Arms</h3>
                 <div class="control-group">
                     <label>
-                        Upper Width: <span id="upperArmTopWidthValue">4</span>px
-                        <input type="range" id="upperArmTopWidth" min="2" max="6" value="4" step="0.5">
+                        Upper Arm Width: <span id="upperArmTopWidthValue">8</span>%
+                        <input type="range" id="upperArmTopWidth" min="4" max="12" value="8" step="1">
                     </label>
                 </div>
                 <div class="control-group">
                     <label>
-                        Forearm Width: <span id="forearmTopWidthValue">3</span>px
-                        <input type="range" id="forearmTopWidth" min="1.5" max="5" value="3" step="0.5">
+                        Forearm Width: <span id="forearmTopWidthValue">6</span>%
+                        <input type="range" id="forearmTopWidth" min="3" max="10" value="6" step="1">
                     </label>
                 </div>
                 <div class="control-group">
                     <label>
-                        Arm Length: <span id="upperArmLengthValue">11</span>px
-                        <input type="range" id="upperArmLength" min="8" max="14" value="11" step="1">
+                        Arm Length: <span id="upperArmLengthValue">22</span>%
+                        <input type="range" id="upperArmLength" min="16" max="28" value="22" step="1">
                     </label>
                 </div>
                 <div class="control-group">
@@ -93,20 +103,20 @@
                 <h3>Legs</h3>
                 <div class="control-group">
                     <label>
-                        Thigh Width: <span id="thighTopWidthValue">5</span>px
-                        <input type="range" id="thighTopWidth" min="3" max="8" value="5" step="0.5">
+                        Thigh Width: <span id="thighTopWidthValue">10</span>%
+                        <input type="range" id="thighTopWidth" min="6" max="16" value="10" step="1">
                     </label>
                 </div>
                 <div class="control-group">
                     <label>
-                        Shin Width: <span id="shinTopWidthValue">4</span>px
-                        <input type="range" id="shinTopWidth" min="2" max="6" value="4" step="0.5">
+                        Shin Width: <span id="shinTopWidthValue">8</span>%
+                        <input type="range" id="shinTopWidth" min="4" max="12" value="8" step="1">
                     </label>
                 </div>
                 <div class="control-group">
                     <label>
-                        Thigh Length: <span id="thighLengthValue">12</span>px
-                        <input type="range" id="thighLength" min="10" max="16" value="12" step="1">
+                        Thigh Length: <span id="thighLengthValue">22</span>%
+                        <input type="range" id="thighLength" min="16" max="28" value="22" step="1">
                     </label>
                 </div>
                 <div class="control-group">
@@ -118,17 +128,7 @@
             </div>
 
             <div class="section">
-                <h3>Canvas Settings</h3>
-                <div class="control-group">
-                    <label>
-                        Grid Size: <span id="canvasSizeValue">50</span>px
-                        <input type="range" id="canvasSize" min="30" max="100" value="50" step="5">
-                    </label>
-                </div>
-            </div>
-
-            <div class="section">
-                <h3>Generation</h3>
+                <h3>Rendering</h3>
                 <div class="control-group">
                     <label>
                         Fill Density: <span id="fillDensityValue">0.8</span>
@@ -138,21 +138,21 @@
             </div>
 
             <div class="section">
-                <h3>Batch Options</h3>
+                <h3>Batch Generation</h3>
                 <div class="control-group">
                     <label>
-                        <input type="checkbox" id="randomizeBatch"> Randomize Parameters in Batch
+                        <input type="checkbox" id="randomizeBatch"> Randomize Each Character
                     </label>
                 </div>
                 <div class="control-group">
                     <label>
-                        Body Type Preset:
+                        Body Type:
                         <select id="bodyPreset">
                             <option value="standard">Standard</option>
-                            <option value="short">Short (Bassi)</option>
-                            <option value="tall">Tall (Alti)</option>
-                            <option value="thin">Thin (Magri)</option>
-                            <option value="bulky">Bulky (Robusti)</option>
+                            <option value="short">Short</option>
+                            <option value="tall">Tall</option>
+                            <option value="thin">Thin</option>
+                            <option value="bulky">Bulky</option>
                         </select>
                     </label>
                 </div>
@@ -192,7 +192,8 @@
                 <button id="generateOne" class="btn-primary">Generate 1</button>
                 <button id="generateTen" class="btn-secondary">Generate 10</button>
                 <button id="generateHundred" class="btn-secondary">Generate 100</button>
-                <button id="randomize" class="btn-accent">Randomize</button>
+                <button id="randomize" class="btn-accent">Randomize Params</button>
+                <button id="exportAll" class="btn-export">Export All</button>
             </div>
         </aside>
 

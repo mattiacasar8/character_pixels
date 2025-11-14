@@ -68,29 +68,30 @@ class CharacterGenerator {
     }
 
     getParamRanges(preset) {
+        // All size parameters are now in % of canvas size
         const baseRanges = {
-            torsoTopWidth: { min: 8, max: 16 },
-            torsoBottomWidth: { min: 6, max: 14 },
-            torsoHeight: { min: 12, max: 18 },
-            torsoY: { min: 8, max: 12 },
-            neckWidth: { min: 2, max: 5 },
-            neckHeight: { min: 2, max: 6 },
-            headWidth: { min: 6, max: 12 },
-            headHeight: { min: 6, max: 12 },
-            upperArmTopWidth: { min: 2, max: 6 },
-            upperArmBottomWidth: { min: 1.5, max: 5 },
-            upperArmLength: { min: 8, max: 14 },
-            forearmTopWidth: { min: 1.5, max: 5 },
-            forearmBottomWidth: { min: 1, max: 4 },
-            forearmLength: { min: 8, max: 14 },
+            torsoTopWidth: { min: 16, max: 32 },
+            torsoBottomWidth: { min: 12, max: 28 },
+            torsoHeight: { min: 24, max: 36 },
+            torsoY: { min: 16, max: 24 },
+            neckWidth: { min: 4, max: 10 },
+            neckHeight: { min: 4, max: 12 },
+            headWidth: { min: 12, max: 24 },
+            headHeight: { min: 12, max: 24 },
+            upperArmTopWidth: { min: 4, max: 12 },
+            upperArmBottomWidth: { min: 3, max: 10 },
+            upperArmLength: { min: 16, max: 28 },
+            forearmTopWidth: { min: 3, max: 10 },
+            forearmBottomWidth: { min: 2, max: 8 },
+            forearmLength: { min: 16, max: 28 },
             armAngle: { min: -80, max: -10 },
             elbowAngle: { min: -70, max: 70 },
-            thighTopWidth: { min: 3, max: 8 },
-            thighBottomWidth: { min: 2, max: 6 },
-            thighLength: { min: 8, max: 14 },
-            shinTopWidth: { min: 2, max: 6 },
-            shinBottomWidth: { min: 1.5, max: 5 },
-            shinLength: { min: 10, max: 16 },
+            thighTopWidth: { min: 6, max: 16 },
+            thighBottomWidth: { min: 4, max: 12 },
+            thighLength: { min: 16, max: 28 },
+            shinTopWidth: { min: 4, max: 12 },
+            shinBottomWidth: { min: 3, max: 10 },
+            shinLength: { min: 20, max: 32 },
             legAngle: { min: -25, max: 0 },
             fillDensity: { min: 0.7, max: 1.0 }
         };
@@ -100,47 +101,47 @@ class CharacterGenerator {
                 // Personaggi bassi - torso e gambe più corti
                 return {
                     ...baseRanges,
-                    torsoHeight: { min: 12, max: 15 },
-                    torsoY: { min: 12, max: 16 },
-                    thighLength: { min: 6, max: 10 },
-                    shinLength: { min: 8, max: 12 }
+                    torsoHeight: { min: 24, max: 30 },
+                    torsoY: { min: 24, max: 32 },
+                    thighLength: { min: 12, max: 20 },
+                    shinLength: { min: 16, max: 24 }
                 };
 
             case 'tall':
                 // Personaggi alti - torso e gambe più lunghi
                 return {
                     ...baseRanges,
-                    torsoHeight: { min: 16, max: 22 },
-                    torsoY: { min: 6, max: 10 },
-                    thighLength: { min: 12, max: 18 },
-                    shinLength: { min: 14, max: 20 },
-                    upperArmLength: { min: 12, max: 18 },
-                    forearmLength: { min: 12, max: 18 }
+                    torsoHeight: { min: 32, max: 44 },
+                    torsoY: { min: 12, max: 20 },
+                    thighLength: { min: 24, max: 36 },
+                    shinLength: { min: 28, max: 40 },
+                    upperArmLength: { min: 24, max: 36 },
+                    forearmLength: { min: 24, max: 36 }
                 };
 
             case 'thin':
                 // Personaggi magri - parti del corpo più strette
                 return {
                     ...baseRanges,
-                    torsoTopWidth: { min: 6, max: 10 },
-                    torsoBottomWidth: { min: 5, max: 9 },
-                    upperArmTopWidth: { min: 1.5, max: 3 },
-                    forearmTopWidth: { min: 1, max: 2.5 },
-                    thighTopWidth: { min: 2, max: 4 },
-                    shinTopWidth: { min: 1.5, max: 3 }
+                    torsoTopWidth: { min: 12, max: 20 },
+                    torsoBottomWidth: { min: 10, max: 18 },
+                    upperArmTopWidth: { min: 3, max: 6 },
+                    forearmTopWidth: { min: 2, max: 5 },
+                    thighTopWidth: { min: 4, max: 8 },
+                    shinTopWidth: { min: 3, max: 6 }
                 };
 
             case 'bulky':
                 // Personaggi robusti - parti del corpo più larghe
                 return {
                     ...baseRanges,
-                    torsoTopWidth: { min: 12, max: 18 },
-                    torsoBottomWidth: { min: 10, max: 16 },
-                    upperArmTopWidth: { min: 4, max: 8 },
-                    forearmTopWidth: { min: 3, max: 6 },
-                    thighTopWidth: { min: 5, max: 10 },
-                    shinTopWidth: { min: 4, max: 8 },
-                    headWidth: { min: 8, max: 14 }
+                    torsoTopWidth: { min: 24, max: 36 },
+                    torsoBottomWidth: { min: 20, max: 32 },
+                    upperArmTopWidth: { min: 8, max: 16 },
+                    forearmTopWidth: { min: 6, max: 12 },
+                    thighTopWidth: { min: 10, max: 20 },
+                    shinTopWidth: { min: 8, max: 16 },
+                    headWidth: { min: 16, max: 28 }
                 };
 
             case 'standard':
@@ -162,109 +163,144 @@ class CharacterGenerator {
         return palette;
     }
 
+    scaleParams(params, scale) {
+        // Scale all size parameters from percentage to pixels
+        return {
+            torsoTopWidth: params.torsoTopWidth * scale,
+            torsoBottomWidth: params.torsoBottomWidth * scale,
+            torsoHeight: params.torsoHeight * scale,
+            torsoY: params.torsoY * scale,
+            neckWidth: params.neckWidth * scale,
+            neckHeight: params.neckHeight * scale,
+            headWidth: params.headWidth * scale,
+            headHeight: params.headHeight * scale,
+            upperArmTopWidth: params.upperArmTopWidth * scale,
+            upperArmBottomWidth: params.upperArmBottomWidth * scale,
+            upperArmLength: params.upperArmLength * scale,
+            forearmTopWidth: params.forearmTopWidth * scale,
+            forearmBottomWidth: params.forearmBottomWidth * scale,
+            forearmLength: params.forearmLength * scale,
+            armAngle: params.armAngle, // angles stay the same
+            elbowAngle: params.elbowAngle, // angles stay the same
+            thighTopWidth: params.thighTopWidth * scale,
+            thighBottomWidth: params.thighBottomWidth * scale,
+            thighLength: params.thighLength * scale,
+            shinTopWidth: params.shinTopWidth * scale,
+            shinBottomWidth: params.shinBottomWidth * scale,
+            shinLength: params.shinLength * scale,
+            legAngle: params.legAngle, // angles stay the same
+            fillDensity: params.fillDensity, // density stays the same
+            palette: params.palette
+        };
+    }
+
     generateBodyParts(params) {
         const parts = {};
-        
+
+        // Convert percentage-based params to pixels
+        const scale = this.canvasSize / 100;
+        const scaledParams = this.scaleParams(params, scale);
+
         // 1. TORSO (anchor)
-        const torsoTop = params.torsoY;
-        const torsoBottom = torsoTop + params.torsoHeight;
+        const torsoTop = scaledParams.torsoY;
+        const torsoBottom = torsoTop + scaledParams.torsoHeight;
         parts.torso = this.createTrapezoid(
             this.centerX, torsoTop,
-            params.torsoTopWidth, params.torsoBottomWidth,
-            params.torsoHeight,
+            scaledParams.torsoTopWidth, scaledParams.torsoBottomWidth,
+            scaledParams.torsoHeight,
             0
         );
         
         // 2. NECK
         parts.neck = this.createTrapezoid(
             this.centerX, torsoTop,
-            params.neckWidth, params.neckWidth,
-            -params.neckHeight,
+            scaledParams.neckWidth, scaledParams.neckWidth,
+            -scaledParams.neckHeight,
             0
         );
-        
+
         // 3. HEAD
         parts.head = this.createTrapezoid(
-            this.centerX, torsoTop - params.neckHeight,
-            params.headWidth, params.headWidth,
-            -params.headHeight,
+            this.centerX, torsoTop - scaledParams.neckHeight,
+            scaledParams.headWidth, scaledParams.headWidth,
+            -scaledParams.headHeight,
             0
         );
-        
+
         // 4. LEFT ARM
-        const leftShoulderX = this.centerX - params.torsoTopWidth / 2;
-        
+        const leftShoulderX = this.centerX - scaledParams.torsoTopWidth / 2;
+
         parts.leftUpperArm = this.createTrapezoid(
             leftShoulderX, torsoTop,
-            params.upperArmTopWidth, params.upperArmBottomWidth,
-            params.upperArmLength,
-            params.armAngle
+            scaledParams.upperArmTopWidth, scaledParams.upperArmBottomWidth,
+            scaledParams.upperArmLength,
+            scaledParams.armAngle
         );
-        
+
         const upperArmEnd = this.getTrapezoidBottom(parts.leftUpperArm);
-        
+
         parts.leftForearm = this.createTrapezoid(
             upperArmEnd.x, upperArmEnd.y,
-            params.forearmTopWidth, params.forearmBottomWidth,
-            params.forearmLength,
-            params.armAngle + params.elbowAngle
+            scaledParams.forearmTopWidth, scaledParams.forearmBottomWidth,
+            scaledParams.forearmLength,
+            scaledParams.armAngle + scaledParams.elbowAngle
         );
-        
+
         // 5. RIGHT ARM
-        const rightShoulderX = this.centerX + params.torsoTopWidth / 2;
-        
+        const rightShoulderX = this.centerX + scaledParams.torsoTopWidth / 2;
+
         parts.rightUpperArm = this.createTrapezoid(
             rightShoulderX, torsoTop,
-            params.upperArmTopWidth, params.upperArmBottomWidth,
-            params.upperArmLength,
-            -params.armAngle
+            scaledParams.upperArmTopWidth, scaledParams.upperArmBottomWidth,
+            scaledParams.upperArmLength,
+            -scaledParams.armAngle
         );
-        
+
         const rightUpperArmEnd = this.getTrapezoidBottom(parts.rightUpperArm);
-        
+
         parts.rightForearm = this.createTrapezoid(
             rightUpperArmEnd.x, rightUpperArmEnd.y,
-            params.forearmTopWidth, params.forearmBottomWidth,
-            params.forearmLength,
-            -params.armAngle - params.elbowAngle
+            scaledParams.forearmTopWidth, scaledParams.forearmBottomWidth,
+            scaledParams.forearmLength,
+            -scaledParams.armAngle - scaledParams.elbowAngle
         );
-        
+
         // 6. LEFT LEG
-        const leftHipX = this.centerX - params.torsoBottomWidth / 2;
-        
+        const leftHipX = this.centerX - scaledParams.torsoBottomWidth / 2;
+
         parts.leftThigh = this.createTrapezoid(
             leftHipX, torsoBottom,
-            params.thighTopWidth, params.thighBottomWidth,
-            params.thighLength,
-            params.legAngle
+            scaledParams.thighTopWidth, scaledParams.thighBottomWidth,
+            scaledParams.thighLength,
+            scaledParams.legAngle
         );
-        
+
         const thighEnd = this.getTrapezoidBottom(parts.leftThigh);
         const remainingShinLength = this.groundY - thighEnd.y;
-        
+
         parts.leftShin = this.createTrapezoid(
             thighEnd.x, thighEnd.y,
-            params.shinTopWidth, params.shinBottomWidth,
+            scaledParams.shinTopWidth, scaledParams.shinBottomWidth,
             remainingShinLength,
             0
         );
-        
+
         // 7. RIGHT LEG
-        const rightHipX = this.centerX + params.torsoBottomWidth / 2;
-        
+        const rightHipX = this.centerX + scaledParams.torsoBottomWidth / 2;
+
         parts.rightThigh = this.createTrapezoid(
             rightHipX, torsoBottom,
-            params.thighTopWidth, params.thighBottomWidth,
-            params.thighLength,
-            -params.legAngle
+            scaledParams.thighTopWidth, scaledParams.thighBottomWidth,
+            scaledParams.thighLength,
+            -scaledParams.legAngle
         );
-        
+
         const rightThighEnd = this.getTrapezoidBottom(parts.rightThigh);
         const rightRemainingShinLength = this.groundY - rightThighEnd.y;
-        
+
         parts.rightShin = this.createTrapezoid(
             rightThighEnd.x, rightThighEnd.y,
-            params.shinTopWidth, params.shinBottomWidth,
+            scaledParams.shinTopWidth, scaledParams.shinBottomWidth,
             rightRemainingShinLength,
             0
         );

@@ -120,6 +120,15 @@ button {
     background: #ee5b5b;
 }
 
+.btn-export {
+    background: #4caf50;
+    color: white;
+}
+
+.btn-export:hover {
+    background: #3c9f40;
+}
+
 /* Main Canvas Area */
 .canvas-area {
     flex: 1;
@@ -135,30 +144,18 @@ button {
 
 .canvas-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-    gap: 20px;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 12px;
 }
 
-.canvas-container {
-    background: #2a2a2a;
-    border-radius: 4px;
-    padding: 12px;
-    position: relative;
-}
-
-.canvas-container canvas {
+.canvas-grid canvas {
     display: block;
     width: 100%;
     height: auto;
     image-rendering: pixelated;
     image-rendering: crisp-edges;
-}
-
-.canvas-label {
-    font-size: 10px;
-    color: #666;
-    margin-top: 8px;
-    text-align: center;
+    background: #2a2a2a;
+    border-radius: 4px;
 }
 
 /* Scrollbar styling */

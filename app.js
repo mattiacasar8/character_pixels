@@ -26,6 +26,7 @@ class App {
     }
 
     getParamsFromUI() {
+        // All parameters are now in % of canvas size
         const torsoTopWidth = parseFloat(document.getElementById('torsoTopWidth').value);
         const torsoBottomWidth = parseFloat(document.getElementById('torsoBottomWidth').value);
         const headWidth = parseFloat(document.getElementById('headWidth').value);
@@ -33,18 +34,18 @@ class App {
         const forearmTopWidth = parseFloat(document.getElementById('forearmTopWidth').value);
         const thighTopWidth = parseFloat(document.getElementById('thighTopWidth').value);
         const shinTopWidth = parseFloat(document.getElementById('shinTopWidth').value);
-        
+
         return {
             torsoTopWidth: torsoTopWidth,
             torsoBottomWidth: torsoBottomWidth,
             torsoHeight: parseFloat(document.getElementById('torsoHeight').value),
-            torsoY: 10, // Higher up
-            
+            torsoY: 20, // 20% from top
+
             neckWidth: parseFloat(document.getElementById('neckWidth').value),
             neckHeight: parseFloat(document.getElementById('neckHeight').value),
             headWidth: headWidth,
             headHeight: headWidth,
-            
+
             upperArmTopWidth: upperArmTopWidth,
             upperArmBottomWidth: upperArmTopWidth * 0.8,
             upperArmLength: parseFloat(document.getElementById('upperArmLength').value),
@@ -53,15 +54,15 @@ class App {
             forearmLength: parseFloat(document.getElementById('upperArmLength').value),
             armAngle: parseFloat(document.getElementById('armAngle').value),
             elbowAngle: parseFloat(document.getElementById('elbowAngle').value),
-            
+
             thighTopWidth: thighTopWidth,
             thighBottomWidth: thighTopWidth * 0.8,
             thighLength: parseFloat(document.getElementById('thighLength').value),
             shinTopWidth: shinTopWidth,
             shinBottomWidth: shinTopWidth * 0.8,
-            shinLength: 12,
+            shinLength: 24, // 24%
             legAngle: parseFloat(document.getElementById('legAngle').value),
-            
+
             fillDensity: parseFloat(document.getElementById('fillDensity').value),
             palette: this.generatePalette()
         };
@@ -158,6 +159,10 @@ class App {
         document.getElementById('randomize').addEventListener('click', () => {
             this.randomizeParams();
         });
+
+        document.getElementById('exportAll').addEventListener('click', () => {
+            this.exportAll();
+        });
     }
 
     updateCanvasSize(newSize) {
@@ -222,20 +227,10 @@ class App {
         const grid = document.getElementById('canvasGrid');
         grid.innerHTML = '';
 
-        this.characters.forEach((character, index) => {
-            const container = document.createElement('div');
-            container.className = 'canvas-container';
-
+        this.characters.forEach((character) => {
             const canvas = this.characterRenderer.createCanvas();
             this.characterRenderer.drawCharacter(canvas, character, this.displayOptions);
-
-            const label = document.createElement('div');
-            label.className = 'canvas-label';
-            label.textContent = `Character ${index + 1}`;
-
-            container.appendChild(canvas);
-            container.appendChild(label);
-            grid.appendChild(container);
+            grid.appendChild(canvas);
         });
     }
 
@@ -273,6 +268,58 @@ class App {
         
         this.currentParams = randomParams;
         this.regenerateCurrentCharacters();
+    }
+
+    exportAll() {
+        if (this.characters.length === 0) {
+            alert('No characters to export! Generate some first.');
+            return;
+        }
+
+        // Calculate grid dimensions for spritesheet
+        const cols = Math.ceil(Math.sqrt(this.characters.length));
+        const rows = Math.ceil(this.characters.length / cols);
+
+        const spriteSize = this.characterRenderer.displaySize;
+        const totalWidth = cols * spriteSize;
+        const totalHeight = rows * spriteSize;
+
+        // Create a large canvas for the spritesheet
+        const spritesheetCanvas = document.createElement('canvas');
+        spritesheetCanvas.width = totalWidth;
+        spritesheetCanvas.height = totalHeight;
+        const ctx = spritesheetCanvas.getContext('2d');
+
+        // Fill background
+        ctx.fillStyle = '#1a1a1a';
+        ctx.fillRect(0, 0, totalWidth, totalHeight);
+
+        // Draw each character to the spritesheet
+        this.characters.forEach((character, index) => {
+            const col = index % cols;
+            const row = Math.floor(index / cols);
+            const x = col * spriteSize;
+            const y = row * spriteSize;
+
+            // Create temporary canvas for this character
+            const charCanvas = this.characterRenderer.createCanvas();
+            this.characterRenderer.drawCharacter(charCanvas, character, { showFinal: true });
+
+            // Draw to spritesheet
+            ctx.drawImage(charCanvas, x, y);
+        });
+
+        // Download the spritesheet
+        spritesheetCanvas.toBlob((blob) => {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `characters_${this.characters.length}_${Date.now()}.png`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
     }
 }
 
