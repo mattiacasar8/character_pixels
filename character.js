@@ -1,8 +1,8 @@
 // Character Generator - Trapezoid-based system
 
 class CharacterGenerator {
-    constructor() {
-        this.canvasSize = 50;
+    constructor(canvasSize = 50) {
+        this.canvasSize = canvasSize;
         this.centerX = this.canvasSize / 2;
         this.groundY = this.canvasSize - 2;
     }
@@ -21,44 +21,132 @@ class CharacterGenerator {
     }
 
     randomParams() {
+        return this.randomParamsInRange('standard');
+    }
+
+    randomParamsInRange(preset = 'standard') {
+        const ranges = this.getParamRanges(preset);
+
         return {
-            // Torso (anchor) - moved higher
-            torsoTopWidth: this.randomFloat(8, 16),
-            torsoBottomWidth: this.randomFloat(6, 14),
-            torsoHeight: this.randomFloat(12, 18), // Shorter
-            torsoY: this.randomFloat(8, 12), // Higher up
-            
+            // Torso (anchor)
+            torsoTopWidth: this.randomFloat(ranges.torsoTopWidth.min, ranges.torsoTopWidth.max),
+            torsoBottomWidth: this.randomFloat(ranges.torsoBottomWidth.min, ranges.torsoBottomWidth.max),
+            torsoHeight: this.randomFloat(ranges.torsoHeight.min, ranges.torsoHeight.max),
+            torsoY: this.randomFloat(ranges.torsoY.min, ranges.torsoY.max),
+
             // Neck
-            neckWidth: this.randomFloat(2, 5),
-            neckHeight: this.randomFloat(2, 6),
-            
+            neckWidth: this.randomFloat(ranges.neckWidth.min, ranges.neckWidth.max),
+            neckHeight: this.randomFloat(ranges.neckHeight.min, ranges.neckHeight.max),
+
             // Head
-            headWidth: this.randomFloat(6, 12),
-            headHeight: this.randomFloat(6, 12),
-            
+            headWidth: this.randomFloat(ranges.headWidth.min, ranges.headWidth.max),
+            headHeight: this.randomFloat(ranges.headHeight.min, ranges.headHeight.max),
+
             // Arms
-            upperArmTopWidth: this.randomFloat(2, 6),
-            upperArmBottomWidth: this.randomFloat(1.5, 5),
-            upperArmLength: this.randomFloat(8, 14),
-            forearmTopWidth: this.randomFloat(1.5, 5),
-            forearmBottomWidth: this.randomFloat(1, 4),
-            forearmLength: this.randomFloat(8, 14),
-            armAngle: this.randomFloat(-80, -10),
-            elbowAngle: this.randomFloat(-70, 70),
-            
+            upperArmTopWidth: this.randomFloat(ranges.upperArmTopWidth.min, ranges.upperArmTopWidth.max),
+            upperArmBottomWidth: this.randomFloat(ranges.upperArmBottomWidth.min, ranges.upperArmBottomWidth.max),
+            upperArmLength: this.randomFloat(ranges.upperArmLength.min, ranges.upperArmLength.max),
+            forearmTopWidth: this.randomFloat(ranges.forearmTopWidth.min, ranges.forearmTopWidth.max),
+            forearmBottomWidth: this.randomFloat(ranges.forearmBottomWidth.min, ranges.forearmBottomWidth.max),
+            forearmLength: this.randomFloat(ranges.forearmLength.min, ranges.forearmLength.max),
+            armAngle: this.randomFloat(ranges.armAngle.min, ranges.armAngle.max),
+            elbowAngle: this.randomFloat(ranges.elbowAngle.min, ranges.elbowAngle.max),
+
             // Legs
-            thighTopWidth: this.randomFloat(3, 8),
-            thighBottomWidth: this.randomFloat(2, 6),
-            thighLength: this.randomFloat(8, 14), // Shorter default
-            shinTopWidth: this.randomFloat(2, 6),
-            shinBottomWidth: this.randomFloat(1.5, 5),
-            shinLength: this.randomFloat(10, 16),
-            legAngle: this.randomFloat(-25, 0),
-            
+            thighTopWidth: this.randomFloat(ranges.thighTopWidth.min, ranges.thighTopWidth.max),
+            thighBottomWidth: this.randomFloat(ranges.thighBottomWidth.min, ranges.thighBottomWidth.max),
+            thighLength: this.randomFloat(ranges.thighLength.min, ranges.thighLength.max),
+            shinTopWidth: this.randomFloat(ranges.shinTopWidth.min, ranges.shinTopWidth.max),
+            shinBottomWidth: this.randomFloat(ranges.shinBottomWidth.min, ranges.shinBottomWidth.max),
+            shinLength: this.randomFloat(ranges.shinLength.min, ranges.shinLength.max),
+            legAngle: this.randomFloat(ranges.legAngle.min, ranges.legAngle.max),
+
             // Generation
-            fillDensity: this.randomFloat(0.7, 1.0),
+            fillDensity: this.randomFloat(ranges.fillDensity.min, ranges.fillDensity.max),
             palette: this.generateRandomPalette()
         };
+    }
+
+    getParamRanges(preset) {
+        const baseRanges = {
+            torsoTopWidth: { min: 8, max: 16 },
+            torsoBottomWidth: { min: 6, max: 14 },
+            torsoHeight: { min: 12, max: 18 },
+            torsoY: { min: 8, max: 12 },
+            neckWidth: { min: 2, max: 5 },
+            neckHeight: { min: 2, max: 6 },
+            headWidth: { min: 6, max: 12 },
+            headHeight: { min: 6, max: 12 },
+            upperArmTopWidth: { min: 2, max: 6 },
+            upperArmBottomWidth: { min: 1.5, max: 5 },
+            upperArmLength: { min: 8, max: 14 },
+            forearmTopWidth: { min: 1.5, max: 5 },
+            forearmBottomWidth: { min: 1, max: 4 },
+            forearmLength: { min: 8, max: 14 },
+            armAngle: { min: -80, max: -10 },
+            elbowAngle: { min: -70, max: 70 },
+            thighTopWidth: { min: 3, max: 8 },
+            thighBottomWidth: { min: 2, max: 6 },
+            thighLength: { min: 8, max: 14 },
+            shinTopWidth: { min: 2, max: 6 },
+            shinBottomWidth: { min: 1.5, max: 5 },
+            shinLength: { min: 10, max: 16 },
+            legAngle: { min: -25, max: 0 },
+            fillDensity: { min: 0.7, max: 1.0 }
+        };
+
+        switch (preset) {
+            case 'short':
+                // Personaggi bassi - torso e gambe più corti
+                return {
+                    ...baseRanges,
+                    torsoHeight: { min: 12, max: 15 },
+                    torsoY: { min: 12, max: 16 },
+                    thighLength: { min: 6, max: 10 },
+                    shinLength: { min: 8, max: 12 }
+                };
+
+            case 'tall':
+                // Personaggi alti - torso e gambe più lunghi
+                return {
+                    ...baseRanges,
+                    torsoHeight: { min: 16, max: 22 },
+                    torsoY: { min: 6, max: 10 },
+                    thighLength: { min: 12, max: 18 },
+                    shinLength: { min: 14, max: 20 },
+                    upperArmLength: { min: 12, max: 18 },
+                    forearmLength: { min: 12, max: 18 }
+                };
+
+            case 'thin':
+                // Personaggi magri - parti del corpo più strette
+                return {
+                    ...baseRanges,
+                    torsoTopWidth: { min: 6, max: 10 },
+                    torsoBottomWidth: { min: 5, max: 9 },
+                    upperArmTopWidth: { min: 1.5, max: 3 },
+                    forearmTopWidth: { min: 1, max: 2.5 },
+                    thighTopWidth: { min: 2, max: 4 },
+                    shinTopWidth: { min: 1.5, max: 3 }
+                };
+
+            case 'bulky':
+                // Personaggi robusti - parti del corpo più larghe
+                return {
+                    ...baseRanges,
+                    torsoTopWidth: { min: 12, max: 18 },
+                    torsoBottomWidth: { min: 10, max: 16 },
+                    upperArmTopWidth: { min: 4, max: 8 },
+                    forearmTopWidth: { min: 3, max: 6 },
+                    thighTopWidth: { min: 5, max: 10 },
+                    shinTopWidth: { min: 4, max: 8 },
+                    headWidth: { min: 8, max: 14 }
+                };
+
+            case 'standard':
+            default:
+                return baseRanges;
+        }
     }
 
     generateRandomPalette() {

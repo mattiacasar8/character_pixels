@@ -1,9 +1,9 @@
 // Renderer - Draw trapezoid-based characters
 
 class CharacterRenderer {
-    constructor(scale = 3) {
+    constructor(scale = 3, canvasSize = 50) {
         this.scale = scale;
-        this.canvasSize = 50;
+        this.canvasSize = canvasSize;
         this.displaySize = this.canvasSize * this.scale;
     }
 

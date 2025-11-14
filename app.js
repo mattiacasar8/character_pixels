@@ -2,16 +2,25 @@
 
 class App {
     constructor() {
+        this.canvasSize = 50; // Default canvas size, will be configurable
+        this.characterGenerator = new CharacterGenerator(this.canvasSize);
+        this.characterRenderer = new CharacterRenderer(3, this.canvasSize);
+
         this.currentParams = this.getParamsFromUI();
         this.displayOptions = this.getDisplayOptions();
+        this.batchOptions = {
+            randomize: false,
+            preset: 'standard'
+        };
         this.characters = [];
-        
+
         this.init();
     }
 
     init() {
         this.setupSliders();
         this.setupCheckboxes();
+        this.setupBatchOptions();
         this.setupButtons();
         this.generateCharacters(1);
     }
@@ -77,6 +86,17 @@ class App {
     }
 
     setupSliders() {
+        // Canvas size slider (special handling)
+        const canvasSizeSlider = document.getElementById('canvasSize');
+        const canvasSizeValue = document.getElementById('canvasSizeValue');
+
+        canvasSizeSlider.addEventListener('input', (e) => {
+            const newSize = parseInt(e.target.value);
+            canvasSizeValue.textContent = newSize;
+            this.updateCanvasSize(newSize);
+        });
+
+        // Regular parameter sliders
         const sliders = [
             'torsoTopWidth', 'torsoBottomWidth', 'torsoHeight',
             'headWidth', 'neckWidth', 'neckHeight',
@@ -89,7 +109,7 @@ class App {
         sliders.forEach(id => {
             const slider = document.getElementById(id);
             const valueDisplay = document.getElementById(id + 'Value');
-            
+
             slider.addEventListener('input', (e) => {
                 valueDisplay.textContent = e.target.value;
                 this.currentParams = this.getParamsFromUI();
@@ -100,12 +120,25 @@ class App {
 
     setupCheckboxes() {
         const checkboxes = ['showStickFigure', 'showThickness', 'showHeatmap', 'showFinal', 'showGrid'];
-        
+
         checkboxes.forEach(id => {
             document.getElementById(id).addEventListener('change', () => {
                 this.displayOptions = this.getDisplayOptions();
                 this.redrawCharacters();
             });
+        });
+    }
+
+    setupBatchOptions() {
+        const randomizeBatch = document.getElementById('randomizeBatch');
+        const bodyPreset = document.getElementById('bodyPreset');
+
+        randomizeBatch.addEventListener('change', (e) => {
+            this.batchOptions.randomize = e.target.checked;
+        });
+
+        bodyPreset.addEventListener('change', (e) => {
+            this.batchOptions.preset = e.target.value;
         });
     }
 
@@ -127,17 +160,32 @@ class App {
         });
     }
 
+    updateCanvasSize(newSize) {
+        this.canvasSize = newSize;
+        this.characterGenerator = new CharacterGenerator(this.canvasSize);
+        this.characterRenderer = new CharacterRenderer(3, this.canvasSize);
+        this.regenerateCurrentCharacters();
+    }
+
     generateCharacters(count) {
         this.characters = [];
-        
+
         for (let i = 0; i < count; i++) {
-            const params = { ...this.currentParams };
-            params.palette = this.generateRandomPalette();
-            
-            const character = characterGenerator.generate(params);
+            let params;
+
+            if (count > 1 && this.batchOptions.randomize) {
+                // Batch generation con randomizzazione
+                params = this.characterGenerator.randomParamsInRange(this.batchOptions.preset);
+            } else {
+                // Generazione singola o batch senza randomizzazione
+                params = { ...this.currentParams };
+                params.palette = this.generateRandomPalette();
+            }
+
+            const character = this.characterGenerator.generate(params);
             this.characters.push(character);
         }
-        
+
         this.renderCharacters();
     }
 
@@ -156,13 +204,13 @@ class App {
 
     regenerateCurrentCharacters() {
         if (this.characters.length === 0) return;
-        
+
         this.characters = this.characters.map(() => {
             const params = { ...this.currentParams };
             params.palette = this.generateRandomPalette();
-            return characterGenerator.generate(params);
+            return this.characterGenerator.generate(params);
         });
-        
+
         this.renderCharacters();
     }
 
@@ -177,14 +225,14 @@ class App {
         this.characters.forEach((character, index) => {
             const container = document.createElement('div');
             container.className = 'canvas-container';
-            
-            const canvas = characterRenderer.createCanvas();
-            characterRenderer.drawCharacter(canvas, character, this.displayOptions);
-            
+
+            const canvas = this.characterRenderer.createCanvas();
+            this.characterRenderer.drawCharacter(canvas, character, this.displayOptions);
+
             const label = document.createElement('div');
             label.className = 'canvas-label';
             label.textContent = `Character ${index + 1}`;
-            
+
             container.appendChild(canvas);
             container.appendChild(label);
             grid.appendChild(container);
@@ -192,7 +240,7 @@ class App {
     }
 
     randomizeParams() {
-        const randomParams = characterGenerator.randomParams();
+        const randomParams = this.characterGenerator.randomParams();
         
         const sliderMappings = {
             'torsoTopWidth': randomParams.torsoTopWidth,

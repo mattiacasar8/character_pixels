@@ -62,6 +62,24 @@ body {
     margin-right: 8px;
 }
 
+.control-group select {
+    width: 100%;
+    margin-top: 4px;
+    padding: 6px;
+    background: #333;
+    color: #ccc;
+    border: 1px solid #444;
+    border-radius: 4px;
+    font-family: inherit;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.control-group select:hover {
+    background: #3a3a3a;
+    border-color: #555;
+}
+
 button {
     width: 100%;
     padding: 10px;
