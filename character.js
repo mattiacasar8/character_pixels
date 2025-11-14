@@ -1,177 +1,379 @@
-// Character Generator - Core Logic
+// Character Generator - Trapezoid-based system
 
 class CharacterGenerator {
     constructor() {
         this.canvasSize = 50;
         this.centerX = this.canvasSize / 2;
+        this.groundY = this.canvasSize - 2;
     }
 
-    // Generate a character from parameters
     generate(params) {
-        const stickFigure = this.generateStickFigure(params);
-        const thickened = this.applyThickness(stickFigure, params);
-        const final = this.applySurfaceNoise(thickened, params);
+        const bodyParts = this.generateBodyParts(params);
+        const heatmap = this.generateHeatmap(bodyParts, params);
+        const final = this.generatePixels(heatmap, params);
         
         return {
-            stickFigure,
-            thickened,
+            bodyParts,
+            heatmap,
             final,
             params
         };
     }
 
-    // Generate random parameters
     randomParams() {
         return {
-            headSize: this.randomInt(8, 20),
-            bodyHeight: this.randomInt(12, 30),
-            shoulderWidth: this.randomInt(8, 24),
-            hipWidth: this.randomInt(6, 20),
-            armLength: this.randomInt(10, 28),
-            legLength: this.randomInt(12, 32),
-            headThickness: this.randomFloat(1, 6),
-            torsoThickness: this.randomFloat(1, 8),
-            armThickness: this.randomFloat(1, 5),
-            legThickness: this.randomFloat(1, 6)
+            // Torso (anchor) - moved higher
+            torsoTopWidth: this.randomFloat(8, 16),
+            torsoBottomWidth: this.randomFloat(6, 14),
+            torsoHeight: this.randomFloat(12, 18), // Shorter
+            torsoY: this.randomFloat(8, 12), // Higher up
+            
+            // Neck
+            neckWidth: this.randomFloat(2, 5),
+            neckHeight: this.randomFloat(2, 6),
+            
+            // Head
+            headWidth: this.randomFloat(6, 12),
+            headHeight: this.randomFloat(6, 12),
+            
+            // Arms
+            upperArmTopWidth: this.randomFloat(2, 6),
+            upperArmBottomWidth: this.randomFloat(1.5, 5),
+            upperArmLength: this.randomFloat(8, 14),
+            forearmTopWidth: this.randomFloat(1.5, 5),
+            forearmBottomWidth: this.randomFloat(1, 4),
+            forearmLength: this.randomFloat(8, 14),
+            armAngle: this.randomFloat(-80, -10),
+            elbowAngle: this.randomFloat(-70, 70),
+            
+            // Legs
+            thighTopWidth: this.randomFloat(3, 8),
+            thighBottomWidth: this.randomFloat(2, 6),
+            thighLength: this.randomFloat(8, 14), // Shorter default
+            shinTopWidth: this.randomFloat(2, 6),
+            shinBottomWidth: this.randomFloat(1.5, 5),
+            shinLength: this.randomFloat(10, 16),
+            legAngle: this.randomFloat(-25, 0),
+            
+            // Generation
+            fillDensity: this.randomFloat(0.7, 1.0),
+            palette: this.generateRandomPalette()
         };
     }
 
-    // Generate stick figure skeleton
-    generateStickFigure(params) {
-        const {
-            headSize,
-            bodyHeight,
-            shoulderWidth,
-            hipWidth,
-            armLength,
-            legLength
-        } = params;
-
-        // Calculate vertical positions (from top)
-        const headRadius = headSize / 2;
-        const headCenterY = headRadius + 2; // Small margin from top
-        const neckY = headCenterY + headRadius;
-        const shoulderY = neckY + 2;
-        const hipY = shoulderY + bodyHeight;
-        const footY = hipY + legLength;
-
-        // Create skeleton points
-        const skeleton = {
-            head: {
-                center: { x: this.centerX, y: headCenterY },
-                radius: headRadius
-            },
-            neck: { x: this.centerX, y: neckY },
-            shoulders: {
-                left: { x: this.centerX - shoulderWidth / 2, y: shoulderY },
-                right: { x: this.centerX + shoulderWidth / 2, y: shoulderY }
-            },
-            spine: [
-                { x: this.centerX, y: shoulderY },
-                { x: this.centerX, y: hipY }
-            ],
-            hips: {
-                left: { x: this.centerX - hipWidth / 2, y: hipY },
-                right: { x: this.centerX + hipWidth / 2, y: hipY }
-            },
-            arms: {
-                left: [
-                    { x: this.centerX - shoulderWidth / 2, y: shoulderY },
-                    { x: this.centerX - shoulderWidth / 2, y: shoulderY + armLength }
-                ],
-                right: [
-                    { x: this.centerX + shoulderWidth / 2, y: shoulderY },
-                    { x: this.centerX + shoulderWidth / 2, y: shoulderY + armLength }
-                ]
-            },
-            legs: {
-                left: [
-                    { x: this.centerX - hipWidth / 2, y: hipY },
-                    { x: this.centerX - hipWidth / 2, y: footY }
-                ],
-                right: [
-                    { x: this.centerX + hipWidth / 2, y: hipY },
-                    { x: this.centerX + hipWidth / 2, y: footY }
-                ]
-            }
-        };
-
-        return skeleton;
+    generateRandomPalette() {
+        const numColors = this.randomInt(3, 5);
+        const palette = [];
+        for (let i = 0; i < numColors; i++) {
+            palette.push({
+                r: this.randomInt(50, 255),
+                g: this.randomInt(50, 255),
+                b: this.randomInt(50, 255)
+            });
+        }
+        return palette;
     }
 
-    // Apply thickness to stick figure - convert to shapes
-    applyThickness(skeleton, params) {
-        const shapes = {
-            head: this.createCircle(skeleton.head.center, skeleton.head.radius),
-            torso: this.createRectFromLine(
-                skeleton.spine[0],
-                skeleton.spine[1],
-                params.torsoThickness
-            ),
-            armLeft: this.createRectFromLine(
-                skeleton.arms.left[0],
-                skeleton.arms.left[1],
-                params.armThickness
-            ),
-            armRight: this.createRectFromLine(
-                skeleton.arms.right[0],
-                skeleton.arms.right[1],
-                params.armThickness
-            ),
-            legLeft: this.createRectFromLine(
-                skeleton.legs.left[0],
-                skeleton.legs.left[1],
-                params.legThickness
-            ),
-            legRight: this.createRectFromLine(
-                skeleton.legs.right[0],
-                skeleton.legs.right[1],
-                params.legThickness
-            )
-        };
-
-        return shapes;
-    }
-
-    // Create circle shape
-    createCircle(center, radius) {
-        return {
-            type: 'circle',
-            center: { ...center },
-            radius: radius
-        };
-    }
-
-    // Create rectangle from a line with thickness
-    createRectFromLine(start, end, thickness) {
-        const dx = end.x - start.x;
-        const dy = end.y - start.y;
-        const length = Math.sqrt(dx * dx + dy * dy);
-        const angle = Math.atan2(dy, dx);
+    generateBodyParts(params) {
+        const parts = {};
         
-        // Perpendicular offset for thickness
-        const offsetX = Math.sin(angle) * thickness / 2;
-        const offsetY = -Math.cos(angle) * thickness / 2;
+        // 1. TORSO (anchor)
+        const torsoTop = params.torsoY;
+        const torsoBottom = torsoTop + params.torsoHeight;
+        parts.torso = this.createTrapezoid(
+            this.centerX, torsoTop,
+            params.torsoTopWidth, params.torsoBottomWidth,
+            params.torsoHeight,
+            0
+        );
+        
+        // 2. NECK
+        parts.neck = this.createTrapezoid(
+            this.centerX, torsoTop,
+            params.neckWidth, params.neckWidth,
+            -params.neckHeight,
+            0
+        );
+        
+        // 3. HEAD
+        parts.head = this.createTrapezoid(
+            this.centerX, torsoTop - params.neckHeight,
+            params.headWidth, params.headWidth,
+            -params.headHeight,
+            0
+        );
+        
+        // 4. LEFT ARM
+        const leftShoulderX = this.centerX - params.torsoTopWidth / 2;
+        
+        parts.leftUpperArm = this.createTrapezoid(
+            leftShoulderX, torsoTop,
+            params.upperArmTopWidth, params.upperArmBottomWidth,
+            params.upperArmLength,
+            params.armAngle
+        );
+        
+        const upperArmEnd = this.getTrapezoidBottom(parts.leftUpperArm);
+        
+        parts.leftForearm = this.createTrapezoid(
+            upperArmEnd.x, upperArmEnd.y,
+            params.forearmTopWidth, params.forearmBottomWidth,
+            params.forearmLength,
+            params.armAngle + params.elbowAngle
+        );
+        
+        // 5. RIGHT ARM
+        const rightShoulderX = this.centerX + params.torsoTopWidth / 2;
+        
+        parts.rightUpperArm = this.createTrapezoid(
+            rightShoulderX, torsoTop,
+            params.upperArmTopWidth, params.upperArmBottomWidth,
+            params.upperArmLength,
+            -params.armAngle
+        );
+        
+        const rightUpperArmEnd = this.getTrapezoidBottom(parts.rightUpperArm);
+        
+        parts.rightForearm = this.createTrapezoid(
+            rightUpperArmEnd.x, rightUpperArmEnd.y,
+            params.forearmTopWidth, params.forearmBottomWidth,
+            params.forearmLength,
+            -params.armAngle - params.elbowAngle
+        );
+        
+        // 6. LEFT LEG
+        const leftHipX = this.centerX - params.torsoBottomWidth / 2;
+        
+        parts.leftThigh = this.createTrapezoid(
+            leftHipX, torsoBottom,
+            params.thighTopWidth, params.thighBottomWidth,
+            params.thighLength,
+            params.legAngle
+        );
+        
+        const thighEnd = this.getTrapezoidBottom(parts.leftThigh);
+        const remainingShinLength = this.groundY - thighEnd.y;
+        
+        parts.leftShin = this.createTrapezoid(
+            thighEnd.x, thighEnd.y,
+            params.shinTopWidth, params.shinBottomWidth,
+            remainingShinLength,
+            0
+        );
+        
+        // 7. RIGHT LEG
+        const rightHipX = this.centerX + params.torsoBottomWidth / 2;
+        
+        parts.rightThigh = this.createTrapezoid(
+            rightHipX, torsoBottom,
+            params.thighTopWidth, params.thighBottomWidth,
+            params.thighLength,
+            -params.legAngle
+        );
+        
+        const rightThighEnd = this.getTrapezoidBottom(parts.rightThigh);
+        const rightRemainingShinLength = this.groundY - rightThighEnd.y;
+        
+        parts.rightShin = this.createTrapezoid(
+            rightThighEnd.x, rightThighEnd.y,
+            params.shinTopWidth, params.shinBottomWidth,
+            rightRemainingShinLength,
+            0
+        );
+        
+        return parts;
+    }
 
+    createTrapezoid(centerX, centerY, topWidth, bottomWidth, length, angleDeg) {
+        const angleRad = (angleDeg * Math.PI) / 180;
+        
+        const topLeft = {
+            x: centerX - topWidth / 2,
+            y: centerY
+        };
+        const topRight = {
+            x: centerX + topWidth / 2,
+            y: centerY
+        };
+        
+        const dx = Math.sin(angleRad) * length;
+        const dy = Math.cos(angleRad) * length;
+        
+        const bottomCenter = {
+            x: centerX + dx,
+            y: centerY + dy
+        };
+        
+        const bottomLeft = {
+            x: bottomCenter.x - bottomWidth / 2,
+            y: bottomCenter.y
+        };
+        const bottomRight = {
+            x: bottomCenter.x + bottomWidth / 2,
+            y: bottomCenter.y
+        };
+        
         return {
-            type: 'rect',
-            points: [
-                { x: start.x - offsetX, y: start.y - offsetY },
-                { x: start.x + offsetX, y: start.y + offsetY },
-                { x: end.x + offsetX, y: end.y + offsetY },
-                { x: end.x - offsetX, y: end.y - offsetY }
-            ]
+            type: 'trapezoid',
+            points: [topLeft, topRight, bottomRight, bottomLeft],
+            center: { x: centerX, y: centerY },
+            bottomCenter: bottomCenter,
+            topWidth,
+            bottomWidth,
+            length,
+            angle: angleDeg
         };
     }
 
-    // Apply surface noise/texture (placeholder for now)
-    applySurfaceNoise(shapes, params) {
-        // For now, just return shapes
-        // Later: add pixel-level noise, asymmetry, details
-        return shapes;
+    getTrapezoidBottom(trap) {
+        return trap.bottomCenter;
     }
 
-    // Utility functions
+    generateHeatmap(bodyParts, params) {
+        const heatmap = Array(this.canvasSize).fill(0).map(() => 
+            Array(this.canvasSize).fill(0)
+        );
+        
+        Object.values(bodyParts).forEach(part => {
+            this.fillHeatmapForTrapezoid(heatmap, part);
+        });
+        
+        return heatmap;
+    }
+
+    fillHeatmapForTrapezoid(heatmap, trap) {
+        // Get bounding box
+        const xs = trap.points.map(p => p.x);
+        const ys = trap.points.map(p => p.y);
+        const minX = Math.max(0, Math.floor(Math.min(...xs)));
+        const maxX = Math.min(this.canvasSize, Math.ceil(Math.max(...xs)));
+        const minY = Math.max(0, Math.floor(Math.min(...ys)));
+        const maxY = Math.min(this.canvasSize, Math.ceil(Math.max(...ys)));
+        
+        // Calculate the centroid of trapezoid
+        const centroid = {
+            x: trap.points.reduce((sum, p) => sum + p.x, 0) / trap.points.length,
+            y: trap.points.reduce((sum, p) => sum + p.y, 0) / trap.points.length
+        };
+        
+        // Calculate max distance from centroid to edges (for normalization)
+        let maxDistFromCenter = 0;
+        trap.points.forEach(p => {
+            const d = this.distance(centroid, p);
+            maxDistFromCenter = Math.max(maxDistFromCenter, d);
+        });
+        
+        // Fill pixels ONLY inside trapezoid
+        for (let y = minY; y < maxY; y++) {
+            for (let x = minX; x < maxX; x++) {
+                const point = { x, y };
+                
+                // Only fill if inside shape
+                if (this.isPointInPolygon(point, trap.points)) {
+                    // Distance from center of shape
+                    const distFromCenter = this.distance(point, centroid);
+                    
+                    // Intensity: 1.0 at center, decays toward edges
+                    const intensity = Math.max(0, 1 - (distFromCenter / maxDistFromCenter) * 0.5);
+                    
+                    heatmap[y][x] = Math.max(heatmap[y][x], intensity);
+                }
+            }
+        }
+    }
+
+    isPointInPolygon(point, vertices) {
+        let inside = false;
+        for (let i = 0, j = vertices.length - 1; i < vertices.length; j = i++) {
+            const xi = vertices[i].x, yi = vertices[i].y;
+            const xj = vertices[j].x, yj = vertices[j].y;
+            
+            const intersect = ((yi > point.y) !== (yj > point.y))
+                && (point.x < (xj - xi) * (point.y - yi) / (yj - yi) + xi);
+            if (intersect) inside = !inside;
+        }
+        return inside;
+    }
+
+    pointToSegmentDistance(p, a, b) {
+        const dx = b.x - a.x;
+        const dy = b.y - a.y;
+        const lengthSq = dx * dx + dy * dy;
+        
+        if (lengthSq === 0) return this.distance(p, a);
+        
+        let t = ((p.x - a.x) * dx + (p.y - a.y) * dy) / lengthSq;
+        t = Math.max(0, Math.min(1, t));
+        
+        const closest = {
+            x: a.x + t * dx,
+            y: a.y + t * dy
+        };
+        
+        return this.distance(p, closest);
+    }
+
+    distance(a, b) {
+        const dx = b.x - a.x;
+        const dy = b.y - a.y;
+        return Math.sqrt(dx * dx + dy * dy);
+    }
+
+    generatePixels(heatmap, params) {
+        const pixels = Array(this.canvasSize).fill(0).map(() => 
+            Array(this.canvasSize).fill(null)
+        );
+        
+        const fillDensity = params.fillDensity || 0.8;
+        
+        // Generate left half, then mirror
+        for (let y = 0; y < this.canvasSize; y++) {
+            for (let x = 0; x < Math.floor(this.canvasSize / 2); x++) {
+                const probability = heatmap[y][x];
+                
+                if (probability > 0.1 && Math.random() < probability * fillDensity) {
+                    const color = params.palette[
+                        Math.floor(Math.random() * params.palette.length)
+                    ];
+                    pixels[y][x] = color;
+                    
+                    const mirrorX = this.canvasSize - 1 - x;
+                    pixels[y][mirrorX] = color;
+                }
+            }
+        }
+        
+        this.removeIsolatedPixels(pixels);
+        
+        return pixels;
+    }
+
+    removeIsolatedPixels(pixels) {
+        const toRemove = [];
+        
+        for (let y = 1; y < this.canvasSize - 1; y++) {
+            for (let x = 1; x < this.canvasSize - 1; x++) {
+                if (pixels[y][x]) {
+                    let neighborCount = 0;
+                    for (let dy = -1; dy <= 1; dy++) {
+                        for (let dx = -1; dx <= 1; dx++) {
+                            if (dx === 0 && dy === 0) continue;
+                            if (pixels[y + dy][x + dx]) neighborCount++;
+                        }
+                    }
+                    
+                    if (neighborCount < 2) {
+                        toRemove.push({ x, y });
+                    }
+                }
+            }
+        }
+        
+        toRemove.forEach(({ x, y }) => {
+            pixels[y][x] = null;
+        });
+    }
+
     randomInt(min, max) {
         return Math.floor(Math.random() * (max - min + 1)) + min;
     }
@@ -181,5 +383,4 @@ class CharacterGenerator {
     }
 }
 
-// Export for use in other scripts
 const characterGenerator = new CharacterGenerator();

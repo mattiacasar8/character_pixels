@@ -1,13 +1,12 @@
-// Renderer - Draw characters on canvas
+// Renderer - Draw trapezoid-based characters
 
 class CharacterRenderer {
     constructor(scale = 3) {
-        this.scale = scale; // Scale factor for display (50px -> 150px)
+        this.scale = scale;
         this.canvasSize = 50;
         this.displaySize = this.canvasSize * this.scale;
     }
 
-    // Create a new canvas element
     createCanvas() {
         const canvas = document.createElement('canvas');
         canvas.width = this.displaySize;
@@ -15,52 +14,38 @@ class CharacterRenderer {
         return canvas;
     }
 
-    // Draw character with all layers
     drawCharacter(canvas, character, options = {}) {
         const ctx = canvas.getContext('2d');
+        ctx.imageSmoothingEnabled = false;
+        
         const {
             showStickFigure = false,
             showThickness = false,
+            showHeatmap = false,
             showFinal = true,
             showGrid = false
         } = options;
 
-        // Clear canvas
+        // Clear
         ctx.fillStyle = '#1a1a1a';
         ctx.fillRect(0, 0, this.displaySize, this.displaySize);
 
-        // Draw grid if enabled
-        if (showGrid) {
-            this.drawGrid(ctx);
-        }
-
-        // Draw layers based on options
-        if (showStickFigure) {
-            this.drawStickFigure(ctx, character.stickFigure);
-        }
-
-        if (showThickness) {
-            this.drawThickened(ctx, character.thickened);
-        }
-
-        if (showFinal) {
-            this.drawFinal(ctx, character.final);
-        }
+        if (showGrid) this.drawGrid(ctx);
+        if (showHeatmap) this.drawHeatmap(ctx, character.heatmap);
+        if (showFinal) this.drawPixels(ctx, character.final);
+        if (showThickness) this.drawBodyParts(ctx, character.bodyParts);
+        if (showStickFigure) this.drawConnectionPoints(ctx, character.bodyParts);
     }
 
-    // Draw grid
     drawGrid(ctx) {
         ctx.strokeStyle = '#333';
         ctx.lineWidth = 0.5;
-
         for (let i = 0; i <= this.canvasSize; i++) {
             const pos = i * this.scale;
-            // Vertical lines
             ctx.beginPath();
             ctx.moveTo(pos, 0);
             ctx.lineTo(pos, this.displaySize);
             ctx.stroke();
-            // Horizontal lines
             ctx.beginPath();
             ctx.moveTo(0, pos);
             ctx.lineTo(this.displaySize, pos);
@@ -68,122 +53,125 @@ class CharacterRenderer {
         }
     }
 
-    // Draw stick figure skeleton
-    drawStickFigure(ctx, skeleton) {
+    drawBodyParts(ctx, bodyParts) {
+        ctx.fillStyle = 'rgba(74, 158, 255, 0.3)';
+        ctx.strokeStyle = 'rgba(74, 158, 255, 0.5)';
+        ctx.lineWidth = 1;
+        
+        Object.values(bodyParts).forEach(part => {
+            if (part.type === 'trapezoid') {
+                this.drawTrapezoid(ctx, part);
+            }
+        });
+    }
+
+    drawTrapezoid(ctx, trap) {
+        ctx.beginPath();
+        ctx.moveTo(trap.points[0].x * this.scale, trap.points[0].y * this.scale);
+        for (let i = 1; i < trap.points.length; i++) {
+            ctx.lineTo(trap.points[i].x * this.scale, trap.points[i].y * this.scale);
+        }
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+    }
+
+    drawConnectionPoints(ctx, bodyParts) {
+        ctx.fillStyle = '#ff6b6b';
+        
+        // Draw connection points (red dots)
+        const points = [
+            bodyParts.torso.center, // Torso center
+            bodyParts.neck.center,
+            bodyParts.neck.bottomCenter,
+            bodyParts.head.bottomCenter,
+            bodyParts.leftUpperArm.center,
+            bodyParts.leftUpperArm.bottomCenter,
+            bodyParts.leftForearm.bottomCenter,
+            bodyParts.rightUpperArm.center,
+            bodyParts.rightUpperArm.bottomCenter,
+            bodyParts.rightForearm.bottomCenter,
+            bodyParts.leftThigh.center,
+            bodyParts.leftThigh.bottomCenter,
+            bodyParts.leftShin.bottomCenter,
+            bodyParts.rightThigh.center,
+            bodyParts.rightThigh.bottomCenter,
+            bodyParts.rightShin.bottomCenter
+        ];
+        
+        points.forEach(point => {
+            ctx.beginPath();
+            ctx.arc(
+                point.x * this.scale,
+                point.y * this.scale,
+                3, 0, Math.PI * 2
+            );
+            ctx.fill();
+        });
+        
+        // Draw lines between connected parts
         ctx.strokeStyle = '#ff6b6b';
         ctx.lineWidth = 1;
-        ctx.fillStyle = '#ff6b6b';
-
-        // Draw head circle
-        ctx.beginPath();
-        ctx.arc(
-            skeleton.head.center.x * this.scale,
-            skeleton.head.center.y * this.scale,
-            skeleton.head.radius * this.scale,
-            0,
-            Math.PI * 2
-        );
-        ctx.stroke();
-
-        // Draw spine
-        this.drawLine(ctx, skeleton.spine[0], skeleton.spine[1]);
-
-        // Draw arms
-        this.drawLine(ctx, skeleton.arms.left[0], skeleton.arms.left[1]);
-        this.drawLine(ctx, skeleton.arms.right[0], skeleton.arms.right[1]);
-
-        // Draw legs
-        this.drawLine(ctx, skeleton.legs.left[0], skeleton.legs.left[1]);
-        this.drawLine(ctx, skeleton.legs.right[0], skeleton.legs.right[1]);
-
-        // Draw shoulder line
-        this.drawLine(ctx, skeleton.shoulders.left, skeleton.shoulders.right);
-
-        // Draw hip line
-        this.drawLine(ctx, skeleton.hips.left, skeleton.hips.right);
-    }
-
-    // Draw thickened shapes
-    drawThickened(ctx, shapes) {
-        ctx.fillStyle = '#4a9eff';
-        ctx.strokeStyle = '#4a9eff';
-        ctx.lineWidth = 1;
-
-        // Draw all shapes
-        Object.values(shapes).forEach(shape => {
-            if (shape.type === 'circle') {
-                ctx.beginPath();
-                ctx.arc(
-                    shape.center.x * this.scale,
-                    shape.center.y * this.scale,
-                    shape.radius * this.scale,
-                    0,
-                    Math.PI * 2
-                );
-                ctx.fill();
-            } else if (shape.type === 'rect') {
-                ctx.beginPath();
-                ctx.moveTo(
-                    shape.points[0].x * this.scale,
-                    shape.points[0].y * this.scale
-                );
-                for (let i = 1; i < shape.points.length; i++) {
-                    ctx.lineTo(
-                        shape.points[i].x * this.scale,
-                        shape.points[i].y * this.scale
-                    );
-                }
-                ctx.closePath();
-                ctx.fill();
-            }
+        
+        const connections = [
+            [bodyParts.torso.center, bodyParts.neck.center],
+            [bodyParts.neck.bottomCenter, bodyParts.head.center],
+            [bodyParts.torso.center, bodyParts.leftUpperArm.center],
+            [bodyParts.leftUpperArm.bottomCenter, bodyParts.leftForearm.center],
+            [bodyParts.torso.center, bodyParts.rightUpperArm.center],
+            [bodyParts.rightUpperArm.bottomCenter, bodyParts.rightForearm.center],
+            [bodyParts.torso.bottomCenter, bodyParts.leftThigh.center],
+            [bodyParts.leftThigh.bottomCenter, bodyParts.leftShin.center],
+            [bodyParts.torso.bottomCenter, bodyParts.rightThigh.center],
+            [bodyParts.rightThigh.bottomCenter, bodyParts.rightShin.center]
+        ];
+        
+        connections.forEach(([p1, p2]) => {
+            ctx.beginPath();
+            ctx.moveTo(p1.x * this.scale, p1.y * this.scale);
+            ctx.lineTo(p2.x * this.scale, p2.y * this.scale);
+            ctx.stroke();
         });
     }
 
-    // Draw final pixelated version
-    drawFinal(ctx, final) {
-        // For now, same as thickened
-        // Later: add pixel snapping, noise, etc
-        ctx.fillStyle = '#6bff6b';
-        ctx.strokeStyle = '#6bff6b';
-        ctx.lineWidth = 1;
-
-        Object.values(final).forEach(shape => {
-            if (shape.type === 'circle') {
-                ctx.beginPath();
-                ctx.arc(
-                    shape.center.x * this.scale,
-                    shape.center.y * this.scale,
-                    shape.radius * this.scale,
-                    0,
-                    Math.PI * 2
-                );
-                ctx.fill();
-            } else if (shape.type === 'rect') {
-                ctx.beginPath();
-                ctx.moveTo(
-                    shape.points[0].x * this.scale,
-                    shape.points[0].y * this.scale
-                );
-                for (let i = 1; i < shape.points.length; i++) {
-                    ctx.lineTo(
-                        shape.points[i].x * this.scale,
-                        shape.points[i].y * this.scale
+    drawHeatmap(ctx, heatmap) {
+        for (let y = 0; y < this.canvasSize; y++) {
+            for (let x = 0; x < this.canvasSize; x++) {
+                const intensity = heatmap[y][x];
+                if (intensity > 0) {
+                    const r = 255;
+                    const g = Math.floor(intensity * 255);
+                    const b = 0;
+                    const a = intensity * 0.6;
+                    
+                    ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${a})`;
+                    ctx.fillRect(
+                        x * this.scale,
+                        y * this.scale,
+                        this.scale,
+                        this.scale
                     );
                 }
-                ctx.closePath();
-                ctx.fill();
             }
-        });
+        }
     }
 
-    // Helper: draw line between two points
-    drawLine(ctx, start, end) {
-        ctx.beginPath();
-        ctx.moveTo(start.x * this.scale, start.y * this.scale);
-        ctx.lineTo(end.x * this.scale, end.y * this.scale);
-        ctx.stroke();
+    drawPixels(ctx, pixels) {
+        for (let y = 0; y < this.canvasSize; y++) {
+            for (let x = 0; x < this.canvasSize; x++) {
+                const color = pixels[y][x];
+                if (color) {
+                    ctx.fillStyle = `rgb(${color.r}, ${color.g}, ${color.b})`;
+                    ctx.fillRect(
+                        x * this.scale,
+                        y * this.scale,
+                        this.scale,
+                        this.scale
+                    );
+                }
+            }
+        }
     }
 }
 
-// Export renderer instance
 const characterRenderer = new CharacterRenderer(3);

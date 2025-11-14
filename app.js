@@ -13,43 +13,77 @@ class App {
         this.setupSliders();
         this.setupCheckboxes();
         this.setupButtons();
-        
-        // Generate initial character
         this.generateCharacters(1);
     }
 
-    // Get current parameters from UI sliders
     getParamsFromUI() {
+        const torsoTopWidth = parseFloat(document.getElementById('torsoTopWidth').value);
+        const torsoBottomWidth = parseFloat(document.getElementById('torsoBottomWidth').value);
+        const headWidth = parseFloat(document.getElementById('headWidth').value);
+        const upperArmTopWidth = parseFloat(document.getElementById('upperArmTopWidth').value);
+        const forearmTopWidth = parseFloat(document.getElementById('forearmTopWidth').value);
+        const thighTopWidth = parseFloat(document.getElementById('thighTopWidth').value);
+        const shinTopWidth = parseFloat(document.getElementById('shinTopWidth').value);
+        
         return {
-            headSize: parseFloat(document.getElementById('headSize').value),
-            bodyHeight: parseFloat(document.getElementById('bodyHeight').value),
-            shoulderWidth: parseFloat(document.getElementById('shoulderWidth').value),
-            hipWidth: parseFloat(document.getElementById('hipWidth').value),
-            armLength: parseFloat(document.getElementById('armLength').value),
-            legLength: parseFloat(document.getElementById('legLength').value),
-            headThickness: parseFloat(document.getElementById('headThickness').value),
-            torsoThickness: parseFloat(document.getElementById('torsoThickness').value),
-            armThickness: parseFloat(document.getElementById('armThickness').value),
-            legThickness: parseFloat(document.getElementById('legThickness').value)
+            torsoTopWidth: torsoTopWidth,
+            torsoBottomWidth: torsoBottomWidth,
+            torsoHeight: parseFloat(document.getElementById('torsoHeight').value),
+            torsoY: 10, // Higher up
+            
+            neckWidth: parseFloat(document.getElementById('neckWidth').value),
+            neckHeight: parseFloat(document.getElementById('neckHeight').value),
+            headWidth: headWidth,
+            headHeight: headWidth,
+            
+            upperArmTopWidth: upperArmTopWidth,
+            upperArmBottomWidth: upperArmTopWidth * 0.8,
+            upperArmLength: parseFloat(document.getElementById('upperArmLength').value),
+            forearmTopWidth: forearmTopWidth,
+            forearmBottomWidth: forearmTopWidth * 0.7,
+            forearmLength: parseFloat(document.getElementById('upperArmLength').value),
+            armAngle: parseFloat(document.getElementById('armAngle').value),
+            elbowAngle: parseFloat(document.getElementById('elbowAngle').value),
+            
+            thighTopWidth: thighTopWidth,
+            thighBottomWidth: thighTopWidth * 0.8,
+            thighLength: parseFloat(document.getElementById('thighLength').value),
+            shinTopWidth: shinTopWidth,
+            shinBottomWidth: shinTopWidth * 0.8,
+            shinLength: 12,
+            legAngle: parseFloat(document.getElementById('legAngle').value),
+            
+            fillDensity: parseFloat(document.getElementById('fillDensity').value),
+            palette: this.generatePalette()
         };
     }
 
-    // Get display options from checkboxes
+    generatePalette() {
+        return [
+            { r: 255, g: 100, b: 100 },
+            { r: 100, g: 255, b: 100 },
+            { r: 100, g: 100, b: 255 }
+        ];
+    }
+
     getDisplayOptions() {
         return {
             showStickFigure: document.getElementById('showStickFigure').checked,
             showThickness: document.getElementById('showThickness').checked,
+            showHeatmap: document.getElementById('showHeatmap').checked,
             showFinal: document.getElementById('showFinal').checked,
             showGrid: document.getElementById('showGrid').checked
         };
     }
 
-    // Setup slider event listeners
     setupSliders() {
         const sliders = [
-            'headSize', 'bodyHeight', 'shoulderWidth', 'hipWidth',
-            'armLength', 'legLength', 'headThickness', 'torsoThickness',
-            'armThickness', 'legThickness'
+            'torsoTopWidth', 'torsoBottomWidth', 'torsoHeight',
+            'headWidth', 'neckWidth', 'neckHeight',
+            'upperArmTopWidth', 'forearmTopWidth', 'upperArmLength',
+            'armAngle', 'elbowAngle',
+            'thighTopWidth', 'shinTopWidth', 'thighLength', 'legAngle',
+            'fillDensity'
         ];
 
         sliders.forEach(id => {
@@ -64,9 +98,8 @@ class App {
         });
     }
 
-    // Setup checkbox event listeners
     setupCheckboxes() {
-        const checkboxes = ['showStickFigure', 'showThickness', 'showFinal', 'showGrid'];
+        const checkboxes = ['showStickFigure', 'showThickness', 'showHeatmap', 'showFinal', 'showGrid'];
         
         checkboxes.forEach(id => {
             document.getElementById(id).addEventListener('change', () => {
@@ -76,7 +109,6 @@ class App {
         });
     }
 
-    // Setup button event listeners
     setupButtons() {
         document.getElementById('generateOne').addEventListener('click', () => {
             this.generateCharacters(1);
@@ -95,38 +127,52 @@ class App {
         });
     }
 
-    // Generate N characters
     generateCharacters(count) {
         this.characters = [];
         
         for (let i = 0; i < count; i++) {
-            const character = characterGenerator.generate(this.currentParams);
+            const params = { ...this.currentParams };
+            params.palette = this.generateRandomPalette();
+            
+            const character = characterGenerator.generate(params);
             this.characters.push(character);
         }
         
         this.renderCharacters();
     }
 
-    // Regenerate characters with new parameters (keep same count)
+    generateRandomPalette() {
+        const numColors = Math.floor(Math.random() * 3) + 3;
+        const palette = [];
+        for (let i = 0; i < numColors; i++) {
+            palette.push({
+                r: Math.floor(Math.random() * 206) + 50,
+                g: Math.floor(Math.random() * 206) + 50,
+                b: Math.floor(Math.random() * 206) + 50
+            });
+        }
+        return palette;
+    }
+
     regenerateCurrentCharacters() {
         if (this.characters.length === 0) return;
         
-        this.characters = this.characters.map(() => 
-            characterGenerator.generate(this.currentParams)
-        );
+        this.characters = this.characters.map(() => {
+            const params = { ...this.currentParams };
+            params.palette = this.generateRandomPalette();
+            return characterGenerator.generate(params);
+        });
         
         this.renderCharacters();
     }
 
-    // Redraw existing characters (no regeneration, just re-render)
     redrawCharacters() {
         this.renderCharacters();
     }
 
-    // Render all characters to canvas grid
     renderCharacters() {
         const grid = document.getElementById('canvasGrid');
-        grid.innerHTML = ''; // Clear grid
+        grid.innerHTML = '';
 
         this.characters.forEach((character, index) => {
             const container = document.createElement('div');
@@ -145,17 +191,35 @@ class App {
         });
     }
 
-    // Randomize all parameters
     randomizeParams() {
         const randomParams = characterGenerator.randomParams();
         
-        // Update UI sliders
-        Object.keys(randomParams).forEach(key => {
-            const slider = document.getElementById(key);
-            const valueDisplay = document.getElementById(key + 'Value');
+        const sliderMappings = {
+            'torsoTopWidth': randomParams.torsoTopWidth,
+            'torsoBottomWidth': randomParams.torsoBottomWidth,
+            'torsoHeight': randomParams.torsoHeight,
+            'headWidth': randomParams.headWidth,
+            'neckWidth': randomParams.neckWidth,
+            'neckHeight': randomParams.neckHeight,
+            'upperArmTopWidth': randomParams.upperArmTopWidth,
+            'forearmTopWidth': randomParams.forearmTopWidth,
+            'upperArmLength': randomParams.upperArmLength,
+            'armAngle': randomParams.armAngle,
+            'elbowAngle': randomParams.elbowAngle,
+            'thighTopWidth': randomParams.thighTopWidth,
+            'shinTopWidth': randomParams.shinTopWidth,
+            'thighLength': randomParams.thighLength,
+            'legAngle': randomParams.legAngle,
+            'fillDensity': randomParams.fillDensity
+        };
+        
+        Object.keys(sliderMappings).forEach(id => {
+            const slider = document.getElementById(id);
+            const valueDisplay = document.getElementById(id + 'Value');
             if (slider && valueDisplay) {
-                slider.value = randomParams[key];
-                valueDisplay.textContent = randomParams[key];
+                const value = sliderMappings[id];
+                slider.value = value;
+                valueDisplay.textContent = typeof value === 'number' ? value.toFixed(1) : value;
             }
         });
         
@@ -164,7 +228,6 @@ class App {
     }
 }
 
-// Initialize app when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
     const app = new App();
 });

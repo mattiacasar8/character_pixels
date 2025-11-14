@@ -8,74 +8,121 @@
 </head>
 <body>
     <div class="container">
-        <!-- Controls Sidebar -->
         <aside class="controls">
             <h2>Parameters</h2>
             
             <div class="section">
-                <h3>Structure</h3>
+                <h3>Torso</h3>
                 <div class="control-group">
                     <label>
-                        Head Size: <span id="headSizeValue">12</span>px
-                        <input type="range" id="headSize" min="8" max="20" value="12" step="1">
+                        Top Width: <span id="torsoTopWidthValue">12</span>px
+                        <input type="range" id="torsoTopWidth" min="8" max="16" value="12" step="0.5">
                     </label>
                 </div>
                 <div class="control-group">
                     <label>
-                        Body Height: <span id="bodyHeightValue">20</span>px
-                        <input type="range" id="bodyHeight" min="12" max="30" value="20" step="1">
+                        Bottom Width: <span id="torsoBottomWidthValue">10</span>px
+                        <input type="range" id="torsoBottomWidth" min="6" max="14" value="10" step="0.5">
                     </label>
                 </div>
                 <div class="control-group">
                     <label>
-                        Shoulder Width: <span id="shoulderWidthValue">16</span>px
-                        <input type="range" id="shoulderWidth" min="8" max="24" value="16" step="1">
-                    </label>
-                </div>
-                <div class="control-group">
-                    <label>
-                        Hip Width: <span id="hipWidthValue">12</span>px
-                        <input type="range" id="hipWidth" min="6" max="20" value="12" step="1">
-                    </label>
-                </div>
-                <div class="control-group">
-                    <label>
-                        Arm Length: <span id="armLengthValue">18</span>px
-                        <input type="range" id="armLength" min="10" max="28" value="18" step="1">
-                    </label>
-                </div>
-                <div class="control-group">
-                    <label>
-                        Leg Length: <span id="legLengthValue">20</span>px
-                        <input type="range" id="legLength" min="12" max="32" value="20" step="1">
+                        Height: <span id="torsoHeightValue">20</span>px
+                        <input type="range" id="torsoHeight" min="15" max="25" value="20" step="1">
                     </label>
                 </div>
             </div>
 
             <div class="section">
-                <h3>Thickness</h3>
+                <h3>Head & Neck</h3>
                 <div class="control-group">
                     <label>
-                        Head: <span id="headThicknessValue">3</span>px
-                        <input type="range" id="headThickness" min="1" max="6" value="3" step="0.5">
+                        Head Size: <span id="headWidthValue">9</span>px
+                        <input type="range" id="headWidth" min="6" max="12" value="9" step="0.5">
                     </label>
                 </div>
                 <div class="control-group">
                     <label>
-                        Torso: <span id="torsoThicknessValue">4</span>px
-                        <input type="range" id="torsoThickness" min="1" max="8" value="4" step="0.5">
+                        Neck Width: <span id="neckWidthValue">3</span>px
+                        <input type="range" id="neckWidth" min="2" max="5" value="3" step="0.5">
                     </label>
                 </div>
                 <div class="control-group">
                     <label>
-                        Arms: <span id="armThicknessValue">2</span>px
-                        <input type="range" id="armThickness" min="1" max="5" value="2" step="0.5">
+                        Neck Height: <span id="neckHeightValue">3</span>px
+                        <input type="range" id="neckHeight" min="2" max="6" value="3" step="0.5">
+                    </label>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>Arms</h3>
+                <div class="control-group">
+                    <label>
+                        Upper Width: <span id="upperArmTopWidthValue">4</span>px
+                        <input type="range" id="upperArmTopWidth" min="2" max="6" value="4" step="0.5">
                     </label>
                 </div>
                 <div class="control-group">
                     <label>
-                        Legs: <span id="legThicknessValue">2.5</span>px
-                        <input type="range" id="legThickness" min="1" max="6" value="2.5" step="0.5">
+                        Forearm Width: <span id="forearmTopWidthValue">3</span>px
+                        <input type="range" id="forearmTopWidth" min="1.5" max="5" value="3" step="0.5">
+                    </label>
+                </div>
+                <div class="control-group">
+                    <label>
+                        Arm Length: <span id="upperArmLengthValue">11</span>px
+                        <input type="range" id="upperArmLength" min="8" max="14" value="11" step="1">
+                    </label>
+                </div>
+                <div class="control-group">
+                    <label>
+                        Arm Angle: <span id="armAngleValue">-45</span>°
+                        <input type="range" id="armAngle" min="-80" max="-10" value="-45" step="5">
+                    </label>
+                </div>
+                <div class="control-group">
+                    <label>
+                        Elbow Angle: <span id="elbowAngleValue">0</span>°
+                        <input type="range" id="elbowAngle" min="-70" max="70" value="0" step="5">
+                    </label>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>Legs</h3>
+                <div class="control-group">
+                    <label>
+                        Thigh Width: <span id="thighTopWidthValue">5</span>px
+                        <input type="range" id="thighTopWidth" min="3" max="8" value="5" step="0.5">
+                    </label>
+                </div>
+                <div class="control-group">
+                    <label>
+                        Shin Width: <span id="shinTopWidthValue">4</span>px
+                        <input type="range" id="shinTopWidth" min="2" max="6" value="4" step="0.5">
+                    </label>
+                </div>
+                <div class="control-group">
+                    <label>
+                        Thigh Length: <span id="thighLengthValue">12</span>px
+                        <input type="range" id="thighLength" min="10" max="16" value="12" step="1">
+                    </label>
+                </div>
+                <div class="control-group">
+                    <label>
+                        Leg Angle: <span id="legAngleValue">-10</span>°
+                        <input type="range" id="legAngle" min="-25" max="0" value="-10" step="5">
+                    </label>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>Generation</h3>
+                <div class="control-group">
+                    <label>
+                        Fill Density: <span id="fillDensityValue">0.8</span>
+                        <input type="range" id="fillDensity" min="0.3" max="1.0" value="0.8" step="0.05">
                     </label>
                 </div>
             </div>
@@ -84,17 +131,22 @@
                 <h3>Display Options</h3>
                 <div class="control-group">
                     <label>
-                        <input type="checkbox" id="showStickFigure" checked> Show Stick Figure
+                        <input type="checkbox" id="showStickFigure"> Connection Points
                     </label>
                 </div>
                 <div class="control-group">
                     <label>
-                        <input type="checkbox" id="showThickness" checked> Show Thickness
+                        <input type="checkbox" id="showThickness" checked> Show Shapes
                     </label>
                 </div>
                 <div class="control-group">
                     <label>
-                        <input type="checkbox" id="showFinal" checked> Show Final
+                        <input type="checkbox" id="showHeatmap"> Show Heatmap
+                    </label>
+                </div>
+                <div class="control-group">
+                    <label>
+                        <input type="checkbox" id="showFinal"> Show Final
                     </label>
                 </div>
                 <div class="control-group">
@@ -105,15 +157,14 @@
             </div>
 
             <div class="section">
-                <h3>Generation</h3>
+                <h3>Actions</h3>
                 <button id="generateOne" class="btn-primary">Generate 1</button>
                 <button id="generateTen" class="btn-secondary">Generate 10</button>
                 <button id="generateHundred" class="btn-secondary">Generate 100</button>
-                <button id="randomize" class="btn-accent">Randomize Params</button>
+                <button id="randomize" class="btn-accent">Randomize</button>
             </div>
         </aside>
 
-        <!-- Canvas Grid -->
         <main class="canvas-area">
             <h1>Character Pixel Generator</h1>
             <div id="canvasGrid" class="canvas-grid"></div>
