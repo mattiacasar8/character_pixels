@@ -1,0 +1,162 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Courier New', monospace;
+    background: #1a1a1a;
+    color: #e0e0e0;
+}
+
+.container {
+    display: flex;
+    height: 100vh;
+}
+
+/* Sidebar Controls */
+.controls {
+    width: 280px;
+    background: #242424;
+    padding: 20px;
+    overflow-y: auto;
+    border-right: 1px solid #333;
+}
+
+.controls h2 {
+    font-size: 18px;
+    margin-bottom: 20px;
+    color: #fff;
+}
+
+.controls h3 {
+    font-size: 14px;
+    margin-top: 16px;
+    margin-bottom: 12px;
+    color: #999;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.section {
+    margin-bottom: 20px;
+}
+
+.control-group {
+    margin-bottom: 12px;
+}
+
+.control-group label {
+    display: block;
+    font-size: 12px;
+    color: #ccc;
+}
+
+.control-group input[type="range"] {
+    width: 100%;
+    margin-top: 4px;
+}
+
+.control-group input[type="checkbox"] {
+    margin-right: 8px;
+}
+
+button {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 8px;
+    border: none;
+    border-radius: 4px;
+    font-family: inherit;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-primary {
+    background: #4a9eff;
+    color: white;
+    font-weight: bold;
+}
+
+.btn-primary:hover {
+    background: #3a8eef;
+}
+
+.btn-secondary {
+    background: #333;
+    color: #ccc;
+}
+
+.btn-secondary:hover {
+    background: #444;
+}
+
+.btn-accent {
+    background: #ff6b6b;
+    color: white;
+}
+
+.btn-accent:hover {
+    background: #ee5b5b;
+}
+
+/* Main Canvas Area */
+.canvas-area {
+    flex: 1;
+    padding: 40px;
+    overflow-y: auto;
+}
+
+.canvas-area h1 {
+    font-size: 24px;
+    margin-bottom: 30px;
+    color: #fff;
+}
+
+.canvas-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 20px;
+}
+
+.canvas-container {
+    background: #2a2a2a;
+    border-radius: 4px;
+    padding: 12px;
+    position: relative;
+}
+
+.canvas-container canvas {
+    display: block;
+    width: 100%;
+    height: auto;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+}
+
+.canvas-label {
+    font-size: 10px;
+    color: #666;
+    margin-top: 8px;
+    text-align: center;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #1a1a1a;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #444;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
