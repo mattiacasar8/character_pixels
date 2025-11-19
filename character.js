@@ -1,5 +1,54 @@
 // Character Generator - Trapezoid-based system
 
+// Fantasy Color Palettes
+const FANTASY_PALETTES = [
+    // Gameboy
+    [{ r: 15, g: 56, b: 15 }, { r: 48, g: 98, b: 48 }, { r: 139, g: 172, b: 15 }, { r: 155, g: 188, b: 15 }],
+    // NES
+    [{ r: 124, g: 124, b: 124 }, { r: 0, g: 0, b: 252 }, { r: 0, g: 0, b: 188 }, { r: 68, g: 40, b: 188 }],
+    // Pico8
+    [{ r: 29, g: 43, b: 83 }, { r: 126, g: 37, b: 83 }, { r: 0, g: 135, b: 81 }, { r: 171, g: 82, b: 54 }],
+    // Sepia/RPG
+    [{ r: 75, g: 61, b: 68 }, { r: 139, g: 109, b: 156 }, { r: 198, g: 159, b: 165 }, { r: 242, g: 211, b: 171 }],
+    // Forest
+    [{ r: 34, g: 49, b: 28 }, { r: 74, g: 105, b: 48 }, { r: 134, g: 170, b: 84 }, { r: 194, g: 214, b: 156 }],
+    // Desert
+    [{ r: 88, g: 48, b: 35 }, { r: 150, g: 91, b: 64 }, { r: 204, g: 142, b: 91 }, { r: 235, g: 205, b: 158 }],
+    // Ice
+    [{ r: 25, g: 60, b: 88 }, { r: 61, g: 135, b: 177 }, { r: 127, g: 198, b: 222 }, { r: 206, g: 237, b: 245 }],
+    // Fire
+    [{ r: 66, g: 16, b: 8 }, { r: 131, g: 44, b: 19 }, { r: 212, g: 73, b: 34 }, { r: 243, g: 143, b: 66 }],
+    // Arcane
+    [{ r: 50, g: 26, b: 81 }, { r: 110, g: 61, b: 139 }, { r: 168, g: 111, b: 193 }, { r: 211, g: 172, b: 230 }],
+    // Undead
+    [{ r: 38, g: 43, b: 35 }, { r: 72, g: 91, b: 70 }, { r: 133, g: 155, b: 129 }, { r: 178, g: 191, b: 175 }]
+];
+
+// Fantasy Name Generator
+class NameGenerator {
+    constructor() {
+        this.prefixes = ['Aer', 'Bal', 'Cael', 'Dor', 'El', 'Fen', 'Gal', 'Hro', 'Ior', 'Kor', 'Lun', 'Mor', 'Nar', 'Oro', 'Pel', 'Quin', 'Ral', 'Syl', 'Thal', 'Ur', 'Val', 'Wyn', 'Xal', 'Yor', 'Zeph'];
+        this.suffixes = ['th', 'mar', 'ion', 'or', 'is', 'wen', 'gard', 'mir', 'dor', 'wyn', 'ak', 'ius', 'eon', 'ara', 'iel'];
+        this.titles = ['the Brave', 'Sun-shield', 'Storm-walker', 'Shadow-blade', 'Fire-heart', 'Ice-born', 'Sky-seeker', 'Stone-hand', 'Swift-foot', 'Iron-will', 'Moon-eye', 'Star-touched', 'Dawn-bringer', 'Night-walker', 'Wind-rider'];
+    }
+
+    generate() {
+        const prefix = this.prefixes[Math.floor(Math.random() * this.prefixes.length)];
+        const suffix = this.suffixes[Math.floor(Math.random() * this.suffixes.length)];
+        const name = prefix + suffix;
+
+        // 30% chance to add a title
+        if (Math.random() < 0.3) {
+            const title = this.titles[Math.floor(Math.random() * this.titles.length)];
+            return `${name} ${title}`;
+        }
+
+        return name;
+    }
+}
+
+const nameGenerator = new NameGenerator();
+
 class CharacterGenerator {
     constructor(canvasSize = 50) {
         this.canvasSize = canvasSize;
@@ -11,12 +60,14 @@ class CharacterGenerator {
         const bodyParts = this.generateBodyParts(params);
         const heatmap = this.generateHeatmap(bodyParts, params);
         const final = this.generatePixels(heatmap, params);
-        
+        const name = nameGenerator.generate();
+
         return {
             bodyParts,
             heatmap,
             final,
-            params
+            params,
+            name
         };
     }
 
@@ -151,16 +202,24 @@ class CharacterGenerator {
     }
 
     generateRandomPalette() {
-        const numColors = this.randomInt(3, 5);
-        const palette = [];
-        for (let i = 0; i < numColors; i++) {
-            palette.push({
-                r: this.randomInt(50, 255),
-                g: this.randomInt(50, 255),
-                b: this.randomInt(50, 255)
-            });
+        // 70% chance to use preset palette, 30% chance for random
+        if (Math.random() < 0.7) {
+            // Use a fantasy palette
+            const paletteIndex = Math.floor(Math.random() * FANTASY_PALETTES.length);
+            return [...FANTASY_PALETTES[paletteIndex]]; // Return a copy
+        } else {
+            // Generate random palette
+            const numColors = this.randomInt(3, 5);
+            const palette = [];
+            for (let i = 0; i < numColors; i++) {
+                palette.push({
+                    r: this.randomInt(50, 255),
+                    g: this.randomInt(50, 255),
+                    b: this.randomInt(50, 255)
+                });
+            }
+            return palette;
         }
-        return palette;
     }
 
     scaleParams(params, scale) {
@@ -304,8 +363,64 @@ class CharacterGenerator {
             rightRemainingShinLength,
             0
         );
-        
+
+        // 8. JOINTS (circles at articulation points)
+        parts.leftElbow = this.createJoint(parts.leftUpperArm.bottomCenter, scaledParams.upperArmBottomWidth / 2);
+        parts.rightElbow = this.createJoint(parts.rightUpperArm.bottomCenter, scaledParams.upperArmBottomWidth / 2);
+        parts.leftKnee = this.createJoint(parts.leftThigh.bottomCenter, scaledParams.thighBottomWidth / 2);
+        parts.rightKnee = this.createJoint(parts.rightThigh.bottomCenter, scaledParams.thighBottomWidth / 2);
+        parts.leftShoulder = this.createJoint(parts.leftUpperArm.center, scaledParams.upperArmTopWidth / 2);
+        parts.rightShoulder = this.createJoint(parts.rightUpperArm.center, scaledParams.upperArmTopWidth / 2);
+
+        // 9. HANDS (small trapezoids at forearm ends)
+        const leftHandStart = parts.leftForearm.bottomCenter;
+        const leftHandAngle = scaledParams.armAngle + scaledParams.elbowAngle;
+        parts.leftHand = this.createTrapezoid(
+            leftHandStart.x, leftHandStart.y,
+            scaledParams.forearmBottomWidth * 1.2,
+            scaledParams.forearmBottomWidth * 0.8,
+            scaledParams.forearmBottomWidth * 1.5,
+            leftHandAngle
+        );
+
+        const rightHandStart = parts.rightForearm.bottomCenter;
+        const rightHandAngle = -scaledParams.armAngle - scaledParams.elbowAngle;
+        parts.rightHand = this.createTrapezoid(
+            rightHandStart.x, rightHandStart.y,
+            scaledParams.forearmBottomWidth * 1.2,
+            scaledParams.forearmBottomWidth * 0.8,
+            scaledParams.forearmBottomWidth * 1.5,
+            rightHandAngle
+        );
+
+        // 10. FEET (small trapezoids at shin ends)
+        const leftFootStart = parts.leftShin.bottomCenter;
+        parts.leftFoot = this.createTrapezoid(
+            leftFootStart.x, leftFootStart.y,
+            scaledParams.shinBottomWidth,
+            scaledParams.shinBottomWidth * 1.2,
+            scaledParams.shinBottomWidth * 0.8,
+            90 // horizontal feet
+        );
+
+        const rightFootStart = parts.rightShin.bottomCenter;
+        parts.rightFoot = this.createTrapezoid(
+            rightFootStart.x, rightFootStart.y,
+            scaledParams.shinBottomWidth,
+            scaledParams.shinBottomWidth * 1.2,
+            scaledParams.shinBottomWidth * 0.8,
+            90 // horizontal feet
+        );
+
         return parts;
+    }
+
+    createJoint(center, radius) {
+        return {
+            type: 'circle',
+            center: center,
+            radius: radius
+        };
     }
 
     createTrapezoid(centerX, centerY, topWidth, bottomWidth, length, angleDeg) {
@@ -354,15 +469,40 @@ class CharacterGenerator {
     }
 
     generateHeatmap(bodyParts, params) {
-        const heatmap = Array(this.canvasSize).fill(0).map(() => 
+        const heatmap = Array(this.canvasSize).fill(0).map(() =>
             Array(this.canvasSize).fill(0)
         );
-        
+
         Object.values(bodyParts).forEach(part => {
-            this.fillHeatmapForTrapezoid(heatmap, part);
+            if (part.type === 'circle') {
+                this.fillHeatmapForCircle(heatmap, part);
+            } else {
+                this.fillHeatmapForTrapezoid(heatmap, part);
+            }
         });
-        
+
         return heatmap;
+    }
+
+    fillHeatmapForCircle(heatmap, circle) {
+        const { center, radius } = circle;
+        const minX = Math.max(0, Math.floor(center.x - radius));
+        const maxX = Math.min(this.canvasSize, Math.ceil(center.x + radius));
+        const minY = Math.max(0, Math.floor(center.y - radius));
+        const maxY = Math.min(this.canvasSize, Math.ceil(center.y + radius));
+
+        for (let y = minY; y < maxY; y++) {
+            for (let x = minX; x < maxX; x++) {
+                const dx = x - center.x;
+                const dy = y - center.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+
+                if (dist <= radius) {
+                    const intensity = Math.max(0, 1 - (dist / radius) * 0.3);
+                    heatmap[y][x] = Math.max(heatmap[y][x], intensity);
+                }
+            }
+        }
     }
 
     fillHeatmapForTrapezoid(heatmap, trap) {
@@ -444,32 +584,139 @@ class CharacterGenerator {
     }
 
     generatePixels(heatmap, params) {
-        const pixels = Array(this.canvasSize).fill(0).map(() => 
+        const pixels = Array(this.canvasSize).fill(0).map(() =>
             Array(this.canvasSize).fill(null)
         );
-        
+
         const fillDensity = params.fillDensity || 0.8;
-        
+
         // Generate left half, then mirror
         for (let y = 0; y < this.canvasSize; y++) {
             for (let x = 0; x < Math.floor(this.canvasSize / 2); x++) {
                 const probability = heatmap[y][x];
-                
+
                 if (probability > 0.1 && Math.random() < probability * fillDensity) {
                     const color = params.palette[
                         Math.floor(Math.random() * params.palette.length)
                     ];
                     pixels[y][x] = color;
-                    
+
                     const mirrorX = this.canvasSize - 1 - x;
                     pixels[y][mirrorX] = color;
                 }
             }
         }
-        
+
         this.removeIsolatedPixels(pixels);
-        
+
+        // Apply smoothing if enabled
+        if (params.enableSmoothing !== false) {
+            this.applySmoothing(pixels, params.palette);
+        }
+
+        // Apply outline if enabled
+        if (params.showOutline !== false) {
+            this.applyOutline(pixels, params.palette);
+        }
+
         return pixels;
+    }
+
+    applySmoothing(pixels, palette) {
+        // Cellular automata: fill empty cells surrounded by many filled neighbors
+        const toFill = [];
+
+        for (let y = 1; y < this.canvasSize - 1; y++) {
+            for (let x = 1; x < this.canvasSize - 1; x++) {
+                if (pixels[y][x] === null) {
+                    // Count filled neighbors (Moore neighborhood - 8 cells)
+                    let filledCount = 0;
+                    const neighborColors = [];
+
+                    for (let dy = -1; dy <= 1; dy++) {
+                        for (let dx = -1; dx <= 1; dx++) {
+                            if (dx === 0 && dy === 0) continue;
+                            if (pixels[y + dy][x + dx]) {
+                                filledCount++;
+                                neighborColors.push(pixels[y + dy][x + dx]);
+                            }
+                        }
+                    }
+
+                    // Fill if more than 4 neighbors are filled
+                    if (filledCount > 4) {
+                        // Use the most common neighbor color
+                        const color = this.getMostCommonColor(neighborColors) || palette[0];
+                        toFill.push({ x, y, color });
+                    }
+                }
+            }
+        }
+
+        // Apply fills
+        toFill.forEach(({ x, y, color }) => {
+            pixels[y][x] = color;
+        });
+    }
+
+    applyOutline(pixels, palette) {
+        // Add dark outline around sprites
+        const outlineColor = { r: 20, g: 20, b: 20 }; // Dark outline
+        const toOutline = [];
+
+        for (let y = 1; y < this.canvasSize - 1; y++) {
+            for (let x = 1; x < this.canvasSize - 1; x++) {
+                if (pixels[y][x] !== null) {
+                    // Check orthogonal neighbors (up, down, left, right)
+                    const neighbors = [
+                        { dy: -1, dx: 0 }, // up
+                        { dy: 1, dx: 0 },  // down
+                        { dy: 0, dx: -1 }, // left
+                        { dy: 0, dx: 1 }   // right
+                    ];
+
+                    neighbors.forEach(({ dy, dx }) => {
+                        const ny = y + dy;
+                        const nx = x + dx;
+                        if (ny >= 0 && ny < this.canvasSize && nx >= 0 && nx < this.canvasSize) {
+                            if (pixels[ny][nx] === null) {
+                                toOutline.push({ x: nx, y: ny });
+                            }
+                        }
+                    });
+                }
+            }
+        }
+
+        // Apply outline (don't overwrite existing pixels)
+        toOutline.forEach(({ x, y }) => {
+            if (pixels[y][x] === null) {
+                pixels[y][x] = outlineColor;
+            }
+        });
+    }
+
+    getMostCommonColor(colors) {
+        if (colors.length === 0) return null;
+
+        // Simple frequency count
+        const colorMap = new Map();
+        colors.forEach(color => {
+            const key = `${color.r},${color.g},${color.b}`;
+            colorMap.set(key, (colorMap.get(key) || 0) + 1);
+        });
+
+        let maxCount = 0;
+        let mostCommon = colors[0];
+        colorMap.forEach((count, key) => {
+            if (count > maxCount) {
+                maxCount = count;
+                const [r, g, b] = key.split(',').map(Number);
+                mostCommon = { r, g, b };
+            }
+        });
+
+        return mostCommon;
     }
 
     removeIsolatedPixels(pixels) {

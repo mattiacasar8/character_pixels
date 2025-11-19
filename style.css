@@ -80,6 +80,41 @@ body {
     border-color: #555;
 }
 
+/* Accordion Styles */
+.advanced-settings {
+    border: 1px solid #333;
+    border-radius: 4px;
+    margin-bottom: 12px;
+}
+
+.advanced-settings summary {
+    cursor: pointer;
+    padding: 10px;
+    background: #2a2a2a;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: bold;
+    color: #4a9eff;
+    user-select: none;
+}
+
+.advanced-settings summary:hover {
+    background: #333;
+}
+
+.advanced-settings[open] summary {
+    border-bottom: 1px solid #333;
+    border-radius: 4px 4px 0 0;
+}
+
+.advanced-settings .control-group {
+    padding: 0 10px;
+}
+
+.advanced-settings .control-group:last-child {
+    padding-bottom: 10px;
+}
+
 button {
     width: 100%;
     padding: 10px;
@@ -156,6 +191,42 @@ button {
     image-rendering: crisp-edges;
     background: #2a2a2a;
     border-radius: 4px;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.canvas-grid canvas:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 12px rgba(74, 158, 255, 0.5);
+}
+
+/* Tooltip for character names */
+.character-tooltip {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.95);
+    color: #4a9eff;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: bold;
+    border: 2px solid #4a9eff;
+    z-index: 1000;
+    display: none;
+    pointer-events: none;
+    box-shadow: 0 4px 12px rgba(74, 158, 255, 0.3);
+}
+
+.character-tooltip.show {
+    display: block;
+    animation: fadeIn 0.3s;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateX(-50%) translateY(-10px); }
+    to { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
 
 /* Scrollbar styling */

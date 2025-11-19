@@ -64,7 +64,9 @@ class App {
             legAngle: parseFloat(document.getElementById('legAngle').value),
 
             fillDensity: parseFloat(document.getElementById('fillDensity').value),
-            palette: this.generatePalette()
+            palette: this.generatePalette(),
+            enableSmoothing: document.getElementById('enableSmoothing').checked,
+            showOutline: document.getElementById('showOutline').checked
         };
     }
 
@@ -120,12 +122,22 @@ class App {
     }
 
     setupCheckboxes() {
-        const checkboxes = ['showStickFigure', 'showThickness', 'showHeatmap', 'showFinal', 'showGrid'];
+        const displayCheckboxes = ['showStickFigure', 'showThickness', 'showHeatmap', 'showFinal', 'showGrid'];
 
-        checkboxes.forEach(id => {
+        displayCheckboxes.forEach(id => {
             document.getElementById(id).addEventListener('change', () => {
                 this.displayOptions = this.getDisplayOptions();
                 this.redrawCharacters();
+            });
+        });
+
+        // Rendering checkboxes that require regeneration
+        const renderingCheckboxes = ['enableSmoothing', 'showOutline'];
+
+        renderingCheckboxes.forEach(id => {
+            document.getElementById(id).addEventListener('change', () => {
+                this.currentParams = this.getParamsFromUI();
+                this.regenerateCurrentCharacters();
             });
         });
     }
@@ -230,8 +242,28 @@ class App {
         this.characters.forEach((character) => {
             const canvas = this.characterRenderer.createCanvas();
             this.characterRenderer.drawCharacter(canvas, character, this.displayOptions);
+
+            // Store character name in dataset
+            canvas.dataset.characterName = character.name;
+
+            // Add click event to show name
+            canvas.addEventListener('click', () => {
+                this.showCharacterTooltip(character.name);
+            });
+
             grid.appendChild(canvas);
         });
+    }
+
+    showCharacterTooltip(name) {
+        const tooltip = document.getElementById('characterTooltip');
+        tooltip.textContent = `Character: ${name}`;
+        tooltip.classList.add('show');
+
+        // Auto-hide after 3 seconds
+        setTimeout(() => {
+            tooltip.classList.remove('show');
+        }, 3000);
     }
 
     randomizeParams() {

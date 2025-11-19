@@ -22,7 +22,27 @@
             </div>
 
             <div class="section">
-                <h3>Body</h3>
+                <h3>Rendering</h3>
+                <div class="control-group">
+                    <label>
+                        Fill Density: <span id="fillDensityValue">0.8</span>
+                        <input type="range" id="fillDensity" min="0.3" max="1.0" value="0.8" step="0.05">
+                    </label>
+                </div>
+                <div class="control-group">
+                    <label>
+                        <input type="checkbox" id="enableSmoothing" checked> Enable Smoothing
+                    </label>
+                </div>
+                <div class="control-group">
+                    <label>
+                        <input type="checkbox" id="showOutline" checked> Show Outline
+                    </label>
+                </div>
+            </div>
+
+            <details class="section advanced-settings">
+                <summary>Advanced: Body Proportions</summary>
                 <div class="control-group">
                     <label>
                         Torso Width (Top): <span id="torsoTopWidthValue">24</span>%
@@ -41,10 +61,6 @@
                         <input type="range" id="torsoHeight" min="24" max="36" value="30" step="1">
                     </label>
                 </div>
-            </div>
-
-            <div class="section">
-                <h3>Head</h3>
                 <div class="control-group">
                     <label>
                         Head Size: <span id="headWidthValue">18</span>%
@@ -63,10 +79,10 @@
                         <input type="range" id="neckHeight" min="4" max="12" value="6" step="1">
                     </label>
                 </div>
-            </div>
+            </details>
 
-            <div class="section">
-                <h3>Arms</h3>
+            <details class="section advanced-settings">
+                <summary>Advanced: Limbs &amp; Angles</summary>
                 <div class="control-group">
                     <label>
                         Upper Arm Width: <span id="upperArmTopWidthValue">8</span>%
@@ -97,10 +113,6 @@
                         <input type="range" id="elbowAngle" min="-70" max="70" value="0" step="5">
                     </label>
                 </div>
-            </div>
-
-            <div class="section">
-                <h3>Legs</h3>
                 <div class="control-group">
                     <label>
                         Thigh Width: <span id="thighTopWidthValue">10</span>%
@@ -125,17 +137,7 @@
                         <input type="range" id="legAngle" min="-25" max="0" value="-10" step="5">
                     </label>
                 </div>
-            </div>
-
-            <div class="section">
-                <h3>Rendering</h3>
-                <div class="control-group">
-                    <label>
-                        Fill Density: <span id="fillDensityValue">0.8</span>
-                        <input type="range" id="fillDensity" min="0.3" max="1.0" value="0.8" step="0.05">
-                    </label>
-                </div>
-            </div>
+            </details>
 
             <div class="section">
                 <h3>Batch Generation</h3>
@@ -200,6 +202,7 @@
         <main class="canvas-area">
             <h1>Character Pixel Generator</h1>
             <div id="canvasGrid" class="canvas-grid"></div>
+            <div id="characterTooltip" class="character-tooltip"></div>
         </main>
     </div>
 
