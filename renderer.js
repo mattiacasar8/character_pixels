@@ -57,12 +57,27 @@ class CharacterRenderer {
         ctx.fillStyle = 'rgba(74, 158, 255, 0.3)';
         ctx.strokeStyle = 'rgba(74, 158, 255, 0.5)';
         ctx.lineWidth = 1;
-        
+
         Object.values(bodyParts).forEach(part => {
             if (part.type === 'trapezoid') {
                 this.drawTrapezoid(ctx, part);
+            } else if (part.type === 'circle') {
+                this.drawCircle(ctx, part);
             }
         });
+    }
+
+    drawCircle(ctx, circle) {
+        ctx.beginPath();
+        ctx.arc(
+            circle.center.x * this.scale,
+            circle.center.y * this.scale,
+            circle.radius * this.scale,
+            0,
+            Math.PI * 2
+        );
+        ctx.fill();
+        ctx.stroke();
     }
 
     drawTrapezoid(ctx, trap) {

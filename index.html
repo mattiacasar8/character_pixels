@@ -195,17 +195,18 @@
                 <button id="generateTen" class="btn-secondary">Generate 10</button>
                 <button id="generateHundred" class="btn-secondary">Generate 100</button>
                 <button id="randomize" class="btn-accent">Randomize Params</button>
-                <button id="exportAll" class="btn-export">Export All</button>
+                <button id="exportSpritesheet" class="btn-export">Export Spritesheet</button>
+                <button id="exportZip" class="btn-export">Export ZIP</button>
             </div>
         </aside>
 
         <main class="canvas-area">
             <h1>Character Pixel Generator</h1>
             <div id="canvasGrid" class="canvas-grid"></div>
-            <div id="characterTooltip" class="character-tooltip"></div>
         </main>
     </div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="character.js"></script>
     <script src="renderer.js"></script>
     <script src="app.js"></script>

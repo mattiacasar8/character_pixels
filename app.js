@@ -172,8 +172,12 @@ class App {
             this.randomizeParams();
         });
 
-        document.getElementById('exportAll').addEventListener('click', () => {
-            this.exportAll();
+        document.getElementById('exportSpritesheet').addEventListener('click', () => {
+            this.exportSpritesheet();
+        });
+
+        document.getElementById('exportZip').addEventListener('click', () => {
+            this.exportZip();
         });
     }
 
@@ -240,30 +244,22 @@ class App {
         grid.innerHTML = '';
 
         this.characters.forEach((character) => {
+            // Create card wrapper
+            const card = document.createElement('div');
+            card.className = 'char-card';
+
             const canvas = this.characterRenderer.createCanvas();
             this.characterRenderer.drawCharacter(canvas, character, this.displayOptions);
 
-            // Store character name in dataset
-            canvas.dataset.characterName = character.name;
+            // Create name overlay
+            const nameDiv = document.createElement('div');
+            nameDiv.className = 'char-name';
+            nameDiv.textContent = character.name;
 
-            // Add click event to show name
-            canvas.addEventListener('click', () => {
-                this.showCharacterTooltip(character.name);
-            });
-
-            grid.appendChild(canvas);
+            card.appendChild(canvas);
+            card.appendChild(nameDiv);
+            grid.appendChild(card);
         });
-    }
-
-    showCharacterTooltip(name) {
-        const tooltip = document.getElementById('characterTooltip');
-        tooltip.textContent = `Character: ${name}`;
-        tooltip.classList.add('show');
-
-        // Auto-hide after 3 seconds
-        setTimeout(() => {
-            tooltip.classList.remove('show');
-        }, 3000);
     }
 
     randomizeParams() {
@@ -302,7 +298,7 @@ class App {
         this.regenerateCurrentCharacters();
     }
 
-    exportAll() {
+    exportSpritesheet() {
         if (this.characters.length === 0) {
             alert('No characters to export! Generate some first.');
             return;
@@ -346,12 +342,55 @@ class App {
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `characters_${this.characters.length}_${Date.now()}.png`;
+            a.download = `spritesheet_${this.characters.length}_${Date.now()}.png`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
         });
+    }
+
+    async exportZip() {
+        if (this.characters.length === 0) {
+            alert('No characters to export! Generate some first.');
+            return;
+        }
+
+        if (typeof JSZip === 'undefined') {
+            alert('JSZip library not loaded. Please refresh the page.');
+            return;
+        }
+
+        const zip = new JSZip();
+        const folder = zip.folder("characters");
+
+        // Render and add each character to zip
+        const promises = this.characters.map((char, index) => {
+            return new Promise((resolve) => {
+                const canvas = this.characterRenderer.createCanvas();
+                this.characterRenderer.drawCharacter(canvas, char, { showFinal: true });
+
+                canvas.toBlob(blob => {
+                    // Generate unique filename
+                    const filename = `${nameGenerator.generateUniqueFilename(char.name)}.png`;
+                    folder.file(filename, blob);
+                    resolve();
+                });
+            });
+        });
+
+        await Promise.all(promises);
+
+        // Generate and download ZIP
+        const content = await zip.generateAsync({ type: "blob" });
+        const url = URL.createObjectURL(content);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `characters_${this.characters.length}_${Date.now()}.zip`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
     }
 }
 
