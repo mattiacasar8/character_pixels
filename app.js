@@ -26,45 +26,78 @@ class App {
     }
 
     getParamsFromUI() {
-        // All parameters are now in % of canvas size
-        const torsoTopWidth = parseFloat(document.getElementById('torsoTopWidth').value);
-        const torsoBottomWidth = parseFloat(document.getElementById('torsoBottomWidth').value);
-        const headWidth = parseFloat(document.getElementById('headWidth').value);
-        const upperArmTopWidth = parseFloat(document.getElementById('upperArmTopWidth').value);
-        const forearmTopWidth = parseFloat(document.getElementById('forearmTopWidth').value);
-        const thighTopWidth = parseFloat(document.getElementById('thighTopWidth').value);
-        const shinTopWidth = parseFloat(document.getElementById('shinTopWidth').value);
-
+        // All parameters are now ranges (min-max) in % of canvas size
         return {
-            torsoTopWidth: torsoTopWidth,
-            torsoBottomWidth: torsoBottomWidth,
-            torsoHeight: parseFloat(document.getElementById('torsoHeight').value),
-            torsoY: 20, // 20% from top
+            torsoTopWidth: {
+                min: parseFloat(document.getElementById('torsoTopWidthMin').value),
+                max: parseFloat(document.getElementById('torsoTopWidthMax').value)
+            },
+            torsoBottomWidth: {
+                min: parseFloat(document.getElementById('torsoBottomWidthMin').value),
+                max: parseFloat(document.getElementById('torsoBottomWidthMax').value)
+            },
+            torsoHeight: {
+                min: parseFloat(document.getElementById('torsoHeightMin').value),
+                max: parseFloat(document.getElementById('torsoHeightMax').value)
+            },
+            torsoY: 20, // 20% from top (fixed)
 
-            neckWidth: parseFloat(document.getElementById('neckWidth').value),
-            neckHeight: parseFloat(document.getElementById('neckHeight').value),
-            headWidth: headWidth,
-            headHeight: headWidth,
+            neckWidth: {
+                min: parseFloat(document.getElementById('neckWidthMin').value),
+                max: parseFloat(document.getElementById('neckWidthMax').value)
+            },
+            neckHeight: {
+                min: parseFloat(document.getElementById('neckHeightMin').value),
+                max: parseFloat(document.getElementById('neckHeightMax').value)
+            },
+            headWidth: {
+                min: parseFloat(document.getElementById('headWidthMin').value),
+                max: parseFloat(document.getElementById('headWidthMax').value)
+            },
 
-            upperArmTopWidth: upperArmTopWidth,
-            upperArmBottomWidth: upperArmTopWidth * 0.8,
-            upperArmLength: parseFloat(document.getElementById('upperArmLength').value),
-            forearmTopWidth: forearmTopWidth,
-            forearmBottomWidth: forearmTopWidth * 0.7,
-            forearmLength: parseFloat(document.getElementById('upperArmLength').value),
-            armAngle: parseFloat(document.getElementById('armAngle').value),
-            elbowAngle: parseFloat(document.getElementById('elbowAngle').value),
+            upperArmTopWidth: {
+                min: parseFloat(document.getElementById('upperArmTopWidthMin').value),
+                max: parseFloat(document.getElementById('upperArmTopWidthMax').value)
+            },
+            forearmTopWidth: {
+                min: parseFloat(document.getElementById('forearmTopWidthMin').value),
+                max: parseFloat(document.getElementById('forearmTopWidthMax').value)
+            },
+            upperArmLength: {
+                min: parseFloat(document.getElementById('upperArmLengthMin').value),
+                max: parseFloat(document.getElementById('upperArmLengthMax').value)
+            },
+            armAngle: {
+                min: parseFloat(document.getElementById('armAngleMin').value),
+                max: parseFloat(document.getElementById('armAngleMax').value)
+            },
+            elbowAngle: {
+                min: parseFloat(document.getElementById('elbowAngleMin').value),
+                max: parseFloat(document.getElementById('elbowAngleMax').value)
+            },
 
-            thighTopWidth: thighTopWidth,
-            thighBottomWidth: thighTopWidth * 0.8,
-            thighLength: parseFloat(document.getElementById('thighLength').value),
-            shinTopWidth: shinTopWidth,
-            shinBottomWidth: shinTopWidth * 0.8,
-            shinLength: 24, // 24%
-            legAngle: parseFloat(document.getElementById('legAngle').value),
+            thighTopWidth: {
+                min: parseFloat(document.getElementById('thighTopWidthMin').value),
+                max: parseFloat(document.getElementById('thighTopWidthMax').value)
+            },
+            shinTopWidth: {
+                min: parseFloat(document.getElementById('shinTopWidthMin').value),
+                max: parseFloat(document.getElementById('shinTopWidthMax').value)
+            },
+            thighLength: {
+                min: parseFloat(document.getElementById('thighLengthMin').value),
+                max: parseFloat(document.getElementById('thighLengthMax').value)
+            },
+            legAngle: {
+                min: parseFloat(document.getElementById('legAngleMin').value),
+                max: parseFloat(document.getElementById('legAngleMax').value)
+            },
 
-            fillDensity: parseFloat(document.getElementById('fillDensity').value),
-            palette: this.generatePalette(),
+            fillDensity: {
+                min: parseFloat(document.getElementById('fillDensityMin').value),
+                max: parseFloat(document.getElementById('fillDensityMax').value)
+            },
+
             enableSmoothing: document.getElementById('enableSmoothing').checked,
             showOutline: document.getElementById('showOutline').checked
         };
@@ -99,8 +132,8 @@ class App {
             this.updateCanvasSize(newSize);
         });
 
-        // Regular parameter sliders
-        const sliders = [
+        // Range parameter inputs (Min/Max system)
+        const rangeParams = [
             'torsoTopWidth', 'torsoBottomWidth', 'torsoHeight',
             'headWidth', 'neckWidth', 'neckHeight',
             'upperArmTopWidth', 'forearmTopWidth', 'upperArmLength',
@@ -109,15 +142,30 @@ class App {
             'fillDensity'
         ];
 
-        sliders.forEach(id => {
-            const slider = document.getElementById(id);
+        rangeParams.forEach(id => {
+            const minInput = document.getElementById(id + 'Min');
+            const maxInput = document.getElementById(id + 'Max');
             const valueDisplay = document.getElementById(id + 'Value');
 
-            slider.addEventListener('input', (e) => {
-                valueDisplay.textContent = e.target.value;
+            const updateDisplay = () => {
+                const minVal = parseFloat(minInput.value);
+                const maxVal = parseFloat(maxInput.value);
+
+                // Format display based on parameter type
+                if (id === 'fillDensity') {
+                    valueDisplay.textContent = `${minVal.toFixed(2)}-${maxVal.toFixed(2)}`;
+                } else if (id.includes('Angle')) {
+                    valueDisplay.textContent = `${minVal} to ${maxVal}`;
+                } else {
+                    valueDisplay.textContent = `${minVal}-${maxVal}`;
+                }
+
                 this.currentParams = this.getParamsFromUI();
                 this.regenerateCurrentCharacters();
-            });
+            };
+
+            minInput.addEventListener('input', updateDisplay);
+            maxInput.addEventListener('input', updateDisplay);
         });
     }
 
@@ -195,13 +243,16 @@ class App {
             let params;
 
             if (count > 1 && this.batchOptions.randomize) {
-                // Batch generation con randomizzazione
+                // Batch generation with preset randomization
                 params = this.characterGenerator.randomParamsInRange(this.batchOptions.preset);
             } else {
-                // Generazione singola o batch senza randomizzazione
-                params = { ...this.currentParams };
-                params.palette = this.generateRandomPalette();
+                // Single or batch generation using UI ranges
+                // Resolve range params {min, max} to specific values
+                params = this.characterGenerator.resolveParams({ ...this.currentParams });
             }
+
+            // Always add random palette
+            params.palette = this.generateRandomPalette();
 
             const character = this.characterGenerator.generate(params);
             this.characters.push(character);
@@ -227,7 +278,8 @@ class App {
         if (this.characters.length === 0) return;
 
         this.characters = this.characters.map(() => {
-            const params = { ...this.currentParams };
+            // Resolve UI range params to specific values for each character
+            const params = this.characterGenerator.resolveParams({ ...this.currentParams });
             params.palette = this.generateRandomPalette();
             return this.characterGenerator.generate(params);
         });
@@ -264,37 +316,49 @@ class App {
 
     randomizeParams() {
         const randomParams = this.characterGenerator.randomParams();
-        
-        const sliderMappings = {
-            'torsoTopWidth': randomParams.torsoTopWidth,
-            'torsoBottomWidth': randomParams.torsoBottomWidth,
-            'torsoHeight': randomParams.torsoHeight,
-            'headWidth': randomParams.headWidth,
-            'neckWidth': randomParams.neckWidth,
-            'neckHeight': randomParams.neckHeight,
-            'upperArmTopWidth': randomParams.upperArmTopWidth,
-            'forearmTopWidth': randomParams.forearmTopWidth,
-            'upperArmLength': randomParams.upperArmLength,
-            'armAngle': randomParams.armAngle,
-            'elbowAngle': randomParams.elbowAngle,
-            'thighTopWidth': randomParams.thighTopWidth,
-            'shinTopWidth': randomParams.shinTopWidth,
-            'thighLength': randomParams.thighLength,
-            'legAngle': randomParams.legAngle,
-            'fillDensity': randomParams.fillDensity
+
+        // Create a narrow range around each random value for variety
+        const createRange = (value, variance = 0.15) => {
+            const range = value * variance;
+            return {
+                min: Math.max(value - range, value * 0.7),
+                max: Math.min(value + range, value * 1.3)
+            };
         };
-        
-        Object.keys(sliderMappings).forEach(id => {
-            const slider = document.getElementById(id);
+
+        const paramList = [
+            'torsoTopWidth', 'torsoBottomWidth', 'torsoHeight',
+            'headWidth', 'neckWidth', 'neckHeight',
+            'upperArmTopWidth', 'forearmTopWidth', 'upperArmLength',
+            'armAngle', 'elbowAngle',
+            'thighTopWidth', 'shinTopWidth', 'thighLength', 'legAngle',
+            'fillDensity'
+        ];
+
+        paramList.forEach(id => {
+            const value = randomParams[id];
+            const minInput = document.getElementById(id + 'Min');
+            const maxInput = document.getElementById(id + 'Max');
             const valueDisplay = document.getElementById(id + 'Value');
-            if (slider && valueDisplay) {
-                const value = sliderMappings[id];
-                slider.value = value;
-                valueDisplay.textContent = typeof value === 'number' ? value.toFixed(1) : value;
+
+            if (minInput && maxInput && valueDisplay) {
+                const range = createRange(value, id.includes('Angle') ? 10 : 0.15);
+
+                minInput.value = range.min.toFixed(id === 'fillDensity' ? 2 : 0);
+                maxInput.value = range.max.toFixed(id === 'fillDensity' ? 2 : 0);
+
+                // Update display
+                if (id === 'fillDensity') {
+                    valueDisplay.textContent = `${range.min.toFixed(2)}-${range.max.toFixed(2)}`;
+                } else if (id.includes('Angle')) {
+                    valueDisplay.textContent = `${Math.round(range.min)} to ${Math.round(range.max)}`;
+                } else {
+                    valueDisplay.textContent = `${Math.round(range.min)}-${Math.round(range.max)}`;
+                }
             }
         });
-        
-        this.currentParams = randomParams;
+
+        this.currentParams = this.getParamsFromUI();
         this.regenerateCurrentCharacters();
     }
 

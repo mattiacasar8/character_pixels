@@ -23,11 +23,13 @@
 
             <div class="section">
                 <h3>Rendering</h3>
-                <div class="control-group">
-                    <label>
-                        Fill Density: <span id="fillDensityValue">0.8</span>
-                        <input type="range" id="fillDensity" min="0.3" max="1.0" value="0.8" step="0.05">
-                    </label>
+                <div class="control-group range-input">
+                    <label>Fill Density: <span id="fillDensityValue">0.7-0.9</span></label>
+                    <div class="range-controls">
+                        <input type="number" id="fillDensityMin" min="0.3" max="1.0" value="0.7" step="0.05">
+                        <span class="range-separator">—</span>
+                        <input type="number" id="fillDensityMax" min="0.3" max="1.0" value="0.9" step="0.05">
+                    </div>
                 </div>
                 <div class="control-group">
                     <label>
@@ -43,99 +45,129 @@
 
             <details class="section advanced-settings">
                 <summary>Advanced: Body Proportions</summary>
-                <div class="control-group">
-                    <label>
-                        Torso Width (Top): <span id="torsoTopWidthValue">24</span>%
-                        <input type="range" id="torsoTopWidth" min="16" max="32" value="24" step="1">
-                    </label>
+                <div class="control-group range-input">
+                    <label>Torso Width (Top): <span id="torsoTopWidthValue">20-28</span>%</label>
+                    <div class="range-controls">
+                        <input type="number" id="torsoTopWidthMin" min="16" max="32" value="20" step="1">
+                        <span class="range-separator">—</span>
+                        <input type="number" id="torsoTopWidthMax" min="16" max="32" value="28" step="1">
+                    </div>
                 </div>
-                <div class="control-group">
-                    <label>
-                        Torso Width (Bottom): <span id="torsoBottomWidthValue">20</span>%
-                        <input type="range" id="torsoBottomWidth" min="12" max="28" value="20" step="1">
-                    </label>
+                <div class="control-group range-input">
+                    <label>Torso Width (Bottom): <span id="torsoBottomWidthValue">16-24</span>%</label>
+                    <div class="range-controls">
+                        <input type="number" id="torsoBottomWidthMin" min="12" max="28" value="16" step="1">
+                        <span class="range-separator">—</span>
+                        <input type="number" id="torsoBottomWidthMax" min="12" max="28" value="24" step="1">
+                    </div>
                 </div>
-                <div class="control-group">
-                    <label>
-                        Torso Height: <span id="torsoHeightValue">30</span>%
-                        <input type="range" id="torsoHeight" min="24" max="36" value="30" step="1">
-                    </label>
+                <div class="control-group range-input">
+                    <label>Torso Height: <span id="torsoHeightValue">26-34</span>%</label>
+                    <div class="range-controls">
+                        <input type="number" id="torsoHeightMin" min="24" max="36" value="26" step="1">
+                        <span class="range-separator">—</span>
+                        <input type="number" id="torsoHeightMax" min="24" max="36" value="34" step="1">
+                    </div>
                 </div>
-                <div class="control-group">
-                    <label>
-                        Head Size: <span id="headWidthValue">18</span>%
-                        <input type="range" id="headWidth" min="12" max="24" value="18" step="1">
-                    </label>
+                <div class="control-group range-input">
+                    <label>Head Size: <span id="headWidthValue">14-22</span>%</label>
+                    <div class="range-controls">
+                        <input type="number" id="headWidthMin" min="12" max="24" value="14" step="1">
+                        <span class="range-separator">—</span>
+                        <input type="number" id="headWidthMax" min="12" max="24" value="22" step="1">
+                    </div>
                 </div>
-                <div class="control-group">
-                    <label>
-                        Neck Width: <span id="neckWidthValue">6</span>%
-                        <input type="range" id="neckWidth" min="4" max="10" value="6" step="1">
-                    </label>
+                <div class="control-group range-input">
+                    <label>Neck Width: <span id="neckWidthValue">5-8</span>%</label>
+                    <div class="range-controls">
+                        <input type="number" id="neckWidthMin" min="4" max="10" value="5" step="1">
+                        <span class="range-separator">—</span>
+                        <input type="number" id="neckWidthMax" min="4" max="10" value="8" step="1">
+                    </div>
                 </div>
-                <div class="control-group">
-                    <label>
-                        Neck Height: <span id="neckHeightValue">6</span>%
-                        <input type="range" id="neckHeight" min="4" max="12" value="6" step="1">
-                    </label>
+                <div class="control-group range-input">
+                    <label>Neck Height: <span id="neckHeightValue">5-9</span>%</label>
+                    <div class="range-controls">
+                        <input type="number" id="neckHeightMin" min="4" max="12" value="5" step="1">
+                        <span class="range-separator">—</span>
+                        <input type="number" id="neckHeightMax" min="4" max="12" value="9" step="1">
+                    </div>
                 </div>
             </details>
 
             <details class="section advanced-settings">
                 <summary>Advanced: Limbs &amp; Angles</summary>
-                <div class="control-group">
-                    <label>
-                        Upper Arm Width: <span id="upperArmTopWidthValue">8</span>%
-                        <input type="range" id="upperArmTopWidth" min="4" max="12" value="8" step="1">
-                    </label>
+                <div class="control-group range-input">
+                    <label>Upper Arm Width: <span id="upperArmTopWidthValue">6-10</span>%</label>
+                    <div class="range-controls">
+                        <input type="number" id="upperArmTopWidthMin" min="4" max="12" value="6" step="1">
+                        <span class="range-separator">—</span>
+                        <input type="number" id="upperArmTopWidthMax" min="4" max="12" value="10" step="1">
+                    </div>
                 </div>
-                <div class="control-group">
-                    <label>
-                        Forearm Width: <span id="forearmTopWidthValue">6</span>%
-                        <input type="range" id="forearmTopWidth" min="3" max="10" value="6" step="1">
-                    </label>
+                <div class="control-group range-input">
+                    <label>Forearm Width: <span id="forearmTopWidthValue">4-8</span>%</label>
+                    <div class="range-controls">
+                        <input type="number" id="forearmTopWidthMin" min="3" max="10" value="4" step="1">
+                        <span class="range-separator">—</span>
+                        <input type="number" id="forearmTopWidthMax" min="3" max="10" value="8" step="1">
+                    </div>
                 </div>
-                <div class="control-group">
-                    <label>
-                        Arm Length: <span id="upperArmLengthValue">22</span>%
-                        <input type="range" id="upperArmLength" min="16" max="28" value="22" step="1">
-                    </label>
+                <div class="control-group range-input">
+                    <label>Arm Length: <span id="upperArmLengthValue">18-26</span>%</label>
+                    <div class="range-controls">
+                        <input type="number" id="upperArmLengthMin" min="16" max="28" value="18" step="1">
+                        <span class="range-separator">—</span>
+                        <input type="number" id="upperArmLengthMax" min="16" max="28" value="26" step="1">
+                    </div>
                 </div>
-                <div class="control-group">
-                    <label>
-                        Arm Angle: <span id="armAngleValue">-45</span>°
-                        <input type="range" id="armAngle" min="-80" max="-10" value="-45" step="5">
-                    </label>
+                <div class="control-group range-input">
+                    <label>Arm Angle: <span id="armAngleValue">-60 to -30</span>°</label>
+                    <div class="range-controls">
+                        <input type="number" id="armAngleMin" min="-80" max="-10" value="-60" step="5">
+                        <span class="range-separator">—</span>
+                        <input type="number" id="armAngleMax" min="-80" max="-10" value="-30" step="5">
+                    </div>
                 </div>
-                <div class="control-group">
-                    <label>
-                        Elbow Angle: <span id="elbowAngleValue">0</span>°
-                        <input type="range" id="elbowAngle" min="-70" max="70" value="0" step="5">
-                    </label>
+                <div class="control-group range-input">
+                    <label>Elbow Angle: <span id="elbowAngleValue">-20 to 20</span>°</label>
+                    <div class="range-controls">
+                        <input type="number" id="elbowAngleMin" min="-70" max="70" value="-20" step="5">
+                        <span class="range-separator">—</span>
+                        <input type="number" id="elbowAngleMax" min="-70" max="70" value="20" step="5">
+                    </div>
                 </div>
-                <div class="control-group">
-                    <label>
-                        Thigh Width: <span id="thighTopWidthValue">10</span>%
-                        <input type="range" id="thighTopWidth" min="6" max="16" value="10" step="1">
-                    </label>
+                <div class="control-group range-input">
+                    <label>Thigh Width: <span id="thighTopWidthValue">8-12</span>%</label>
+                    <div class="range-controls">
+                        <input type="number" id="thighTopWidthMin" min="6" max="16" value="8" step="1">
+                        <span class="range-separator">—</span>
+                        <input type="number" id="thighTopWidthMax" min="6" max="16" value="12" step="1">
+                    </div>
                 </div>
-                <div class="control-group">
-                    <label>
-                        Shin Width: <span id="shinTopWidthValue">8</span>%
-                        <input type="range" id="shinTopWidth" min="4" max="12" value="8" step="1">
-                    </label>
+                <div class="control-group range-input">
+                    <label>Shin Width: <span id="shinTopWidthValue">6-10</span>%</label>
+                    <div class="range-controls">
+                        <input type="number" id="shinTopWidthMin" min="4" max="12" value="6" step="1">
+                        <span class="range-separator">—</span>
+                        <input type="number" id="shinTopWidthMax" min="4" max="12" value="10" step="1">
+                    </div>
                 </div>
-                <div class="control-group">
-                    <label>
-                        Thigh Length: <span id="thighLengthValue">22</span>%
-                        <input type="range" id="thighLength" min="16" max="28" value="22" step="1">
-                    </label>
+                <div class="control-group range-input">
+                    <label>Thigh Length: <span id="thighLengthValue">18-26</span>%</label>
+                    <div class="range-controls">
+                        <input type="number" id="thighLengthMin" min="16" max="28" value="18" step="1">
+                        <span class="range-separator">—</span>
+                        <input type="number" id="thighLengthMax" min="16" max="28" value="26" step="1">
+                    </div>
                 </div>
-                <div class="control-group">
-                    <label>
-                        Leg Angle: <span id="legAngleValue">-10</span>°
-                        <input type="range" id="legAngle" min="-25" max="0" value="-10" step="5">
-                    </label>
+                <div class="control-group range-input">
+                    <label>Leg Angle: <span id="legAngleValue">-20 to -5</span>°</label>
+                    <div class="range-controls">
+                        <input type="number" id="legAngleMin" min="-25" max="0" value="-20" step="5">
+                        <span class="range-separator">—</span>
+                        <input type="number" id="legAngleMax" min="-25" max="0" value="-5" step="5">
+                    </div>
                 </div>
             </details>
 

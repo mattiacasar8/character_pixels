@@ -94,6 +94,36 @@ class CharacterGenerator {
         };
     }
 
+    // Resolve range objects {min, max} to random values
+    resolveParams(rangeParams) {
+        const resolved = {};
+
+        Object.keys(rangeParams).forEach(key => {
+            const value = rangeParams[key];
+
+            // If it's a range object, resolve to random value
+            if (value && typeof value === 'object' && 'min' in value && 'max' in value) {
+                resolved[key] = this.randomFloat(value.min, value.max);
+            } else {
+                // Otherwise keep the value as-is (e.g., boolean flags, torsoY)
+                resolved[key] = value;
+            }
+        });
+
+        // Add derived values that depend on resolved values
+        if (resolved.torsoTopWidth) {
+            resolved.upperArmBottomWidth = resolved.upperArmTopWidth * 0.8;
+            resolved.forearmBottomWidth = resolved.forearmTopWidth * 0.7;
+            resolved.forearmLength = resolved.upperArmLength;
+            resolved.headHeight = resolved.headWidth;
+            resolved.thighBottomWidth = resolved.thighTopWidth * 0.8;
+            resolved.shinBottomWidth = resolved.shinTopWidth * 0.8;
+            resolved.shinLength = 24; // Fixed at 24%
+        }
+
+        return resolved;
+    }
+
     randomParams() {
         return this.randomParamsInRange('standard');
     }
