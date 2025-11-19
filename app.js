@@ -1,5 +1,121 @@
 // App - Connect UI with generation logic
 
+// Parameter Configuration: Hard Limits vs Safe Limits
+const PARAM_CONFIG = {
+    torsoTopWidth: {
+        hardMin: 5, hardMax: 50,      // Extreme physical limits
+        safeMin: 16, safeMax: 32,     // Suggested humanoid range
+        step: 1,
+        label: 'Torso Width (Top)',
+        suffix: '%'
+    },
+    torsoBottomWidth: {
+        hardMin: 5, hardMax: 45,
+        safeMin: 12, safeMax: 28,
+        step: 1,
+        label: 'Torso Width (Bottom)',
+        suffix: '%'
+    },
+    torsoHeight: {
+        hardMin: 10, hardMax: 60,
+        safeMin: 24, safeMax: 36,
+        step: 1,
+        label: 'Torso Height',
+        suffix: '%'
+    },
+    headWidth: {
+        hardMin: 5, hardMax: 40,
+        safeMin: 12, safeMax: 24,
+        step: 1,
+        label: 'Head Size',
+        suffix: '%'
+    },
+    neckWidth: {
+        hardMin: 2, hardMax: 20,
+        safeMin: 4, safeMax: 10,
+        step: 1,
+        label: 'Neck Width',
+        suffix: '%'
+    },
+    neckHeight: {
+        hardMin: 2, hardMax: 20,
+        safeMin: 4, safeMax: 12,
+        step: 1,
+        label: 'Neck Height',
+        suffix: '%'
+    },
+    upperArmTopWidth: {
+        hardMin: 2, hardMax: 20,
+        safeMin: 4, safeMax: 12,
+        step: 1,
+        label: 'Upper Arm Width',
+        suffix: '%'
+    },
+    forearmTopWidth: {
+        hardMin: 2, hardMax: 18,
+        safeMin: 3, safeMax: 10,
+        step: 1,
+        label: 'Forearm Width',
+        suffix: '%'
+    },
+    upperArmLength: {
+        hardMin: 10, hardMax: 40,
+        safeMin: 16, safeMax: 28,
+        step: 1,
+        label: 'Arm Length',
+        suffix: '%'
+    },
+    armAngle: {
+        hardMin: -180, hardMax: 0,
+        safeMin: -80, safeMax: -10,
+        step: 5,
+        label: 'Arm Angle',
+        suffix: '°'
+    },
+    elbowAngle: {
+        hardMin: -90, hardMax: 90,
+        safeMin: -70, safeMax: 70,
+        step: 5,
+        label: 'Elbow Angle',
+        suffix: '°'
+    },
+    thighTopWidth: {
+        hardMin: 3, hardMax: 25,
+        safeMin: 6, safeMax: 16,
+        step: 1,
+        label: 'Thigh Width',
+        suffix: '%'
+    },
+    shinTopWidth: {
+        hardMin: 2, hardMax: 20,
+        safeMin: 4, safeMax: 12,
+        step: 1,
+        label: 'Shin Width',
+        suffix: '%'
+    },
+    thighLength: {
+        hardMin: 10, hardMax: 40,
+        safeMin: 16, safeMax: 28,
+        step: 1,
+        label: 'Thigh Length',
+        suffix: '%'
+    },
+    legAngle: {
+        hardMin: -45, hardMax: 15,
+        safeMin: -25, safeMax: 0,
+        step: 5,
+        label: 'Leg Angle',
+        suffix: '°'
+    },
+    fillDensity: {
+        hardMin: 0.1, hardMax: 1.0,
+        safeMin: 0.3, safeMax: 1.0,
+        step: 0.05,
+        label: 'Fill Density',
+        suffix: ''
+    }
+};
+
 class App {
     constructor() {
         this.canvasSize = 50; // Default canvas size, will be configurable
@@ -26,77 +142,43 @@ class App {
     }
 
     getParamsFromUI() {
-        // All parameters are now ranges (min-max) in % of canvas size
+        // Helper function to get range from noUiSlider
+        const getRange = (paramKey) => {
+            const slider = document.getElementById(`slider-${paramKey}`);
+            if (!slider || !slider.noUiSlider) {
+                // Fallback to config defaults if slider not initialized
+                const cfg = PARAM_CONFIG[paramKey];
+                return { min: cfg.safeMin, max: cfg.safeMax };
+            }
+            const values = slider.noUiSlider.get();
+            return {
+                min: parseFloat(values[0]),
+                max: parseFloat(values[1])
+            };
+        };
+
         return {
-            torsoTopWidth: {
-                min: parseFloat(document.getElementById('torsoTopWidthMin').value),
-                max: parseFloat(document.getElementById('torsoTopWidthMax').value)
-            },
-            torsoBottomWidth: {
-                min: parseFloat(document.getElementById('torsoBottomWidthMin').value),
-                max: parseFloat(document.getElementById('torsoBottomWidthMax').value)
-            },
-            torsoHeight: {
-                min: parseFloat(document.getElementById('torsoHeightMin').value),
-                max: parseFloat(document.getElementById('torsoHeightMax').value)
-            },
-            torsoY: 20, // 20% from top (fixed)
+            torsoTopWidth: getRange('torsoTopWidth'),
+            torsoBottomWidth: getRange('torsoBottomWidth'),
+            torsoHeight: getRange('torsoHeight'),
+            torsoY: 20, // Fixed at 20% from top
 
-            neckWidth: {
-                min: parseFloat(document.getElementById('neckWidthMin').value),
-                max: parseFloat(document.getElementById('neckWidthMax').value)
-            },
-            neckHeight: {
-                min: parseFloat(document.getElementById('neckHeightMin').value),
-                max: parseFloat(document.getElementById('neckHeightMax').value)
-            },
-            headWidth: {
-                min: parseFloat(document.getElementById('headWidthMin').value),
-                max: parseFloat(document.getElementById('headWidthMax').value)
-            },
+            neckWidth: getRange('neckWidth'),
+            neckHeight: getRange('neckHeight'),
+            headWidth: getRange('headWidth'),
 
-            upperArmTopWidth: {
-                min: parseFloat(document.getElementById('upperArmTopWidthMin').value),
-                max: parseFloat(document.getElementById('upperArmTopWidthMax').value)
-            },
-            forearmTopWidth: {
-                min: parseFloat(document.getElementById('forearmTopWidthMin').value),
-                max: parseFloat(document.getElementById('forearmTopWidthMax').value)
-            },
-            upperArmLength: {
-                min: parseFloat(document.getElementById('upperArmLengthMin').value),
-                max: parseFloat(document.getElementById('upperArmLengthMax').value)
-            },
-            armAngle: {
-                min: parseFloat(document.getElementById('armAngleMin').value),
-                max: parseFloat(document.getElementById('armAngleMax').value)
-            },
-            elbowAngle: {
-                min: parseFloat(document.getElementById('elbowAngleMin').value),
-                max: parseFloat(document.getElementById('elbowAngleMax').value)
-            },
+            upperArmTopWidth: getRange('upperArmTopWidth'),
+            forearmTopWidth: getRange('forearmTopWidth'),
+            upperArmLength: getRange('upperArmLength'),
+            armAngle: getRange('armAngle'),
+            elbowAngle: getRange('elbowAngle'),
 
-            thighTopWidth: {
-                min: parseFloat(document.getElementById('thighTopWidthMin').value),
-                max: parseFloat(document.getElementById('thighTopWidthMax').value)
-            },
-            shinTopWidth: {
-                min: parseFloat(document.getElementById('shinTopWidthMin').value),
-                max: parseFloat(document.getElementById('shinTopWidthMax').value)
-            },
-            thighLength: {
-                min: parseFloat(document.getElementById('thighLengthMin').value),
-                max: parseFloat(document.getElementById('thighLengthMax').value)
-            },
-            legAngle: {
-                min: parseFloat(document.getElementById('legAngleMin').value),
-                max: parseFloat(document.getElementById('legAngleMax').value)
-            },
+            thighTopWidth: getRange('thighTopWidth'),
+            shinTopWidth: getRange('shinTopWidth'),
+            thighLength: getRange('thighLength'),
+            legAngle: getRange('legAngle'),
 
-            fillDensity: {
-                min: parseFloat(document.getElementById('fillDensityMin').value),
-                max: parseFloat(document.getElementById('fillDensityMax').value)
-            },
+            fillDensity: getRange('fillDensity'),
 
             enableSmoothing: document.getElementById('enableSmoothing').checked,
             showOutline: document.getElementById('showOutline').checked
@@ -122,7 +204,7 @@ class App {
     }
 
     setupSliders() {
-        // Canvas size slider (special handling)
+        // Canvas size slider (special handling - still using native range input)
         const canvasSizeSlider = document.getElementById('canvasSize');
         const canvasSizeValue = document.getElementById('canvasSizeValue');
 
@@ -132,40 +214,62 @@ class App {
             this.updateCanvasSize(newSize);
         });
 
-        // Range parameter inputs (Min/Max system)
-        const rangeParams = [
-            'torsoTopWidth', 'torsoBottomWidth', 'torsoHeight',
-            'headWidth', 'neckWidth', 'neckHeight',
-            'upperArmTopWidth', 'forearmTopWidth', 'upperArmLength',
-            'armAngle', 'elbowAngle',
-            'thighTopWidth', 'shinTopWidth', 'thighLength', 'legAngle',
-            'fillDensity'
-        ];
+        // Initialize noUiSlider for all parameters
+        Object.keys(PARAM_CONFIG).forEach(paramKey => {
+            const cfg = PARAM_CONFIG[paramKey];
+            const sliderElement = document.getElementById(`slider-${paramKey}`);
+            const display = document.getElementById(`${paramKey}Display`);
 
-        rangeParams.forEach(id => {
-            const minInput = document.getElementById(id + 'Min');
-            const maxInput = document.getElementById(id + 'Max');
-            const valueDisplay = document.getElementById(id + 'Value');
+            if (!sliderElement || !display) return;
 
-            const updateDisplay = () => {
-                const minVal = parseFloat(minInput.value);
-                const maxVal = parseFloat(maxInput.value);
+            // Calculate default start values (within safe range)
+            const defaultMin = cfg.safeMin + (cfg.safeMax - cfg.safeMin) * 0.2;
+            const defaultMax = cfg.safeMin + (cfg.safeMax - cfg.safeMin) * 0.8;
 
-                // Format display based on parameter type
-                if (id === 'fillDensity') {
-                    valueDisplay.textContent = `${minVal.toFixed(2)}-${maxVal.toFixed(2)}`;
-                } else if (id.includes('Angle')) {
-                    valueDisplay.textContent = `${minVal} to ${maxVal}`;
-                } else {
-                    valueDisplay.textContent = `${minVal}-${maxVal}`;
+            // Create noUiSlider
+            noUiSlider.create(sliderElement, {
+                start: [defaultMin, defaultMax],
+                connect: true,
+                step: cfg.step,
+                range: {
+                    'min': cfg.hardMin,
+                    'max': cfg.hardMax
                 }
+            });
 
+            // Calculate safe zone visualization
+            const safeStartPct = ((cfg.safeMin - cfg.hardMin) / (cfg.hardMax - cfg.hardMin)) * 100;
+            const safeEndPct = ((cfg.safeMax - cfg.hardMin) / (cfg.hardMax - cfg.hardMin)) * 100;
+
+            // Apply safe zone background gradient
+            sliderElement.style.background = `linear-gradient(to right,
+                #222 0%,
+                #222 ${safeStartPct}%,
+                #3a3a3a ${safeStartPct}%,
+                #3a3a3a ${safeEndPct}%,
+                #222 ${safeEndPct}%,
+                #222 100%)`;
+
+            // Update display on slider change
+            sliderElement.noUiSlider.on('update', (values) => {
+                const vMin = parseFloat(values[0]);
+                const vMax = parseFloat(values[1]);
+
+                // Format display based on parameter
+                if (paramKey === 'fillDensity') {
+                    display.textContent = `${vMin.toFixed(2)} - ${vMax.toFixed(2)}`;
+                } else if (paramKey.includes('Angle')) {
+                    display.textContent = `${Math.round(vMin)} to ${Math.round(vMax)}${cfg.suffix}`;
+                } else {
+                    display.textContent = `${Math.round(vMin)} - ${Math.round(vMax)}${cfg.suffix}`;
+                }
+            });
+
+            // Regenerate characters only on final change (performance)
+            sliderElement.noUiSlider.on('change', () => {
                 this.currentParams = this.getParamsFromUI();
                 this.regenerateCurrentCharacters();
-            };
-
-            minInput.addEventListener('input', updateDisplay);
-            maxInput.addEventListener('input', updateDisplay);
+            });
         });
     }
 
@@ -318,46 +422,27 @@ class App {
         const randomParams = this.characterGenerator.randomParams();
 
         // Create a narrow range around each random value for variety
-        const createRange = (value, variance = 0.15) => {
-            const range = value * variance;
-            return {
-                min: Math.max(value - range, value * 0.7),
-                max: Math.min(value + range, value * 1.3)
-            };
+        const createRange = (value, paramKey) => {
+            const cfg = PARAM_CONFIG[paramKey];
+            const variance = paramKey.includes('Angle') ? 10 : (value * 0.15);
+            const rangeMin = Math.max(value - variance, cfg.hardMin);
+            const rangeMax = Math.min(value + variance, cfg.hardMax);
+            return { min: rangeMin, max: rangeMax };
         };
 
-        const paramList = [
-            'torsoTopWidth', 'torsoBottomWidth', 'torsoHeight',
-            'headWidth', 'neckWidth', 'neckHeight',
-            'upperArmTopWidth', 'forearmTopWidth', 'upperArmLength',
-            'armAngle', 'elbowAngle',
-            'thighTopWidth', 'shinTopWidth', 'thighLength', 'legAngle',
-            'fillDensity'
-        ];
+        // Update all noUiSliders with randomized ranges
+        Object.keys(PARAM_CONFIG).forEach(paramKey => {
+            const slider = document.getElementById(`slider-${paramKey}`);
+            if (!slider || !slider.noUiSlider) return;
 
-        paramList.forEach(id => {
-            const value = randomParams[id];
-            const minInput = document.getElementById(id + 'Min');
-            const maxInput = document.getElementById(id + 'Max');
-            const valueDisplay = document.getElementById(id + 'Value');
+            const value = randomParams[paramKey];
+            const range = createRange(value, paramKey);
 
-            if (minInput && maxInput && valueDisplay) {
-                const range = createRange(value, id.includes('Angle') ? 10 : 0.15);
-
-                minInput.value = range.min.toFixed(id === 'fillDensity' ? 2 : 0);
-                maxInput.value = range.max.toFixed(id === 'fillDensity' ? 2 : 0);
-
-                // Update display
-                if (id === 'fillDensity') {
-                    valueDisplay.textContent = `${range.min.toFixed(2)}-${range.max.toFixed(2)}`;
-                } else if (id.includes('Angle')) {
-                    valueDisplay.textContent = `${Math.round(range.min)} to ${Math.round(range.max)}`;
-                } else {
-                    valueDisplay.textContent = `${Math.round(range.min)}-${Math.round(range.max)}`;
-                }
-            }
+            // Set the slider to the new range
+            slider.noUiSlider.set([range.min, range.max]);
         });
 
+        // Update will be triggered automatically by noUiSlider events
         this.currentParams = this.getParamsFromUI();
         this.regenerateCurrentCharacters();
     }
