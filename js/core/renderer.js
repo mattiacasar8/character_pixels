@@ -1,6 +1,6 @@
-// Renderer - Draw trapezoid-based characters
+// Character Renderer
 
-class CharacterRenderer {
+export class CharacterRenderer {
     constructor(scale = 3, canvasSize = 50) {
         this.scale = scale;
         this.canvasSize = canvasSize;
@@ -17,7 +17,7 @@ class CharacterRenderer {
     drawCharacter(canvas, character, options = {}) {
         const ctx = canvas.getContext('2d');
         ctx.imageSmoothingEnabled = false;
-        
+
         const {
             showStickFigure = false,
             showThickness = false,
@@ -32,7 +32,7 @@ class CharacterRenderer {
 
         if (showGrid) this.drawGrid(ctx);
         if (showHeatmap) this.drawHeatmap(ctx, character.heatmap);
-        if (showFinal) this.drawPixels(ctx, character.final);
+        if (showFinal) this.drawPixels(ctx, character.pixels);
         if (showThickness) this.drawBodyParts(ctx, character.bodyParts);
         if (showStickFigure) this.drawConnectionPoints(ctx, character.bodyParts);
     }
@@ -93,7 +93,7 @@ class CharacterRenderer {
 
     drawConnectionPoints(ctx, bodyParts) {
         ctx.fillStyle = '#ff6b6b';
-        
+
         // Draw connection points (red dots)
         const points = [
             bodyParts.torso.center, // Torso center
@@ -113,7 +113,7 @@ class CharacterRenderer {
             bodyParts.rightThigh.bottomCenter,
             bodyParts.rightShin.bottomCenter
         ];
-        
+
         points.forEach(point => {
             ctx.beginPath();
             ctx.arc(
@@ -123,11 +123,11 @@ class CharacterRenderer {
             );
             ctx.fill();
         });
-        
+
         // Draw lines between connected parts
         ctx.strokeStyle = '#ff6b6b';
         ctx.lineWidth = 1;
-        
+
         const connections = [
             [bodyParts.torso.center, bodyParts.neck.center],
             [bodyParts.neck.bottomCenter, bodyParts.head.center],
@@ -140,7 +140,7 @@ class CharacterRenderer {
             [bodyParts.torso.bottomCenter, bodyParts.rightThigh.center],
             [bodyParts.rightThigh.bottomCenter, bodyParts.rightShin.center]
         ];
-        
+
         connections.forEach(([p1, p2]) => {
             ctx.beginPath();
             ctx.moveTo(p1.x * this.scale, p1.y * this.scale);
@@ -150,15 +150,16 @@ class CharacterRenderer {
     }
 
     drawHeatmap(ctx, heatmap) {
-        for (let y = 0; y < this.canvasSize; y++) {
-            for (let x = 0; x < this.canvasSize; x++) {
+        const size = heatmap.length;
+        for (let y = 0; y < size; y++) {
+            for (let x = 0; x < size; x++) {
                 const intensity = heatmap[y][x];
                 if (intensity > 0) {
                     const r = 255;
                     const g = Math.floor(intensity * 255);
                     const b = 0;
                     const a = intensity * 0.6;
-                    
+
                     ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${a})`;
                     ctx.fillRect(
                         x * this.scale,
@@ -172,8 +173,9 @@ class CharacterRenderer {
     }
 
     drawPixels(ctx, pixels) {
-        for (let y = 0; y < this.canvasSize; y++) {
-            for (let x = 0; x < this.canvasSize; x++) {
+        const size = pixels.length;
+        for (let y = 0; y < size; y++) {
+            for (let x = 0; x < size; x++) {
                 const color = pixels[y][x];
                 if (color) {
                     ctx.fillStyle = `rgb(${color.r}, ${color.g}, ${color.b})`;
@@ -188,5 +190,3 @@ class CharacterRenderer {
         }
     }
 }
-
-const characterRenderer = new CharacterRenderer(3);

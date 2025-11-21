@@ -1,131 +1,19 @@
-// App - Connect UI with generation logic
-
-// Parameter Configuration: Hard Limits vs Safe Limits
-const PARAM_CONFIG = {
-    torsoTopWidth: {
-        hardMin: 5, hardMax: 50,      // Extreme physical limits
-        safeMin: 16, safeMax: 32,     // Suggested humanoid range
-        step: 1,
-        label: 'Torso Width (Top)',
-        suffix: '%'
-    },
-    torsoBottomWidth: {
-        hardMin: 5, hardMax: 45,
-        safeMin: 12, safeMax: 28,
-        step: 1,
-        label: 'Torso Width (Bottom)',
-        suffix: '%'
-    },
-    torsoHeight: {
-        hardMin: 10, hardMax: 60,
-        safeMin: 24, safeMax: 36,
-        step: 1,
-        label: 'Torso Height',
-        suffix: '%'
-    },
-    headWidth: {
-        hardMin: 5, hardMax: 40,
-        safeMin: 12, safeMax: 24,
-        step: 1,
-        label: 'Head Size',
-        suffix: '%'
-    },
-    neckWidth: {
-        hardMin: 2, hardMax: 20,
-        safeMin: 4, safeMax: 10,
-        step: 1,
-        label: 'Neck Width',
-        suffix: '%'
-    },
-    neckHeight: {
-        hardMin: 2, hardMax: 20,
-        safeMin: 4, safeMax: 12,
-        step: 1,
-        label: 'Neck Height',
-        suffix: '%'
-    },
-    upperArmTopWidth: {
-        hardMin: 2, hardMax: 20,
-        safeMin: 4, safeMax: 12,
-        step: 1,
-        label: 'Upper Arm Width',
-        suffix: '%'
-    },
-    forearmTopWidth: {
-        hardMin: 2, hardMax: 18,
-        safeMin: 3, safeMax: 10,
-        step: 1,
-        label: 'Forearm Width',
-        suffix: '%'
-    },
-    upperArmLength: {
-        hardMin: 10, hardMax: 40,
-        safeMin: 16, safeMax: 28,
-        step: 1,
-        label: 'Arm Length',
-        suffix: '%'
-    },
-    armAngle: {
-        hardMin: -180, hardMax: 0,
-        safeMin: -80, safeMax: -10,
-        step: 5,
-        label: 'Arm Angle',
-        suffix: '°'
-    },
-    elbowAngle: {
-        hardMin: -90, hardMax: 90,
-        safeMin: -70, safeMax: 70,
-        step: 5,
-        label: 'Elbow Angle',
-        suffix: '°'
-    },
-    thighTopWidth: {
-        hardMin: 3, hardMax: 25,
-        safeMin: 6, safeMax: 16,
-        step: 1,
-        label: 'Thigh Width',
-        suffix: '%'
-    },
-    shinTopWidth: {
-        hardMin: 2, hardMax: 20,
-        safeMin: 4, safeMax: 12,
-        step: 1,
-        label: 'Shin Width',
-        suffix: '%'
-    },
-    thighLength: {
-        hardMin: 10, hardMax: 40,
-        safeMin: 16, safeMax: 28,
-        step: 1,
-        label: 'Thigh Length',
-        suffix: '%'
-    },
-    legAngle: {
-        hardMin: -45, hardMax: 15,
-        safeMin: -25, safeMax: 0,
-        step: 5,
-        label: 'Leg Angle',
-        suffix: '°'
-    },
-    fillDensity: {
-        hardMin: 0.1, hardMax: 1.0,
-        safeMin: 0.3, safeMax: 1.0,
-        step: 0.05,
-        label: 'Fill Density',
-        suffix: ''
-    }
-};
+// Main App Entry Point
+import { CharacterGenerator } from './core/generator.js';
+import { CharacterRenderer } from './core/renderer.js';
+import { PARAM_CONFIG } from './config.js';
+import { nameGenerator } from './utils/name-generator.js';
+import { generateRandomPalette } from './utils/random.js';
 
 class App {
     constructor() {
-        this.canvasSize = 50; // Default canvas size, will be configurable
+        this.canvasSize = 50; // Default canvas size
         this.characterGenerator = new CharacterGenerator(this.canvasSize);
         this.characterRenderer = new CharacterRenderer(3, this.canvasSize);
 
         this.currentParams = this.getParamsFromUI();
         this.displayOptions = this.getDisplayOptions();
         this.batchOptions = {
-            randomize: false,
             preset: 'standard'
         };
         this.characters = [];
@@ -185,14 +73,6 @@ class App {
         };
     }
 
-    generatePalette() {
-        return [
-            { r: 255, g: 100, b: 100 },
-            { r: 100, g: 255, b: 100 },
-            { r: 100, g: 100, b: 255 }
-        ];
-    }
-
     getDisplayOptions() {
         return {
             showStickFigure: document.getElementById('showStickFigure').checked,
@@ -204,7 +84,7 @@ class App {
     }
 
     setupSliders() {
-        // Canvas size slider (special handling - still using native range input)
+        // Canvas size slider
         const canvasSizeSlider = document.getElementById('canvasSize');
         const canvasSizeValue = document.getElementById('canvasSizeValue');
 
@@ -283,28 +163,61 @@ class App {
             });
         });
 
-        // Rendering checkboxes that require regeneration
-        const renderingCheckboxes = ['enableSmoothing', 'showOutline'];
+        // Rendering checkboxes that DO NOT require full regeneration, just reprocessing
+        const reprocessingCheckboxes = ['enableSmoothing', 'showOutline'];
 
-        renderingCheckboxes.forEach(id => {
-            document.getElementById(id).addEventListener('change', () => {
-                this.currentParams = this.getParamsFromUI();
-                this.regenerateCurrentCharacters();
-            });
+        reprocessingCheckboxes.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.addEventListener('change', () => {
+                    this.currentParams = this.getParamsFromUI();
+                    this.reprocessCurrentCharacters();
+                });
+            }
         });
     }
 
     setupBatchOptions() {
-        const randomizeBatch = document.getElementById('randomizeBatch');
         const bodyPreset = document.getElementById('bodyPreset');
 
-        randomizeBatch.addEventListener('change', (e) => {
-            this.batchOptions.randomize = e.target.checked;
+        bodyPreset.addEventListener('change', (e) => {
+            const preset = e.target.value;
+            this.batchOptions.preset = preset;
+            this.applyPresetToSliders(preset);
+        });
+    }
+
+    applyPresetToSliders(preset) {
+        // Get preset ranges from generator (we need to instantiate a dummy or use static if available)
+        // Since getParamRanges is an instance method, we use this.characterGenerator
+        let ranges;
+
+        if (preset === 'max') {
+            // Special "Max Range" preset: set all sliders to safeMin/safeMax
+            Object.keys(PARAM_CONFIG).forEach(paramKey => {
+                const slider = document.getElementById(`slider-${paramKey}`);
+                if (!slider || !slider.noUiSlider) return;
+
+                const cfg = PARAM_CONFIG[paramKey];
+                slider.noUiSlider.set([cfg.safeMin, cfg.safeMax]);
+            });
+            return;
+        } else {
+            ranges = this.characterGenerator.getParamRanges(preset);
+        }
+
+        Object.keys(ranges).forEach(paramKey => {
+            const slider = document.getElementById(`slider-${paramKey}`);
+            if (!slider || !slider.noUiSlider) return;
+
+            const range = ranges[paramKey];
+            // ranges returns {min, max} for each param
+            slider.noUiSlider.set([range.min, range.max]);
         });
 
-        bodyPreset.addEventListener('change', (e) => {
-            this.batchOptions.preset = e.target.value;
-        });
+        // Trigger regeneration
+        this.currentParams = this.getParamsFromUI();
+        this.regenerateCurrentCharacters();
     }
 
     setupButtons() {
@@ -321,14 +234,18 @@ class App {
         });
 
         document.getElementById('randomize').addEventListener('click', () => {
-            this.randomizeParams();
+            this.randomizeSliders();
         });
 
-        document.getElementById('exportSpritesheet').addEventListener('click', () => {
+        document.getElementById('exportSpritesheet').addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
             this.exportSpritesheet();
         });
 
-        document.getElementById('exportZip').addEventListener('click', () => {
+        document.getElementById('exportZip').addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
             this.exportZip();
         });
     }
@@ -344,19 +261,12 @@ class App {
         this.characters = [];
 
         for (let i = 0; i < count; i++) {
-            let params;
+            // Always use UI params (which are now updated by presets)
+            const params = this.characterGenerator.resolveParams({ ...this.currentParams });
 
-            if (count > 1 && this.batchOptions.randomize) {
-                // Batch generation with preset randomization
-                params = this.characterGenerator.randomParamsInRange(this.batchOptions.preset);
-            } else {
-                // Single or batch generation using UI ranges
-                // Resolve range params {min, max} to specific values
-                params = this.characterGenerator.resolveParams({ ...this.currentParams });
+            if (!params.palette) {
+                params.palette = generateRandomPalette();
             }
-
-            // Always add random palette
-            params.palette = this.generateRandomPalette();
 
             const character = this.characterGenerator.generate(params);
             this.characters.push(character);
@@ -365,27 +275,23 @@ class App {
         this.renderCharacters();
     }
 
-    generateRandomPalette() {
-        const numColors = Math.floor(Math.random() * 3) + 3;
-        const palette = [];
-        for (let i = 0; i < numColors; i++) {
-            palette.push({
-                r: Math.floor(Math.random() * 206) + 50,
-                g: Math.floor(Math.random() * 206) + 50,
-                b: Math.floor(Math.random() * 206) + 50
-            });
-        }
-        return palette;
-    }
-
     regenerateCurrentCharacters() {
         if (this.characters.length === 0) return;
 
         this.characters = this.characters.map(() => {
-            // Resolve UI range params to specific values for each character
             const params = this.characterGenerator.resolveParams({ ...this.currentParams });
-            params.palette = this.generateRandomPalette();
+            params.palette = generateRandomPalette();
             return this.characterGenerator.generate(params);
+        });
+
+        this.renderCharacters();
+    }
+
+    reprocessCurrentCharacters() {
+        if (this.characters.length === 0) return;
+
+        this.characters = this.characters.map(char => {
+            return this.characterGenerator.reprocess(char, this.currentParams);
         });
 
         this.renderCharacters();
@@ -418,7 +324,7 @@ class App {
         });
     }
 
-    randomizeParams() {
+    randomizeSliders() {
         const randomParams = this.characterGenerator.randomParams();
 
         // Create a narrow range around each random value for variety
@@ -492,10 +398,16 @@ class App {
             const a = document.createElement('a');
             a.href = url;
             a.download = `spritesheet_${this.characters.length}_${Date.now()}.png`;
+            // Prevent navigation issues
+            a.target = '_blank';
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
-            URL.revokeObjectURL(url);
+
+            // Delay revocation to ensure download starts
+            setTimeout(() => {
+                URL.revokeObjectURL(url);
+            }, 100);
         });
     }
 
@@ -536,10 +448,16 @@ class App {
         const a = document.createElement('a');
         a.href = url;
         a.download = `characters_${this.characters.length}_${Date.now()}.zip`;
+        // Prevent navigation issues
+        a.target = '_blank';
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+
+        // Delay revocation to ensure download starts
+        setTimeout(() => {
+            URL.revokeObjectURL(url);
+        }, 100);
     }
 }
 

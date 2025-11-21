@@ -1,78 +1,10 @@
-// Character Generator - Trapezoid-based system
+// Character Generator
+import { createTrapezoid, createJoint, getTrapezoidBottom, isPointInPolygon, distance } from '../utils/math.js';
+import { randomFloat, randomInt, generateRandomPalette } from '../utils/random.js';
+import { nameGenerator } from '../utils/name-generator.js';
+import { PARAM_CONFIG } from '../config.js';
 
-// Fantasy Color Palettes
-const FANTASY_PALETTES = [
-    // Gameboy
-    [{ r: 15, g: 56, b: 15 }, { r: 48, g: 98, b: 48 }, { r: 139, g: 172, b: 15 }, { r: 155, g: 188, b: 15 }],
-    // NES
-    [{ r: 124, g: 124, b: 124 }, { r: 0, g: 0, b: 252 }, { r: 0, g: 0, b: 188 }, { r: 68, g: 40, b: 188 }],
-    // Pico8
-    [{ r: 29, g: 43, b: 83 }, { r: 126, g: 37, b: 83 }, { r: 0, g: 135, b: 81 }, { r: 171, g: 82, b: 54 }],
-    // Sepia/RPG
-    [{ r: 75, g: 61, b: 68 }, { r: 139, g: 109, b: 156 }, { r: 198, g: 159, b: 165 }, { r: 242, g: 211, b: 171 }],
-    // Forest
-    [{ r: 34, g: 49, b: 28 }, { r: 74, g: 105, b: 48 }, { r: 134, g: 170, b: 84 }, { r: 194, g: 214, b: 156 }],
-    // Desert
-    [{ r: 88, g: 48, b: 35 }, { r: 150, g: 91, b: 64 }, { r: 204, g: 142, b: 91 }, { r: 235, g: 205, b: 158 }],
-    // Ice
-    [{ r: 25, g: 60, b: 88 }, { r: 61, g: 135, b: 177 }, { r: 127, g: 198, b: 222 }, { r: 206, g: 237, b: 245 }],
-    // Fire
-    [{ r: 66, g: 16, b: 8 }, { r: 131, g: 44, b: 19 }, { r: 212, g: 73, b: 34 }, { r: 243, g: 143, b: 66 }],
-    // Arcane
-    [{ r: 50, g: 26, b: 81 }, { r: 110, g: 61, b: 139 }, { r: 168, g: 111, b: 193 }, { r: 211, g: 172, b: 230 }],
-    // Undead
-    [{ r: 38, g: 43, b: 35 }, { r: 72, g: 91, b: 70 }, { r: 133, g: 155, b: 129 }, { r: 178, g: 191, b: 175 }]
-];
-
-// Fantasy Name Generator
-class NameGenerator {
-    constructor() {
-        this.prefixes = [
-            'Aer', 'Bal', 'Cael', 'Dor', 'El', 'Fen', 'Gal', 'Hro', 'Ior', 'Kor',
-            'Lun', 'Mor', 'Nar', 'Oro', 'Pel', 'Quin', 'Ral', 'Syl', 'Thal', 'Ur',
-            'Val', 'Wyn', 'Xal', 'Yor', 'Zeph', 'Bran', 'Eld', 'Fir', 'Grim', 'Hal',
-            'Kir', 'Lor', 'Mal', 'Nev', 'Ral', 'Ser', 'Tor', 'Var', 'Zar', 'Ash',
-            'Cyr', 'Drak', 'Eth', 'Kael', 'Lyr', 'Myr', 'Nyx', 'Rax', 'Vex', 'Zul'
-        ];
-        this.suffixes = [
-            'th', 'mar', 'ion', 'or', 'is', 'wen', 'gard', 'mir', 'dor', 'wyn',
-            'ak', 'ius', 'eon', 'ara', 'iel', 'ran', 'eth', 'in', 'on', 'ul',
-            'ix', 'ax', 'ex', 'gar', 'kar', 'tar', 'var', 'ril', 'dil', 'thir'
-        ];
-        this.titles = [
-            'the Brave', 'Sun-shield', 'Storm-walker', 'Shadow-blade', 'Fire-heart',
-            'Ice-born', 'Sky-seeker', 'Stone-hand', 'Swift-foot', 'Iron-will',
-            'Moon-eye', 'Star-touched', 'Dawn-bringer', 'Night-walker', 'Wind-rider',
-            'Frost-bearer', 'Flame-keeper', 'Dark-hunter', 'Light-bringer', 'Death-dealer'
-        ];
-    }
-
-    generate() {
-        const prefix = this.prefixes[Math.floor(Math.random() * this.prefixes.length)];
-        const suffix = this.suffixes[Math.floor(Math.random() * this.suffixes.length)];
-        const name = prefix + suffix;
-
-        // 30% chance to add a title
-        if (Math.random() < 0.3) {
-            const title = this.titles[Math.floor(Math.random() * this.titles.length)];
-            return `${name} ${title}`;
-        }
-
-        return name;
-    }
-
-    generateUniqueFilename(baseName) {
-        // Add random ID for file uniqueness
-        const randomID = Math.floor(Math.random() * 9999).toString().padStart(4, '0');
-        // Remove spaces and special characters for filename safety
-        const safeName = baseName.replace(/[^a-zA-Z0-9-]/g, '_');
-        return `${safeName}_${randomID}`;
-    }
-}
-
-const nameGenerator = new NameGenerator();
-
-class CharacterGenerator {
+export class CharacterGenerator {
     constructor(canvasSize = 50) {
         this.canvasSize = canvasSize;
         this.centerX = this.canvasSize / 2;
@@ -82,16 +14,55 @@ class CharacterGenerator {
     generate(params) {
         const bodyParts = this.generateBodyParts(params);
         const heatmap = this.generateHeatmap(bodyParts, params);
-        const final = this.generatePixels(heatmap, params);
+        // 7. Generate Pixels
+        let pixels = this.generatePixels(heatmap, params);
+
+        // Store raw pixels for reprocessing (before smoothing/outline)
+        // We need to clone it because applySmoothing/Outline mutates the array
+        const rawPixels = pixels.map(row => [...row]);
+
+        this.removeIsolatedPixels(pixels);
+
+        // Apply smoothing if enabled
+        if (params.enableSmoothing) {
+            this.applySmoothing(pixels, params.palette);
+        }
+
+        // Apply outline if enabled
+        if (params.showOutline) {
+            this.applyOutline(pixels, params.palette);
+        }
+
         const name = nameGenerator.generate();
 
         return {
             bodyParts,
             heatmap,
-            final,
-            params,
-            name
+            pixels,
+            rawPixels, // Export raw pixels
+            name,
+            params // Store params used
         };
+    }
+
+    reprocess(character, newParams) {
+        // Restore from raw pixels
+        // Clone again to avoid mutating the stored rawPixels
+        const pixels = character.rawPixels.map(row => [...row]);
+
+        this.removeIsolatedPixels(pixels);
+
+        if (newParams.enableSmoothing) {
+            this.applySmoothing(pixels, character.params.palette);
+        }
+
+        if (newParams.showOutline) {
+            this.applyOutline(pixels, character.params.palette);
+        }
+
+        // Update character
+        character.pixels = pixels;
+        return character;
     }
 
     // Resolve range objects {min, max} to random values
@@ -103,7 +74,7 @@ class CharacterGenerator {
 
             // If it's a range object, resolve to random value
             if (value && typeof value === 'object' && 'min' in value && 'max' in value) {
-                resolved[key] = this.randomFloat(value.min, value.max);
+                resolved[key] = randomFloat(value.min, value.max);
             } else {
                 // Otherwise keep the value as-is (e.g., boolean flags, torsoY)
                 resolved[key] = value;
@@ -133,41 +104,41 @@ class CharacterGenerator {
 
         return {
             // Torso (anchor)
-            torsoTopWidth: this.randomFloat(ranges.torsoTopWidth.min, ranges.torsoTopWidth.max),
-            torsoBottomWidth: this.randomFloat(ranges.torsoBottomWidth.min, ranges.torsoBottomWidth.max),
-            torsoHeight: this.randomFloat(ranges.torsoHeight.min, ranges.torsoHeight.max),
-            torsoY: this.randomFloat(ranges.torsoY.min, ranges.torsoY.max),
+            torsoTopWidth: randomFloat(ranges.torsoTopWidth.min, ranges.torsoTopWidth.max),
+            torsoBottomWidth: randomFloat(ranges.torsoBottomWidth.min, ranges.torsoBottomWidth.max),
+            torsoHeight: randomFloat(ranges.torsoHeight.min, ranges.torsoHeight.max),
+            torsoY: randomFloat(ranges.torsoY.min, ranges.torsoY.max),
 
             // Neck
-            neckWidth: this.randomFloat(ranges.neckWidth.min, ranges.neckWidth.max),
-            neckHeight: this.randomFloat(ranges.neckHeight.min, ranges.neckHeight.max),
+            neckWidth: randomFloat(ranges.neckWidth.min, ranges.neckWidth.max),
+            neckHeight: randomFloat(ranges.neckHeight.min, ranges.neckHeight.max),
 
             // Head
-            headWidth: this.randomFloat(ranges.headWidth.min, ranges.headWidth.max),
-            headHeight: this.randomFloat(ranges.headHeight.min, ranges.headHeight.max),
+            headWidth: randomFloat(ranges.headWidth.min, ranges.headWidth.max),
+            headHeight: randomFloat(ranges.headHeight.min, ranges.headHeight.max),
 
             // Arms
-            upperArmTopWidth: this.randomFloat(ranges.upperArmTopWidth.min, ranges.upperArmTopWidth.max),
-            upperArmBottomWidth: this.randomFloat(ranges.upperArmBottomWidth.min, ranges.upperArmBottomWidth.max),
-            upperArmLength: this.randomFloat(ranges.upperArmLength.min, ranges.upperArmLength.max),
-            forearmTopWidth: this.randomFloat(ranges.forearmTopWidth.min, ranges.forearmTopWidth.max),
-            forearmBottomWidth: this.randomFloat(ranges.forearmBottomWidth.min, ranges.forearmBottomWidth.max),
-            forearmLength: this.randomFloat(ranges.forearmLength.min, ranges.forearmLength.max),
-            armAngle: this.randomFloat(ranges.armAngle.min, ranges.armAngle.max),
-            elbowAngle: this.randomFloat(ranges.elbowAngle.min, ranges.elbowAngle.max),
+            upperArmTopWidth: randomFloat(ranges.upperArmTopWidth.min, ranges.upperArmTopWidth.max),
+            upperArmBottomWidth: randomFloat(ranges.upperArmBottomWidth.min, ranges.upperArmBottomWidth.max),
+            upperArmLength: randomFloat(ranges.upperArmLength.min, ranges.upperArmLength.max),
+            forearmTopWidth: randomFloat(ranges.forearmTopWidth.min, ranges.forearmTopWidth.max),
+            forearmBottomWidth: randomFloat(ranges.forearmBottomWidth.min, ranges.forearmBottomWidth.max),
+            forearmLength: randomFloat(ranges.forearmLength.min, ranges.forearmLength.max),
+            armAngle: randomFloat(ranges.armAngle.min, ranges.armAngle.max),
+            elbowAngle: randomFloat(ranges.elbowAngle.min, ranges.elbowAngle.max),
 
             // Legs
-            thighTopWidth: this.randomFloat(ranges.thighTopWidth.min, ranges.thighTopWidth.max),
-            thighBottomWidth: this.randomFloat(ranges.thighBottomWidth.min, ranges.thighBottomWidth.max),
-            thighLength: this.randomFloat(ranges.thighLength.min, ranges.thighLength.max),
-            shinTopWidth: this.randomFloat(ranges.shinTopWidth.min, ranges.shinTopWidth.max),
-            shinBottomWidth: this.randomFloat(ranges.shinBottomWidth.min, ranges.shinBottomWidth.max),
-            shinLength: this.randomFloat(ranges.shinLength.min, ranges.shinLength.max),
-            legAngle: this.randomFloat(ranges.legAngle.min, ranges.legAngle.max),
+            thighTopWidth: randomFloat(ranges.thighTopWidth.min, ranges.thighTopWidth.max),
+            thighBottomWidth: randomFloat(ranges.thighBottomWidth.min, ranges.thighBottomWidth.max),
+            thighLength: randomFloat(ranges.thighLength.min, ranges.thighLength.max),
+            shinTopWidth: randomFloat(ranges.shinTopWidth.min, ranges.shinTopWidth.max),
+            shinBottomWidth: randomFloat(ranges.shinBottomWidth.min, ranges.shinBottomWidth.max),
+            shinLength: randomFloat(ranges.shinLength.min, ranges.shinLength.max),
+            legAngle: randomFloat(ranges.legAngle.min, ranges.legAngle.max),
 
             // Generation
-            fillDensity: this.randomFloat(ranges.fillDensity.min, ranges.fillDensity.max),
-            palette: this.generateRandomPalette()
+            fillDensity: randomFloat(ranges.fillDensity.min, ranges.fillDensity.max),
+            palette: generateRandomPalette()
         };
     }
 
@@ -202,7 +173,6 @@ class CharacterGenerator {
 
         switch (preset) {
             case 'short':
-                // Personaggi bassi - torso e gambe più corti
                 return {
                     ...baseRanges,
                     torsoHeight: { min: 24, max: 30 },
@@ -212,7 +182,6 @@ class CharacterGenerator {
                 };
 
             case 'tall':
-                // Personaggi alti - torso e gambe più lunghi
                 return {
                     ...baseRanges,
                     torsoHeight: { min: 32, max: 44 },
@@ -224,7 +193,6 @@ class CharacterGenerator {
                 };
 
             case 'thin':
-                // Personaggi magri - parti del corpo più strette
                 return {
                     ...baseRanges,
                     torsoTopWidth: { min: 12, max: 20 },
@@ -236,7 +204,6 @@ class CharacterGenerator {
                 };
 
             case 'bulky':
-                // Personaggi robusti - parti del corpo più larghe
                 return {
                     ...baseRanges,
                     torsoTopWidth: { min: 24, max: 36 },
@@ -251,27 +218,6 @@ class CharacterGenerator {
             case 'standard':
             default:
                 return baseRanges;
-        }
-    }
-
-    generateRandomPalette() {
-        // 70% chance to use preset palette, 30% chance for random
-        if (Math.random() < 0.7) {
-            // Use a fantasy palette
-            const paletteIndex = Math.floor(Math.random() * FANTASY_PALETTES.length);
-            return [...FANTASY_PALETTES[paletteIndex]]; // Return a copy
-        } else {
-            // Generate random palette
-            const numColors = this.randomInt(3, 5);
-            const palette = [];
-            for (let i = 0; i < numColors; i++) {
-                palette.push({
-                    r: this.randomInt(50, 255),
-                    g: this.randomInt(50, 255),
-                    b: this.randomInt(50, 255)
-                });
-            }
-            return palette;
         }
     }
 
@@ -316,15 +262,15 @@ class CharacterGenerator {
         // 1. TORSO (anchor)
         const torsoTop = scaledParams.torsoY;
         const torsoBottom = torsoTop + scaledParams.torsoHeight;
-        parts.torso = this.createTrapezoid(
+        parts.torso = createTrapezoid(
             this.centerX, torsoTop,
             scaledParams.torsoTopWidth, scaledParams.torsoBottomWidth,
             scaledParams.torsoHeight,
             0
         );
-        
+
         // 2. NECK
-        parts.neck = this.createTrapezoid(
+        parts.neck = createTrapezoid(
             this.centerX, torsoTop,
             scaledParams.neckWidth, scaledParams.neckWidth,
             -scaledParams.neckHeight,
@@ -332,65 +278,73 @@ class CharacterGenerator {
         );
 
         // 3. HEAD
-        parts.head = this.createTrapezoid(
+        parts.head = createTrapezoid(
             this.centerX, torsoTop - scaledParams.neckHeight,
             scaledParams.headWidth, scaledParams.headWidth,
             -scaledParams.headHeight,
             0
         );
 
+        // Symmetrical by default (mirrored)
+        const leftShoulderAngle = scaledParams.armAngle;
+        const leftForearmAngle = scaledParams.armAngle + scaledParams.elbowAngle;
+
+        const rightShoulderAngle = -scaledParams.armAngle;
+        const rightForearmAngle = -scaledParams.armAngle - scaledParams.elbowAngle;
+
+
         // 4. LEFT ARM
         const leftShoulderX = this.centerX - scaledParams.torsoTopWidth / 2;
 
-        parts.leftUpperArm = this.createTrapezoid(
+        parts.leftUpperArm = createTrapezoid(
             leftShoulderX, torsoTop,
             scaledParams.upperArmTopWidth, scaledParams.upperArmBottomWidth,
             scaledParams.upperArmLength,
-            scaledParams.armAngle
+            leftShoulderAngle
         );
 
-        const upperArmEnd = this.getTrapezoidBottom(parts.leftUpperArm);
+        const upperArmEnd = getTrapezoidBottom(parts.leftUpperArm);
 
-        parts.leftForearm = this.createTrapezoid(
+        parts.leftForearm = createTrapezoid(
             upperArmEnd.x, upperArmEnd.y,
             scaledParams.forearmTopWidth, scaledParams.forearmBottomWidth,
             scaledParams.forearmLength,
-            scaledParams.armAngle + scaledParams.elbowAngle
+            leftForearmAngle
         );
 
         // 5. RIGHT ARM
         const rightShoulderX = this.centerX + scaledParams.torsoTopWidth / 2;
 
-        parts.rightUpperArm = this.createTrapezoid(
+        parts.rightUpperArm = createTrapezoid(
             rightShoulderX, torsoTop,
             scaledParams.upperArmTopWidth, scaledParams.upperArmBottomWidth,
             scaledParams.upperArmLength,
-            -scaledParams.armAngle
+            rightShoulderAngle
         );
 
-        const rightUpperArmEnd = this.getTrapezoidBottom(parts.rightUpperArm);
+        const rightUpperArmEnd = getTrapezoidBottom(parts.rightUpperArm);
 
-        parts.rightForearm = this.createTrapezoid(
+        parts.rightForearm = createTrapezoid(
             rightUpperArmEnd.x, rightUpperArmEnd.y,
             scaledParams.forearmTopWidth, scaledParams.forearmBottomWidth,
             scaledParams.forearmLength,
-            -scaledParams.armAngle - scaledParams.elbowAngle
+            rightForearmAngle
         );
 
         // 6. LEFT LEG
         const leftHipX = this.centerX - scaledParams.torsoBottomWidth / 2;
 
-        parts.leftThigh = this.createTrapezoid(
+        parts.leftThigh = createTrapezoid(
             leftHipX, torsoBottom,
             scaledParams.thighTopWidth, scaledParams.thighBottomWidth,
             scaledParams.thighLength,
             scaledParams.legAngle
         );
 
-        const thighEnd = this.getTrapezoidBottom(parts.leftThigh);
+        const thighEnd = getTrapezoidBottom(parts.leftThigh);
         const remainingShinLength = this.groundY - thighEnd.y;
 
-        parts.leftShin = this.createTrapezoid(
+        parts.leftShin = createTrapezoid(
             thighEnd.x, thighEnd.y,
             scaledParams.shinTopWidth, scaledParams.shinBottomWidth,
             remainingShinLength,
@@ -400,17 +354,17 @@ class CharacterGenerator {
         // 7. RIGHT LEG
         const rightHipX = this.centerX + scaledParams.torsoBottomWidth / 2;
 
-        parts.rightThigh = this.createTrapezoid(
+        parts.rightThigh = createTrapezoid(
             rightHipX, torsoBottom,
             scaledParams.thighTopWidth, scaledParams.thighBottomWidth,
             scaledParams.thighLength,
             -scaledParams.legAngle
         );
 
-        const rightThighEnd = this.getTrapezoidBottom(parts.rightThigh);
+        const rightThighEnd = getTrapezoidBottom(parts.rightThigh);
         const rightRemainingShinLength = this.groundY - rightThighEnd.y;
 
-        parts.rightShin = this.createTrapezoid(
+        parts.rightShin = createTrapezoid(
             rightThighEnd.x, rightThighEnd.y,
             scaledParams.shinTopWidth, scaledParams.shinBottomWidth,
             rightRemainingShinLength,
@@ -418,17 +372,17 @@ class CharacterGenerator {
         );
 
         // 8. JOINTS (circles at articulation points)
-        parts.leftElbow = this.createJoint(parts.leftUpperArm.bottomCenter, scaledParams.upperArmBottomWidth / 2);
-        parts.rightElbow = this.createJoint(parts.rightUpperArm.bottomCenter, scaledParams.upperArmBottomWidth / 2);
-        parts.leftKnee = this.createJoint(parts.leftThigh.bottomCenter, scaledParams.thighBottomWidth / 2);
-        parts.rightKnee = this.createJoint(parts.rightThigh.bottomCenter, scaledParams.thighBottomWidth / 2);
-        parts.leftShoulder = this.createJoint(parts.leftUpperArm.center, scaledParams.upperArmTopWidth / 2);
-        parts.rightShoulder = this.createJoint(parts.rightUpperArm.center, scaledParams.upperArmTopWidth / 2);
+        parts.leftElbow = createJoint(parts.leftUpperArm.bottomCenter, scaledParams.upperArmBottomWidth / 2);
+        parts.rightElbow = createJoint(parts.rightUpperArm.bottomCenter, scaledParams.upperArmBottomWidth / 2);
+        parts.leftKnee = createJoint(parts.leftThigh.bottomCenter, scaledParams.thighBottomWidth / 2);
+        parts.rightKnee = createJoint(parts.rightThigh.bottomCenter, scaledParams.thighBottomWidth / 2);
+        parts.leftShoulder = createJoint(parts.leftUpperArm.center, scaledParams.upperArmTopWidth / 2);
+        parts.rightShoulder = createJoint(parts.rightUpperArm.center, scaledParams.upperArmTopWidth / 2);
 
         // 9. HANDS (small trapezoids at forearm ends)
         const leftHandStart = parts.leftForearm.bottomCenter;
-        const leftHandAngle = scaledParams.armAngle + scaledParams.elbowAngle;
-        parts.leftHand = this.createTrapezoid(
+        const leftHandAngle = leftForearmAngle;
+        parts.leftHand = createTrapezoid(
             leftHandStart.x, leftHandStart.y,
             scaledParams.forearmBottomWidth * 1.2,
             scaledParams.forearmBottomWidth * 0.8,
@@ -437,8 +391,8 @@ class CharacterGenerator {
         );
 
         const rightHandStart = parts.rightForearm.bottomCenter;
-        const rightHandAngle = -scaledParams.armAngle - scaledParams.elbowAngle;
-        parts.rightHand = this.createTrapezoid(
+        const rightHandAngle = rightForearmAngle;
+        parts.rightHand = createTrapezoid(
             rightHandStart.x, rightHandStart.y,
             scaledParams.forearmBottomWidth * 1.2,
             scaledParams.forearmBottomWidth * 0.8,
@@ -448,7 +402,7 @@ class CharacterGenerator {
 
         // 10. FEET (small trapezoids at shin ends)
         const leftFootStart = parts.leftShin.bottomCenter;
-        parts.leftFoot = this.createTrapezoid(
+        parts.leftFoot = createTrapezoid(
             leftFootStart.x, leftFootStart.y,
             scaledParams.shinBottomWidth,
             scaledParams.shinBottomWidth * 1.2,
@@ -457,7 +411,7 @@ class CharacterGenerator {
         );
 
         const rightFootStart = parts.rightShin.bottomCenter;
-        parts.rightFoot = this.createTrapezoid(
+        parts.rightFoot = createTrapezoid(
             rightFootStart.x, rightFootStart.y,
             scaledParams.shinBottomWidth,
             scaledParams.shinBottomWidth * 1.2,
@@ -466,59 +420,6 @@ class CharacterGenerator {
         );
 
         return parts;
-    }
-
-    createJoint(center, radius) {
-        return {
-            type: 'circle',
-            center: center,
-            radius: radius
-        };
-    }
-
-    createTrapezoid(centerX, centerY, topWidth, bottomWidth, length, angleDeg) {
-        const angleRad = (angleDeg * Math.PI) / 180;
-        
-        const topLeft = {
-            x: centerX - topWidth / 2,
-            y: centerY
-        };
-        const topRight = {
-            x: centerX + topWidth / 2,
-            y: centerY
-        };
-        
-        const dx = Math.sin(angleRad) * length;
-        const dy = Math.cos(angleRad) * length;
-        
-        const bottomCenter = {
-            x: centerX + dx,
-            y: centerY + dy
-        };
-        
-        const bottomLeft = {
-            x: bottomCenter.x - bottomWidth / 2,
-            y: bottomCenter.y
-        };
-        const bottomRight = {
-            x: bottomCenter.x + bottomWidth / 2,
-            y: bottomCenter.y
-        };
-        
-        return {
-            type: 'trapezoid',
-            points: [topLeft, topRight, bottomRight, bottomLeft],
-            center: { x: centerX, y: centerY },
-            bottomCenter: bottomCenter,
-            topWidth,
-            bottomWidth,
-            length,
-            angle: angleDeg
-        };
-    }
-
-    getTrapezoidBottom(trap) {
-        return trap.bottomCenter;
     }
 
     generateHeatmap(bodyParts, params) {
@@ -566,74 +467,37 @@ class CharacterGenerator {
         const maxX = Math.min(this.canvasSize, Math.ceil(Math.max(...xs)));
         const minY = Math.max(0, Math.floor(Math.min(...ys)));
         const maxY = Math.min(this.canvasSize, Math.ceil(Math.max(...ys)));
-        
+
         // Calculate the centroid of trapezoid
         const centroid = {
             x: trap.points.reduce((sum, p) => sum + p.x, 0) / trap.points.length,
             y: trap.points.reduce((sum, p) => sum + p.y, 0) / trap.points.length
         };
-        
+
         // Calculate max distance from centroid to edges (for normalization)
         let maxDistFromCenter = 0;
         trap.points.forEach(p => {
-            const d = this.distance(centroid, p);
+            const d = distance(centroid, p);
             maxDistFromCenter = Math.max(maxDistFromCenter, d);
         });
-        
+
         // Fill pixels ONLY inside trapezoid
         for (let y = minY; y < maxY; y++) {
             for (let x = minX; x < maxX; x++) {
                 const point = { x, y };
-                
+
                 // Only fill if inside shape
-                if (this.isPointInPolygon(point, trap.points)) {
+                if (isPointInPolygon(point, trap.points)) {
                     // Distance from center of shape
-                    const distFromCenter = this.distance(point, centroid);
-                    
+                    const distFromCenter = distance(point, centroid);
+
                     // Intensity: 1.0 at center, decays toward edges
                     const intensity = Math.max(0, 1 - (distFromCenter / maxDistFromCenter) * 0.5);
-                    
+
                     heatmap[y][x] = Math.max(heatmap[y][x], intensity);
                 }
             }
         }
-    }
-
-    isPointInPolygon(point, vertices) {
-        let inside = false;
-        for (let i = 0, j = vertices.length - 1; i < vertices.length; j = i++) {
-            const xi = vertices[i].x, yi = vertices[i].y;
-            const xj = vertices[j].x, yj = vertices[j].y;
-            
-            const intersect = ((yi > point.y) !== (yj > point.y))
-                && (point.x < (xj - xi) * (point.y - yi) / (yj - yi) + xi);
-            if (intersect) inside = !inside;
-        }
-        return inside;
-    }
-
-    pointToSegmentDistance(p, a, b) {
-        const dx = b.x - a.x;
-        const dy = b.y - a.y;
-        const lengthSq = dx * dx + dy * dy;
-        
-        if (lengthSq === 0) return this.distance(p, a);
-        
-        let t = ((p.x - a.x) * dx + (p.y - a.y) * dy) / lengthSq;
-        t = Math.max(0, Math.min(1, t));
-        
-        const closest = {
-            x: a.x + t * dx,
-            y: a.y + t * dy
-        };
-        
-        return this.distance(p, closest);
-    }
-
-    distance(a, b) {
-        const dx = b.x - a.x;
-        const dy = b.y - a.y;
-        return Math.sqrt(dx * dx + dy * dy);
     }
 
     generatePixels(heatmap, params) {
@@ -675,12 +539,40 @@ class CharacterGenerator {
         return pixels;
     }
 
+    removeIsolatedPixels(pixels) {
+        const toRemove = [];
+        const size = pixels.length;
+
+        for (let y = 1; y < size - 1; y++) {
+            for (let x = 1; x < size - 1; x++) {
+                if (pixels[y][x]) {
+                    let neighborCount = 0;
+                    for (let dy = -1; dy <= 1; dy++) {
+                        for (let dx = -1; dx <= 1; dx++) {
+                            if (dx === 0 && dy === 0) continue;
+                            if (pixels[y + dy] && pixels[y + dy][x + dx]) neighborCount++;
+                        }
+                    }
+
+                    if (neighborCount < 2) {
+                        toRemove.push({ x, y });
+                    }
+                }
+            }
+        }
+
+        toRemove.forEach(({ x, y }) => {
+            pixels[y][x] = null;
+        });
+    }
+
     applySmoothing(pixels, palette) {
         // Cellular automata: fill empty cells surrounded by many filled neighbors
         const toFill = [];
+        const size = pixels.length;
 
-        for (let y = 1; y < this.canvasSize - 1; y++) {
-            for (let x = 1; x < this.canvasSize - 1; x++) {
+        for (let y = 1; y < size - 1; y++) {
+            for (let x = 1; x < size - 1; x++) {
                 if (pixels[y][x] === null) {
                     // Count filled neighbors (Moore neighborhood - 8 cells)
                     let filledCount = 0;
@@ -689,7 +581,7 @@ class CharacterGenerator {
                     for (let dy = -1; dy <= 1; dy++) {
                         for (let dx = -1; dx <= 1; dx++) {
                             if (dx === 0 && dy === 0) continue;
-                            if (pixels[y + dy][x + dx]) {
+                            if (pixels[y + dy] && pixels[y + dy][x + dx]) {
                                 filledCount++;
                                 neighborColors.push(pixels[y + dy][x + dx]);
                             }
@@ -716,9 +608,10 @@ class CharacterGenerator {
         // Add dark outline around sprites
         const outlineColor = { r: 20, g: 20, b: 20 }; // Dark outline
         const toOutline = [];
+        const size = pixels.length;
 
-        for (let y = 1; y < this.canvasSize - 1; y++) {
-            for (let x = 1; x < this.canvasSize - 1; x++) {
+        for (let y = 1; y < size - 1; y++) {
+            for (let x = 1; x < size - 1; x++) {
                 if (pixels[y][x] !== null) {
                     // Check orthogonal neighbors (up, down, left, right)
                     const neighbors = [
@@ -731,7 +624,7 @@ class CharacterGenerator {
                     neighbors.forEach(({ dy, dx }) => {
                         const ny = y + dy;
                         const nx = x + dx;
-                        if (ny >= 0 && ny < this.canvasSize && nx >= 0 && nx < this.canvasSize) {
+                        if (ny >= 0 && ny < size && nx >= 0 && nx < size) {
                             if (pixels[ny][nx] === null) {
                                 toOutline.push({ x: nx, y: ny });
                             }
@@ -748,6 +641,7 @@ class CharacterGenerator {
             }
         });
     }
+
 
     getMostCommonColor(colors) {
         if (colors.length === 0) return null;
@@ -771,40 +665,4 @@ class CharacterGenerator {
 
         return mostCommon;
     }
-
-    removeIsolatedPixels(pixels) {
-        const toRemove = [];
-        
-        for (let y = 1; y < this.canvasSize - 1; y++) {
-            for (let x = 1; x < this.canvasSize - 1; x++) {
-                if (pixels[y][x]) {
-                    let neighborCount = 0;
-                    for (let dy = -1; dy <= 1; dy++) {
-                        for (let dx = -1; dx <= 1; dx++) {
-                            if (dx === 0 && dy === 0) continue;
-                            if (pixels[y + dy][x + dx]) neighborCount++;
-                        }
-                    }
-                    
-                    if (neighborCount < 2) {
-                        toRemove.push({ x, y });
-                    }
-                }
-            }
-        }
-        
-        toRemove.forEach(({ x, y }) => {
-            pixels[y][x] = null;
-        });
-    }
-
-    randomInt(min, max) {
-        return Math.floor(Math.random() * (max - min + 1)) + min;
-    }
-
-    randomFloat(min, max) {
-        return Math.random() * (max - min) + min;
-    }
 }
-
-const characterGenerator = new CharacterGenerator();
