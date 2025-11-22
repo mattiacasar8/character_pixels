@@ -1,6 +1,7 @@
 // Main App Entry Point
 import { CharacterGenerator } from './core/generator.js';
 import { CharacterRenderer } from './core/renderer.js';
+import { BackstoryGenerator } from './backstory-generator.js';
 import { PARAM_CONFIG } from './config.js';
 import { nameGenerator } from './utils/name-generator.js';
 import { generateRandomPalette } from './utils/random.js';
@@ -10,6 +11,7 @@ class App {
         this.canvasSize = 50; // Default canvas size
         this.characterGenerator = new CharacterGenerator(this.canvasSize);
         this.characterRenderer = new CharacterRenderer(3, this.canvasSize);
+        this.backstoryGenerator = new BackstoryGenerator();
 
         this.currentParams = this.getParamsFromUI();
         this.displayOptions = this.getDisplayOptions();
@@ -26,7 +28,45 @@ class App {
         this.setupCheckboxes();
         this.setupBatchOptions();
         this.setupButtons();
+        this.setupModal();
         this.generateCharacters(1);
+    }
+
+    setupModal() {
+        // Create modal structure if it doesn't exist
+        if (!document.getElementById('backstoryModal')) {
+            const modal = document.createElement('div');
+            modal.id = 'backstoryModal';
+            modal.className = 'modal';
+            modal.innerHTML = `
+                <div class="modal-content">
+                    <span class="close-modal">&times;</span>
+                    <h2 id="modalTitle">Character Name</h2>
+                    <div id="modalBody" class="backstory-text"></div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+
+            // Close logic
+            const closeBtn = modal.querySelector('.close-modal');
+            closeBtn.onclick = () => modal.style.display = "none";
+            window.onclick = (event) => {
+                if (event.target == modal) {
+                    modal.style.display = "none";
+                }
+            };
+        }
+    }
+
+    showBackstory(character) {
+        const modal = document.getElementById('backstoryModal');
+        const title = document.getElementById('modalTitle');
+        const body = document.getElementById('modalBody');
+
+        title.textContent = character.name;
+        body.textContent = character.backstory || "Nessuna storia disponibile.";
+
+        modal.style.display = "block";
     }
 
     getParamsFromUI() {
@@ -259,6 +299,8 @@ class App {
 
     generateCharacters(count) {
         this.characters = [];
+        // Reset pools to ensure variety in new batch
+        this.backstoryGenerator.resetPools();
 
         for (let i = 0; i < count; i++) {
             // Always use UI params (which are now updated by presets)
@@ -269,6 +311,10 @@ class App {
             }
 
             const character = this.characterGenerator.generate(params);
+
+            // Generate backstory
+            character.backstory = this.backstoryGenerator.generate(character.name);
+
             this.characters.push(character);
         }
 
@@ -278,10 +324,23 @@ class App {
     regenerateCurrentCharacters() {
         if (this.characters.length === 0) return;
 
-        this.characters = this.characters.map(() => {
+        // Note: We keep the same names and backstories when just tweaking sliders?
+        // Or should we regenerate everything?
+        // The current logic regenerates the visual character but keeps the object reference if possible?
+        // Actually map creates new array.
+        // Let's keep the name and backstory if we are just regenerating visuals.
+
+        const oldCharacters = [...this.characters];
+        this.characters = oldCharacters.map((oldChar) => {
             const params = this.characterGenerator.resolveParams({ ...this.currentParams });
             params.palette = generateRandomPalette();
-            return this.characterGenerator.generate(params);
+            const newChar = this.characterGenerator.generate(params);
+
+            // Preserve identity
+            newChar.name = oldChar.name;
+            newChar.backstory = oldChar.backstory;
+
+            return newChar;
         });
 
         this.renderCharacters();
@@ -309,6 +368,11 @@ class App {
             // Create card wrapper
             const card = document.createElement('div');
             card.className = 'char-card';
+
+            // Add click listener for backstory
+            card.style.cursor = 'pointer';
+            card.title = 'Click to see backstory';
+            card.addEventListener('click', () => this.showBackstory(character));
 
             const canvas = this.characterRenderer.createCanvas();
             this.characterRenderer.drawCharacter(canvas, character, this.displayOptions);
@@ -435,6 +499,10 @@ class App {
                     // Generate unique filename
                     const filename = `${nameGenerator.generateUniqueFilename(char.name)}.png`;
                     folder.file(filename, blob);
+                    // Also save backstory
+                    if (char.backstory) {
+                        folder.file(`${filename.replace('.png', '.txt')}`, char.backstory);
+                    }
                     resolve();
                 });
             });
