@@ -42,9 +42,12 @@ class App {
             modal.className = 'modal';
             modal.innerHTML = `
                 <div class="modal-content">
-                    <span class="close-modal">&times;</span>
-                    <h2 id="modalTitle">Character Name</h2>
-                    <div id="modalBody" class="backstory-text"></div>
+                    <div class="modal-image-container"></div>
+                    <div class="modal-info">
+                        <span class="close-modal">&times;</span>
+                        <h2 id="modalTitle">Character Name</h2>
+                        <div id="modalBody" class="backstory-text"></div>
+                    </div>
                 </div>
             `;
             document.body.appendChild(modal);
@@ -56,6 +59,7 @@ class App {
             closeBtn.onclick = () => modal.style.display = "none";
         }
 
+        // Close logic (click outside to close)
         window.onclick = (event) => {
             if (event.target == modal) {
                 modal.style.display = "none";
@@ -63,15 +67,26 @@ class App {
         };
     }
 
-    showBackstory(character) {
+    showBackstory(character, canvas) {
         const modal = document.getElementById('backstoryModal');
-        const title = document.getElementById('modalTitle');
-        const body = document.getElementById('modalBody');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalBody = document.getElementById('modalBody');
+        const modalImgContainer = modal.querySelector('.modal-image-container');
 
-        title.textContent = character.name;
-        body.textContent = character.backstory || "Nessuna storia disponibile.";
+        modalTitle.textContent = character.name;
+        modalBody.innerHTML = character.backstory || "Nessuna storia disponibile.";
 
-        modal.style.display = "block";
+        // Clear previous image and add new one
+        modalImgContainer.innerHTML = '';
+        if (canvas) {
+            const imgClone = canvas.cloneNode(true); // Clone with children (if any, though canvas usually doesn't have them)
+            imgClone.style.width = '100%';
+            imgClone.style.height = 'auto';
+            imgClone.style.imageRendering = 'pixelated';
+            modalImgContainer.appendChild(imgClone);
+        }
+
+        modal.style.display = "flex"; // Use flex to center
     }
 
     getParamsFromUI() {
