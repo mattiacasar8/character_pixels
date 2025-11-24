@@ -1,6 +1,6 @@
-import { data, poolNames } from '../data/backstory-dataset.js';
+import { data, poolNames } from '../../data/human-backstory-data.js';
 
-export class BackstoryGenerator {
+export class HumanBackstoryGenerator {
     constructor() {
         this.shuffledPools = new Map();
     }

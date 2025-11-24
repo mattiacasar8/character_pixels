@@ -1,17 +1,21 @@
 // Main App Entry Point
-import { CharacterGenerator } from './generators/character-generator.js';
+import { MonsterGenerator } from './generators/monster/monster-generator.js';
+import { HumanGenerator } from './generators/human/human-generator.js';
+import { MonsterBackstoryGenerator } from './generators/monster/monster-backstory.js';
+import { HumanBackstoryGenerator } from './generators/human/human-backstory.js';
 import { CharacterRenderer } from './core/renderer.js';
-import { BackstoryGenerator } from './generators/backstory-generator.js';
 import { PARAM_CONFIG } from './config.js';
-import { nameGenerator } from './generators/name-generator.js';
 import { generateRandomPalette } from './utils/random.js';
 
 class App {
     constructor() {
         this.canvasSize = 50; // Default canvas size
-        this.characterGenerator = new CharacterGenerator(this.canvasSize);
+        this.monsterGenerator = new MonsterGenerator(this.canvasSize);
+        this.humanGenerator = new HumanGenerator(this.canvasSize);
         this.characterRenderer = new CharacterRenderer(3, this.canvasSize);
-        this.backstoryGenerator = new BackstoryGenerator();
+
+        this.monsterBackstoryGenerator = new MonsterBackstoryGenerator();
+        this.humanBackstoryGenerator = new HumanBackstoryGenerator();
 
         this.currentParams = this.getParamsFromUI();
         this.displayOptions = this.getDisplayOptions();
@@ -24,12 +28,32 @@ class App {
     }
 
     init() {
+        this.setupGeneratorType();
         this.setupSliders();
         this.setupCheckboxes();
         this.setupBatchOptions();
         this.setupButtons();
         this.setupModal();
         this.generateCharacters(1);
+    }
+
+    get currentGenerator() {
+        const type = document.getElementById('generatorType').value;
+        return type === 'human' ? this.humanGenerator : this.monsterGenerator;
+    }
+
+    get currentBackstoryGenerator() {
+        const type = document.getElementById('generatorType').value;
+        return type === 'human' ? this.humanBackstoryGenerator : this.monsterBackstoryGenerator;
+    }
+
+    setupGeneratorType() {
+        const selector = document.getElementById('generatorType');
+        selector.addEventListener('change', () => {
+            // When switching types, we might want to reset sliders to a default for that type
+            // For now, let's just regenerate with current sliders but new logic
+            this.generateCharacters(this.characters.length || 1);
+        });
     }
 
     setupModal() {
@@ -267,7 +291,7 @@ class App {
             });
             return;
         } else {
-            ranges = this.characterGenerator.getParamRanges(preset);
+            ranges = this.currentGenerator.getParamRanges(preset);
         }
 
         Object.keys(ranges).forEach(paramKey => {
@@ -316,7 +340,8 @@ class App {
 
     updateCanvasSize(newSize) {
         this.canvasSize = newSize;
-        this.characterGenerator = new CharacterGenerator(this.canvasSize);
+        this.monsterGenerator = new MonsterGenerator(this.canvasSize);
+        this.humanGenerator = new HumanGenerator(this.canvasSize);
         this.characterRenderer = new CharacterRenderer(3, this.canvasSize);
         this.regenerateCurrentCharacters();
     }
@@ -324,20 +349,26 @@ class App {
     generateCharacters(count) {
         this.characters = [];
         // Reset pools to ensure variety in new batch
-        this.backstoryGenerator.resetPools();
+        // this.backstoryGenerator.resetPools(); // TODO: Add reset to placeholders if needed
 
         for (let i = 0; i < count; i++) {
             // Always use UI params (which are now updated by presets)
-            const params = this.characterGenerator.resolveParams({ ...this.currentParams });
+            // Use current generator to resolve params
+            const params = this.currentGenerator.resolveParams({ ...this.currentParams });
 
             if (!params.palette) {
-                params.palette = generateRandomPalette();
+                if (this.currentGenerator instanceof HumanGenerator) {
+                    const dummy = this.currentGenerator.randomParamsInRange();
+                    params.palette = dummy.palette;
+                } else {
+                    params.palette = generateRandomPalette();
+                }
             }
 
-            const character = this.characterGenerator.generate(params);
+            const character = this.currentGenerator.generate(params);
 
             // Generate backstory
-            character.backstory = this.backstoryGenerator.generate(character.name);
+            character.backstory = this.currentBackstoryGenerator.generate(character.name);
 
             this.characters.push(character);
         }
@@ -356,9 +387,19 @@ class App {
 
         const oldCharacters = [...this.characters];
         this.characters = oldCharacters.map((oldChar) => {
-            const params = this.characterGenerator.resolveParams({ ...this.currentParams });
-            params.palette = generateRandomPalette();
-            const newChar = this.characterGenerator.generate(params);
+            const params = this.currentGenerator.resolveParams({ ...this.currentParams });
+
+            // Keep existing palette if we are just tweaking sliders?
+            // Or generate new one? Original code generated new one.
+            // Let's generate new one consistent with generator type.
+            if (this.currentGenerator instanceof HumanGenerator) {
+                const dummy = this.currentGenerator.randomParamsInRange();
+                params.palette = dummy.palette;
+            } else {
+                params.palette = generateRandomPalette();
+            }
+
+            const newChar = this.currentGenerator.generate(params);
 
             // Preserve identity
             newChar.name = oldChar.name;
@@ -374,7 +415,7 @@ class App {
         if (this.characters.length === 0) return;
 
         this.characters = this.characters.map(char => {
-            return this.characterGenerator.reprocess(char, this.currentParams);
+            return this.currentGenerator.reprocess(char, this.currentParams);
         });
 
         this.renderCharacters();
@@ -419,7 +460,7 @@ class App {
     }
 
     randomizeSliders() {
-        const randomParams = this.characterGenerator.randomParams();
+        const randomParams = this.currentGenerator.randomParams();
 
         // Create a narrow range around each random value for variety
         const createRange = (value, paramKey) => {

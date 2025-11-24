@@ -24,6 +24,17 @@
             </header>
 
             <div class="controls-container">
+                <!-- Mode Selection -->
+                <section class="control-section">
+                    <h2>MODE</h2>
+                    <div class="control-row">
+                        <select id="generatorType">
+                            <option value="monster">Creature / Monster</option>
+                            <option value="human">Humanoid</option>
+                        </select>
+                    </div>
+                </section>
+
                 <!-- Generation Controls -->
                 <section class="control-section">
                     <h2>GENERATION</h2>
@@ -187,6 +198,7 @@
                 <h2 id="modalTitle">NAME</h2>
                 <span class="close-modal">&times;</span>
             </header>
+            <div class="modal-image-container"></div>
             <div id="modalBody" class="modal-body"></div>
         </div>
     </div>

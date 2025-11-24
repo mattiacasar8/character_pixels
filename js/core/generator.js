@@ -1,7 +1,6 @@
 // Character Generator
 import { createTrapezoid, createJoint, getTrapezoidBottom, isPointInPolygon, distance } from '../utils/math.js';
 import { randomFloat, randomInt, generateRandomPalette } from '../utils/random.js';
-import { nameGenerator } from './name-generator.js';
 import { PARAM_CONFIG } from '../config.js';
 
 export class CharacterGenerator {
@@ -33,7 +32,8 @@ export class CharacterGenerator {
             this.applyOutline(pixels, params.palette);
         }
 
-        const name = nameGenerator.generate();
+        // Name generation is handled by the app or subclass
+        const name = params.name || "Unknown";
 
         return {
             bodyParts,
