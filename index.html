@@ -8,218 +8,187 @@
     <link rel="stylesheet" href="style.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.7.1/nouislider.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.7.1/nouislider.min.js"></script>
+    <!-- Inter Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap"
+        rel="stylesheet">
 </head>
 
 <body>
-    <div class="container">
-        <aside class="controls">
-            <h2>Character Generator</h2>
+    <div class="layout-grid">
+        <aside class="sidebar">
+            <header class="sidebar-header">
+                <h1>CPG_v1.0</h1>
+            </header>
 
-            <div class="section">
-                <h3>Canvas</h3>
-                <div class="control-group">
-                    <label>Grid Size: <span id="canvasSizeValue">50</span></label>
-                    <input type="range" id="canvasSize" min="20" max="70" value="50" step="10">
-                </div>
-            </div>
+            <div class="controls-container">
+                <!-- Generation Controls -->
+                <section class="control-section">
+                    <h2>GENERATION</h2>
 
-            <div class="section">
-                <h3>Rendering</h3>
-                <div class="control-group slider-group" data-param="fillDensity">
-                    <div class="slider-header">
-                        <label>Fill Density</label>
-                        <span class="slider-values" id="fillDensityDisplay">0.70 - 0.90</span>
+                    <div class="control-row">
+                        <label>PRESET</label>
+                        <select id="bodyPreset">
+                            <option value="standard">Standard</option>
+                            <option value="bulky">Bulky</option>
+                            <option value="tall">Tall</option>
+                            <option value="monster">Monstrous</option>
+                            <option value="max">Chaotic</option>
+                        </select>
                     </div>
-                    <div id="slider-fillDensity" class="custom-slider"></div>
-                </div>
-                <div class="control-group">
-                    <label>
-                        <input type="checkbox" id="enableSmoothing" checked> Enable Smoothing
-                    </label>
-                </div>
-                <div class="control-group">
-                    <label>
-                        <input type="checkbox" id="showOutline" checked> Show Outline
-                    </label>
-                </div>
 
-            </div>
+                    <div class="control-row">
+                        <label>DENSITY</label>
+                        <div id="slider-fillDensity" class="swiss-slider"></div>
+                        <span id="fillDensityDisplay" class="value-display">0.70 - 0.90</span>
+                    </div>
 
-            <details class="section advanced-settings">
-                <summary>Advanced: Body Proportions</summary>
-                <div class="control-group slider-group" data-param="torsoTopWidth">
-                    <div class="slider-header">
-                        <label>Torso Width (Top)</label>
-                        <span class="slider-values" id="torsoTopWidthDisplay">20 - 28%</span>
+                    <div class="control-row checkbox-row">
+                        <input type="checkbox" id="enableSmoothing" checked>
+                        <label for="enableSmoothing">SMOOTHING</label>
                     </div>
-                    <div id="slider-torsoTopWidth" class="custom-slider"></div>
-                </div>
-                <div class="control-group slider-group" data-param="torsoBottomWidth">
-                    <div class="slider-header">
-                        <label>Torso Width (Bottom)</label>
-                        <span class="slider-values" id="torsoBottomWidthDisplay">16 - 24%</span>
-                    </div>
-                    <div id="slider-torsoBottomWidth" class="custom-slider"></div>
-                </div>
-                <div class="control-group slider-group" data-param="torsoHeight">
-                    <div class="slider-header">
-                        <label>Torso Height</label>
-                        <span class="slider-values" id="torsoHeightDisplay">26 - 34%</span>
-                    </div>
-                    <div id="slider-torsoHeight" class="custom-slider"></div>
-                </div>
-                <div class="control-group slider-group" data-param="headWidth">
-                    <div class="slider-header">
-                        <label>Head Size</label>
-                        <span class="slider-values" id="headWidthDisplay">14 - 22%</span>
-                    </div>
-                    <div id="slider-headWidth" class="custom-slider"></div>
-                </div>
-                <div class="control-group slider-group" data-param="neckWidth">
-                    <div class="slider-header">
-                        <label>Neck Width</label>
-                        <span class="slider-values" id="neckWidthDisplay">5 - 8%</span>
-                    </div>
-                    <div id="slider-neckWidth" class="custom-slider"></div>
-                </div>
-                <div class="control-group slider-group" data-param="neckHeight">
-                    <div class="slider-header">
-                        <label>Neck Height</label>
-                        <span class="slider-values" id="neckHeightDisplay">5 - 9%</span>
-                    </div>
-                    <div id="slider-neckHeight" class="custom-slider"></div>
-                </div>
-            </details>
 
-            <details class="section advanced-settings">
-                <summary>Advanced: Limbs &amp; Angles</summary>
-                <div class="control-group slider-group" data-param="upperArmTopWidth">
-                    <div class="slider-header">
-                        <label>Upper Arm Width</label>
-                        <span class="slider-values" id="upperArmTopWidthDisplay">6 - 10%</span>
+                    <div class="control-row checkbox-row">
+                        <input type="checkbox" id="showOutline" checked>
+                        <label for="showOutline">OUTLINE</label>
                     </div>
-                    <div id="slider-upperArmTopWidth" class="custom-slider"></div>
-                </div>
-                <div class="control-group slider-group" data-param="forearmTopWidth">
-                    <div class="slider-header">
-                        <label>Forearm Width</label>
-                        <span class="slider-values" id="forearmTopWidthDisplay">4 - 8%</span>
-                    </div>
-                    <div id="slider-forearmTopWidth" class="custom-slider"></div>
-                </div>
-                <div class="control-group slider-group" data-param="upperArmLength">
-                    <div class="slider-header">
-                        <label>Arm Length</label>
-                        <span class="slider-values" id="upperArmLengthDisplay">18 - 26%</span>
-                    </div>
-                    <div id="slider-upperArmLength" class="custom-slider"></div>
-                </div>
-                <div class="control-group slider-group" data-param="armAngle">
-                    <div class="slider-header">
-                        <label>Arm Angle</label>
-                        <span class="slider-values" id="armAngleDisplay">-60 to -30°</span>
-                    </div>
-                    <div id="slider-armAngle" class="custom-slider"></div>
-                </div>
-                <div class="control-group slider-group" data-param="elbowAngle">
-                    <div class="slider-header">
-                        <label>Elbow Angle</label>
-                        <span class="slider-values" id="elbowAngleDisplay">-20 to 20°</span>
-                    </div>
-                    <div id="slider-elbowAngle" class="custom-slider"></div>
-                </div>
-                <div class="control-group slider-group" data-param="thighTopWidth">
-                    <div class="slider-header">
-                        <label>Thigh Width</label>
-                        <span class="slider-values" id="thighTopWidthDisplay">8 - 12%</span>
-                    </div>
-                    <div id="slider-thighTopWidth" class="custom-slider"></div>
-                </div>
-                <div class="control-group slider-group" data-param="shinTopWidth">
-                    <div class="slider-header">
-                        <label>Shin Width</label>
-                        <span class="slider-values" id="shinTopWidthDisplay">6 - 10%</span>
-                    </div>
-                    <div id="slider-shinTopWidth" class="custom-slider"></div>
-                </div>
-                <div class="control-group slider-group" data-param="thighLength">
-                    <div class="slider-header">
-                        <label>Thigh Length</label>
-                        <span class="slider-values" id="thighLengthDisplay">18 - 26%</span>
-                    </div>
-                    <div id="slider-thighLength" class="custom-slider"></div>
-                </div>
-                <div class="control-group slider-group" data-param="legAngle">
-                    <div class="slider-header">
-                        <label>Leg Angle</label>
-                        <span class="slider-values" id="legAngleDisplay">-20 to -5°</span>
-                    </div>
-                    <div id="slider-legAngle" class="custom-slider"></div>
-                </div>
-            </details>
+                </section>
 
-            <div class="section">
-                <h3>Batch Generation</h3>
-                <div class="control-group">
-                    <label>Body Preset</label>
-                    <select id="bodyPreset">
-                        <option value="standard">Standard Humanoid</option>
-                        <option value="bulky">Bulky / Dwarf</option>
-                        <option value="tall">Tall / Elf</option>
-                        <option value="monster">Monstrous</option>
-                        <option value="max">Max Range (Chaotic)</option>
-                    </select>
-                </div>
+                <!-- Advanced Controls (Collapsible) -->
+                <section class="control-section">
+                    <details>
+                        <summary>ADVANCED PARAMETERS</summary>
+                        <div class="advanced-content">
+                            <div class="control-group" data-param="torsoTopWidth">
+                                <div class="label-row">
+                                    <label>TORSO TOP</label>
+                                    <span id="torsoTopWidthDisplay">20-28%</span>
+                                </div>
+                                <div id="slider-torsoTopWidth" class="swiss-slider"></div>
+                            </div>
 
-                <div class="button-group">
-                    <button id="randomize" class="secondary">Randomize Sliders</button>
-                </div>
-            </div>
+                            <div class="control-group" data-param="torsoBottomWidth">
+                                <div class="label-row">
+                                    <label>TORSO BOT</label>
+                                    <span id="torsoBottomWidthDisplay">16-24%</span>
+                                </div>
+                                <div id="slider-torsoBottomWidth" class="swiss-slider"></div>
+                            </div>
 
-            <div class="section">
-                <h3>Display Options</h3>
-                <div class="control-group">
-                    <label>
-                        <input type="checkbox" id="showStickFigure"> Connection Points
-                    </label>
-                </div>
-                <div class="control-group">
-                    <label>
-                        <input type="checkbox" id="showThickness"> Show Shapes
-                    </label>
-                </div>
-                <div class="control-group">
-                    <label>
-                        <input type="checkbox" id="showHeatmap"> Show Heatmap
-                    </label>
-                </div>
-                <div class="control-group">
-                    <label>
-                        <input type="checkbox" id="showFinal" checked> Show Final
-                    </label>
-                </div>
-                <div class="control-group">
-                    <label>
-                        <input type="checkbox" id="showGrid"> Show Grid
-                    </label>
-                </div>
-            </div>
+                            <div class="control-group" data-param="torsoHeight">
+                                <div class="label-row">
+                                    <label>TORSO H</label>
+                                    <span id="torsoHeightDisplay">26-34%</span>
+                                </div>
+                                <div id="slider-torsoHeight" class="swiss-slider"></div>
+                            </div>
 
-            <div class="section">
-                <h3>Actions</h3>
-                <button type="button" id="generateOne" class="btn-primary">Generate 1</button>
-                <button type="button" id="generateTen" class="btn-secondary">Generate 10</button>
-                <button type="button" id="generateHundred" class="btn-secondary">Generate 100</button>
-                <button type="button" id="randomize" class="btn-accent">Randomize Params</button>
-                <button type="button" id="exportSpritesheet" class="btn-export">Export Spritesheet</button>
-                <button type="button" id="exportZip" class="btn-export">Export ZIP</button>
+                            <div class="control-group" data-param="headWidth">
+                                <div class="label-row">
+                                    <label>HEAD SIZE</label>
+                                    <span id="headWidthDisplay">14-22%</span>
+                                </div>
+                                <div id="slider-headWidth" class="swiss-slider"></div>
+                            </div>
+
+                            <div class="control-group" data-param="upperArmLength">
+                                <div class="label-row">
+                                    <label>ARM LEN</label>
+                                    <span id="upperArmLengthDisplay">18-26%</span>
+                                </div>
+                                <div id="slider-upperArmLength" class="swiss-slider"></div>
+                            </div>
+
+                            <div class="control-group" data-param="thighLength">
+                                <div class="label-row">
+                                    <label>LEG LEN</label>
+                                    <span id="thighLengthDisplay">18-26%</span>
+                                </div>
+                                <div id="slider-thighLength" class="swiss-slider"></div>
+                            </div>
+
+                            <!-- Hidden sliders for full functionality but less clutter, 
+                                 can be added back if user requests full control visible -->
+                            <div style="display:none">
+                                <div id="slider-neckWidth"></div><span id="neckWidthDisplay"></span>
+                                <div id="slider-neckHeight"></div><span id="neckHeightDisplay"></span>
+                                <div id="slider-upperArmTopWidth"></div><span id="upperArmTopWidthDisplay"></span>
+                                <div id="slider-forearmTopWidth"></div><span id="forearmTopWidthDisplay"></span>
+                                <div id="slider-armAngle"></div><span id="armAngleDisplay"></span>
+                                <div id="slider-elbowAngle"></div><span id="elbowAngleDisplay"></span>
+                                <div id="slider-thighTopWidth"></div><span id="thighTopWidthDisplay"></span>
+                                <div id="slider-shinTopWidth"></div><span id="shinTopWidthDisplay"></span>
+                                <div id="slider-legAngle"></div><span id="legAngleDisplay"></span>
+                            </div>
+                        </div>
+                    </details>
+                </section>
+
+                <!-- Display Options -->
+                <section class="control-section">
+                    <h2>DISPLAY</h2>
+                    <div class="checkbox-grid">
+                        <div class="control-row checkbox-row">
+                            <input type="checkbox" id="showFinal" checked>
+                            <label for="showFinal">PIXELS</label>
+                        </div>
+                        <div class="control-row checkbox-row">
+                            <input type="checkbox" id="showGrid">
+                            <label for="showGrid">GRID</label>
+                        </div>
+                        <div class="control-row checkbox-row">
+                            <input type="checkbox" id="showHeatmap">
+                            <label for="showHeatmap">HEATMAP</label>
+                        </div>
+                        <div class="control-row checkbox-row">
+                            <input type="checkbox" id="showStickFigure">
+                            <label for="showStickFigure">BONES</label>
+                        </div>
+                        <div class="control-row checkbox-row">
+                            <input type="checkbox" id="showThickness">
+                            <label for="showThickness">SHAPES</label>
+                        </div>
+                    </div>
+
+                    <div class="control-row">
+                        <label>SIZE</label>
+                        <input type="range" id="canvasSize" min="20" max="70" value="50" step="10" class="simple-range">
+                        <span id="canvasSizeValue" class="value-display">50</span>
+                    </div>
+                </section>
+
+                <!-- Actions -->
+                <section class="action-section">
+                    <div class="button-grid">
+                        <button type="button" id="generateOne">GENERATE 1</button>
+                        <button type="button" id="generateTen">GENERATE 10</button>
+                        <button type="button" id="generateHundred">GENERATE 100</button>
+                        <button type="button" id="randomize">RANDOMIZE</button>
+                    </div>
+                    <div class="export-grid">
+                        <button type="button" id="exportSpritesheet" class="btn-outline">EXPORT SHEET</button>
+                        <button type="button" id="exportZip" class="btn-outline">EXPORT ZIP</button>
+                    </div>
+                </section>
             </div>
         </aside>
 
-        <main class="canvas-area">
-            <h1>Character Pixel Generator</h1>
-            <div id="canvasGrid" class="canvas-grid"></div>
+        <main class="main-content">
+            <div id="canvasGrid" class="grid-container"></div>
         </main>
+    </div>
+
+    <!-- Modal -->
+    <div id="backstoryModal" class="modal">
+        <div class="modal-content">
+            <header class="modal-header">
+                <h2 id="modalTitle">NAME</h2>
+                <span class="close-modal">&times;</span>
+            </header>
+            <div id="modalBody" class="modal-body"></div>
+        </div>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>

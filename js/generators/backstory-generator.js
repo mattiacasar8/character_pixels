@@ -1,4 +1,4 @@
-import { data, poolNames } from './backstory-dataset.js';
+import { data, poolNames } from '../data/backstory-dataset.js';
 
 export class BackstoryGenerator {
     constructor() {
@@ -101,7 +101,7 @@ export class BackstoryGenerator {
     generate(name, patternKey = null) {
         // Capitalize name just in case
         const cleanName = name.charAt(0).toUpperCase() + name.slice(1);
-        
+
         const patterns = {
             patternA: () => {
                 // Origin + Formation + Current

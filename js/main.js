@@ -1,9 +1,9 @@
 // Main App Entry Point
-import { CharacterGenerator } from './core/generator.js';
+import { CharacterGenerator } from './generators/character-generator.js';
 import { CharacterRenderer } from './core/renderer.js';
-import { BackstoryGenerator } from './backstory-generator.js';
+import { BackstoryGenerator } from './generators/backstory-generator.js';
 import { PARAM_CONFIG } from './config.js';
-import { nameGenerator } from './utils/name-generator.js';
+import { nameGenerator } from './generators/name-generator.js';
 import { generateRandomPalette } from './utils/random.js';
 
 class App {
@@ -33,9 +33,11 @@ class App {
     }
 
     setupModal() {
+        let modal = document.getElementById('backstoryModal');
+
         // Create modal structure if it doesn't exist
-        if (!document.getElementById('backstoryModal')) {
-            const modal = document.createElement('div');
+        if (!modal) {
+            modal = document.createElement('div');
             modal.id = 'backstoryModal';
             modal.className = 'modal';
             modal.innerHTML = `
@@ -46,16 +48,19 @@ class App {
                 </div>
             `;
             document.body.appendChild(modal);
-
-            // Close logic
-            const closeBtn = modal.querySelector('.close-modal');
-            closeBtn.onclick = () => modal.style.display = "none";
-            window.onclick = (event) => {
-                if (event.target == modal) {
-                    modal.style.display = "none";
-                }
-            };
         }
+
+        // Close logic (attach always)
+        const closeBtn = modal.querySelector('.close-modal');
+        if (closeBtn) {
+            closeBtn.onclick = () => modal.style.display = "none";
+        }
+
+        window.onclick = (event) => {
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
+        };
     }
 
     showBackstory(character) {
@@ -162,6 +167,9 @@ class App {
             const safeEndPct = ((cfg.safeMax - cfg.hardMin) / (cfg.hardMax - cfg.hardMin)) * 100;
 
             // Apply safe zone background gradient
+            // Apply safe zone background gradient
+            // Commented out for Swiss design (minimalist)
+            /*
             sliderElement.style.background = `linear-gradient(to right,
                 #222 0%,
                 #222 ${safeStartPct}%,
@@ -169,6 +177,7 @@ class App {
                 #3a3a3a ${safeEndPct}%,
                 #222 ${safeEndPct}%,
                 #222 100%)`;
+            */
 
             // Update display on slider change
             sliderElement.noUiSlider.on('update', (values) => {
@@ -382,8 +391,14 @@ class App {
             nameDiv.className = 'char-name';
             nameDiv.textContent = character.name;
 
+            // Create story overlay
+            const storyDiv = document.createElement('div');
+            storyDiv.className = 'char-story';
+            storyDiv.textContent = character.backstory || "Nessuna storia disponibile.";
+
             card.appendChild(canvas);
             card.appendChild(nameDiv);
+            card.appendChild(storyDiv);
             grid.appendChild(card);
         });
     }

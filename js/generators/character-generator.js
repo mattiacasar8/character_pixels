@@ -1,7 +1,7 @@
 // Character Generator
 import { createTrapezoid, createJoint, getTrapezoidBottom, isPointInPolygon, distance } from '../utils/math.js';
 import { randomFloat, randomInt, generateRandomPalette } from '../utils/random.js';
-import { nameGenerator } from '../utils/name-generator.js';
+import { nameGenerator } from './name-generator.js';
 import { PARAM_CONFIG } from '../config.js';
 
 export class CharacterGenerator {
