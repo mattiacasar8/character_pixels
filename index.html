@@ -194,12 +194,28 @@
     <!-- Modal -->
     <div id="backstoryModal" class="modal">
         <div class="modal-content">
-            <header class="modal-header">
-                <h2 id="modalTitle">NAME</h2>
-                <span class="close-modal">&times;</span>
-            </header>
-            <div class="modal-image-container"></div>
-            <div id="modalBody" class="modal-body"></div>
+            <button id="prevChar" class="nav-btn prev-btn" title="Previous Character">&lt;</button>
+
+            <div class="modal-inner">
+                <div class="modal-image-container"></div>
+                <div class="modal-info">
+                    <h2 id="modalTitle">NAME</h2>
+                    <div id="modalBody" class="modal-body"></div>
+
+                    <div class="modal-controls">
+                        <button id="toggleAnimation" title="Play/Pause Animation">⏸</button>
+                    </div>
+
+                    <div class="modal-actions">
+                        <button id="exportModalCard" class="btn-small">EXPORT CARD</button>
+                        <button id="exportModalStrip" class="btn-small">EXPORT STRIP</button>
+                        <button id="exportModalSeq" class="btn-small">EXPORT SEQ</button>
+                    </div>
+                </div>
+            </div>
+
+            <button id="nextChar" class="nav-btn next-btn" title="Next Character">&gt;</button>
+            <span class="close-modal">&times;</span>
         </div>
     </div>
 

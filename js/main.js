@@ -57,60 +57,126 @@ class App {
     }
 
     setupModal() {
-        let modal = document.getElementById('backstoryModal');
-
-        // Create modal structure if it doesn't exist
-        if (!modal) {
-            modal = document.createElement('div');
-            modal.id = 'backstoryModal';
-            modal.className = 'modal';
-            modal.innerHTML = `
-                <div class="modal-content">
-                    <div class="modal-image-container"></div>
-                    <div class="modal-info">
-                        <span class="close-modal">&times;</span>
-                        <h2 id="modalTitle">Character Name</h2>
-                        <div id="modalBody" class="backstory-text"></div>
-                    </div>
-                </div>
-            `;
-            document.body.appendChild(modal);
-        }
-
-        // Close logic (attach always)
+        const modal = document.getElementById('backstoryModal');
         const closeBtn = modal.querySelector('.close-modal');
-        if (closeBtn) {
-            closeBtn.onclick = () => modal.style.display = "none";
-        }
 
-        // Close logic (click outside to close)
+        // Controls
+        document.getElementById('prevChar').addEventListener('click', () => this.navigateModal(-1));
+        document.getElementById('nextChar').addEventListener('click', () => this.navigateModal(1));
+        document.getElementById('toggleAnimation').addEventListener('click', () => this.toggleAnimation());
+
+        document.getElementById('exportModalCard').addEventListener('click', () => this.exportCard());
+        document.getElementById('exportModalStrip').addEventListener('click', () => this.exportStrip());
+        document.getElementById('exportModalSeq').addEventListener('click', () => this.exportSeq());
+
+        // Close logic
+        const closeModal = () => {
+            modal.style.display = "none";
+            this.stopAnimation();
+        };
+
+        if (closeBtn) closeBtn.onclick = closeModal;
         window.onclick = (event) => {
-            if (event.target == modal) {
-                modal.style.display = "none";
-            }
+            if (event.target == modal) closeModal();
         };
     }
 
-    showBackstory(character, canvas) {
+    showBackstory(character) {
         const modal = document.getElementById('backstoryModal');
-        const modalTitle = document.getElementById('modalTitle');
-        const modalBody = document.getElementById('modalBody');
-        const modalImgContainer = modal.querySelector('.modal-image-container');
+        this.currentModalCharacter = character;
+        this.currentModalIndex = this.characters.indexOf(character);
 
-        modalTitle.textContent = character.name;
-        modalBody.innerHTML = character.backstory || "Nessuna storia disponibile.";
+        // Reset view state
+        this.isAnimating = true;
+        this.animationFrame = 0;
+        this.animationDirection = 1; // 1 for forward, -1 for backward
 
-        // Clear previous image and add new one
+        this.updateModalContent();
+        modal.style.display = "flex";
+
+        this.startAnimation();
+    }
+
+    updateModalContent() {
+        const character = this.currentModalCharacter;
+        if (!character) return;
+
+        document.getElementById('modalTitle').textContent = character.name;
+        document.getElementById('modalBody').innerHTML = character.backstory || "Nessuna storia disponibile.";
+
+        // Update Play/Pause button
+        const btn = document.getElementById('toggleAnimation');
+        btn.textContent = this.isAnimating ? "⏸" : "▶";
+
+        this.renderModalCanvas();
+    }
+
+    renderModalCanvas() {
+        const modalImgContainer = document.querySelector('.modal-image-container');
         modalImgContainer.innerHTML = '';
-        if (canvas) {
-            const imgClone = canvas.cloneNode(true); // Clone with children (if any, though canvas usually doesn't have them)
-            imgClone.style.width = '100%';
-            imgClone.style.height = 'auto';
-            imgClone.style.imageRendering = 'pixelated';
-            modalImgContainer.appendChild(imgClone);
-        }
 
-        modal.style.display = "flex"; // Use flex to center
+        const canvas = this.characterRenderer.createCanvas();
+
+        canvas.style.width = '100%'; // Base width
+        canvas.style.height = 'auto';
+        canvas.style.imageRendering = 'pixelated';
+
+        // Draw with current animation frame
+        this.characterRenderer.drawCharacter(canvas, this.currentModalCharacter, {
+            ...this.displayOptions,
+            showFinal: true, // Always show pixels in modal
+            frameIndex: this.animationFrame
+        });
+
+        modalImgContainer.appendChild(canvas);
+    }
+
+    navigateModal(direction) {
+        if (this.characters.length === 0) return;
+
+        this.currentModalIndex += direction;
+
+        // Loop
+        if (this.currentModalIndex >= this.characters.length) this.currentModalIndex = 0;
+        if (this.currentModalIndex < 0) this.currentModalIndex = this.characters.length - 1;
+
+        this.currentModalCharacter = this.characters[this.currentModalIndex];
+        this.updateModalContent();
+    }
+
+    toggleAnimation() {
+        this.isAnimating = !this.isAnimating;
+        this.updateModalContent(); // Update button
+        if (this.isAnimating) {
+            this.startAnimation();
+        } else {
+            this.stopAnimation();
+        }
+    }
+
+    startAnimation() {
+        this.stopAnimation(); // Clear existing
+        this.animationInterval = setInterval(() => {
+            // Ping-pong loop: 0 -> 1 -> 2 -> 1 -> 0
+            this.animationFrame += this.animationDirection;
+
+            if (this.animationFrame >= 2) {
+                this.animationDirection = -1;
+                this.animationFrame = 2;
+            } else if (this.animationFrame <= 0) {
+                this.animationDirection = 1;
+                this.animationFrame = 0;
+            }
+
+            this.renderModalCanvas();
+        }, 300); // Faster than 500ms for breathing
+    }
+
+    stopAnimation() {
+        if (this.animationInterval) {
+            clearInterval(this.animationInterval);
+            this.animationInterval = null;
+        }
     }
 
     getParamsFromUI() {
@@ -367,6 +433,9 @@ class App {
 
             const character = this.currentGenerator.generate(params);
 
+            // Generate animation frames
+            character.animationFrames = this.currentGenerator.generateAnimationFrames(params);
+
             // Generate backstory
             character.backstory = this.currentBackstoryGenerator.generate(character.name);
 
@@ -400,6 +469,7 @@ class App {
             }
 
             const newChar = this.currentGenerator.generate(params);
+            newChar.animationFrames = this.currentGenerator.generateAnimationFrames(params);
 
             // Preserve identity
             newChar.name = oldChar.name;
@@ -415,7 +485,18 @@ class App {
         if (this.characters.length === 0) return;
 
         this.characters = this.characters.map(char => {
-            return this.currentGenerator.reprocess(char, this.currentParams);
+            const updatedChar = this.currentGenerator.reprocess(char, this.currentParams);
+            // Reprocessing animation frames is tricky because they are just pixels.
+            // Ideally we should regenerate them if params changed significantly, 
+            // but reprocess is for smoothing/outline which applies to pixels.
+            // So we need to reprocess each frame too.
+            // But wait, reprocess method in Generator takes a character object and modifies its pixels.
+            // It doesn't return new pixels for frames.
+            // Let's just regenerate frames for simplicity since reprocess is fast enough or we can skip it for now.
+            // Actually, if we change smoothing, we want frames to be smoothed too.
+            // So let's regenerate frames using current params.
+            updatedChar.animationFrames = this.currentGenerator.generateAnimationFrames(this.currentParams);
+            return updatedChar;
         });
 
         this.renderCharacters();
@@ -544,6 +625,151 @@ class App {
                 URL.revokeObjectURL(url);
             }, 100);
         });
+    }
+
+    exportCard() {
+        const char = this.currentModalCharacter;
+        if (!char) return;
+
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        const padding = 20;
+        const cardWidth = 400;
+        const imageSize = 300; // Scaled up pixel art
+        const textHeight = 200;
+        const cardHeight = padding + imageSize + padding + textHeight + padding;
+
+        canvas.width = cardWidth;
+        canvas.height = cardHeight;
+
+        // Background
+        ctx.fillStyle = '#1a1a1a';
+        ctx.fillRect(0, 0, cardWidth, cardHeight);
+
+        // Border
+        ctx.strokeStyle = '#333';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(1, 1, cardWidth - 2, cardHeight - 2);
+
+        // Draw Character
+        // We need a temp canvas to draw the character first at correct resolution then scale
+        const charCanvas = this.characterRenderer.createCanvas();
+        this.characterRenderer.drawCharacter(charCanvas, char, { showFinal: true });
+
+        ctx.imageSmoothingEnabled = false;
+        // Center image
+        const imgX = (cardWidth - imageSize) / 2;
+        ctx.drawImage(charCanvas, imgX, padding, imageSize, imageSize);
+
+        // Draw Name
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 24px "Inter", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(char.name, cardWidth / 2, padding + imageSize + 40);
+
+        // Draw Backstory (wrap text)
+        ctx.font = '14px "Inter", sans-serif';
+        ctx.fillStyle = '#ccc';
+        const textX = cardWidth / 2;
+        let textY = padding + imageSize + 70;
+        const maxWidth = cardWidth - (padding * 2);
+        const lineHeight = 20;
+
+        const words = (char.backstory || "").split(' ');
+        let line = '';
+
+        for (let n = 0; n < words.length; n++) {
+            const testLine = line + words[n] + ' ';
+            const metrics = ctx.measureText(testLine);
+            const testWidth = metrics.width;
+            if (testWidth > maxWidth && n > 0) {
+                ctx.fillText(line, textX, textY);
+                line = words[n] + ' ';
+                textY += lineHeight;
+            } else {
+                line = testLine;
+            }
+        }
+        ctx.fillText(line, textX, textY);
+
+        // Download
+        canvas.toBlob(blob => {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${char.name.replace(/\s+/g, '_')}_card.png`;
+            a.click();
+            URL.revokeObjectURL(url);
+        });
+    }
+
+    exportStrip() {
+        const char = this.currentModalCharacter;
+        if (!char) return;
+
+        const numFrames = 2; // 0 and 1
+        const spriteSize = this.characterRenderer.displaySize;
+
+        const canvas = document.createElement('canvas');
+        canvas.width = spriteSize * numFrames;
+        canvas.height = spriteSize;
+        const ctx = canvas.getContext('2d');
+
+        for (let i = 0; i < numFrames; i++) {
+            const frameCanvas = this.characterRenderer.createCanvas();
+            this.characterRenderer.drawCharacter(frameCanvas, char, {
+                showFinal: true,
+                frameIndex: i
+            });
+            ctx.drawImage(frameCanvas, i * spriteSize, 0);
+        }
+
+        canvas.toBlob(blob => {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${char.name.replace(/\s+/g, '_')}_strip.png`;
+            a.click();
+            URL.revokeObjectURL(url);
+        });
+    }
+
+    async exportSeq() {
+        const char = this.currentModalCharacter;
+        if (!char) return;
+
+        if (typeof JSZip === 'undefined') {
+            alert('JSZip library not loaded.');
+            return;
+        }
+
+        const zip = new JSZip();
+        const numFrames = 2; // 0 and 1
+
+        const promises = [];
+        for (let i = 0; i < numFrames; i++) {
+            promises.push(new Promise(resolve => {
+                const canvas = this.characterRenderer.createCanvas();
+                this.characterRenderer.drawCharacter(canvas, char, {
+                    showFinal: true,
+                    frameIndex: i
+                });
+                canvas.toBlob(blob => {
+                    zip.file(`${char.name.replace(/\s+/g, '_')}_frame_${i}.png`, blob);
+                    resolve();
+                });
+            }));
+        }
+
+        await Promise.all(promises);
+
+        const content = await zip.generateAsync({ type: "blob" });
+        const url = URL.createObjectURL(content);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${char.name.replace(/\s+/g, '_')}_sequence.zip`;
+        a.click();
+        URL.revokeObjectURL(url);
     }
 
     async exportZip() {

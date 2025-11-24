@@ -1,13 +1,17 @@
 // Character Generator
 import { createTrapezoid, createJoint, getTrapezoidBottom, isPointInPolygon, distance } from '../utils/math.js';
-import { randomFloat, randomInt, generateRandomPalette } from '../utils/random.js';
+import { randomFloat, randomInt, generateRandomPalette, SeededRandom } from '../utils/random.js';
 import { PARAM_CONFIG } from '../config.js';
 
 export class CharacterGenerator {
     constructor(canvasSize = 50) {
         this.canvasSize = canvasSize;
         this.centerX = this.canvasSize / 2;
-        this.groundY = this.canvasSize - 2;
+        // Fix floating: Ground should be at the very bottom or 1px up.
+        // If canvas is 50, indices are 0-49.
+        // If we want feet to touch 49, groundY should be 49?
+        // Let's set it to canvasSize - 1.
+        this.groundY = this.canvasSize - 1;
     }
 
     generate(params) {
@@ -43,6 +47,49 @@ export class CharacterGenerator {
             name,
             params // Store params used
         };
+    }
+
+    generateAnimationFrames(params) {
+        // Frame 0: -5% Torso Height
+        // Frame 1: Original
+        // Frame 2: +5% Torso Height
+        // Actually user said: frame 1 (-5%), frame 2 (0%), frame 3 (+5%)
+        // So indices 0, 1, 2.
+
+        const frames = [];
+        const variations = [-0.05, 0, 0.05];
+
+        variations.forEach(variation => {
+            const frameParams = { ...params };
+            // Ensure seed is preserved (it should be in params)
+            // Adjust torsoHeight
+            // torsoHeight is in pixels or percentage?
+            // In resolveParams it's resolved to a number (percentage of canvas if coming from UI, but resolved to pixels in generateBodyParts?)
+            // Wait, resolveParams returns raw values (percentages).
+            // generateBodyParts scales them.
+            // So we should modify the percentage value in params.
+
+            if (frameParams.torsoHeight) {
+                frameParams.torsoHeight = frameParams.torsoHeight * (1 + variation);
+            }
+
+            // Add arm angle variation for more life
+            // If variation is negative (contract), arms go out slightly?
+            // If variation is positive (expand), arms go in?
+            // Let's just vary angle slightly.
+            if (frameParams.armAngle) {
+                // variation is -0.05, 0, 0.05
+                // Let's multiply angle by (1 + variation * 2)
+                frameParams.armAngle = frameParams.armAngle * (1 + variation * 2);
+            }
+
+            // We need to generate the full character for this frame
+            // But we only need the pixels for rendering
+            const char = this.generate(frameParams);
+            frames.push(char.pixels);
+        });
+
+        return frames;
     }
 
     reprocess(character, newParams) {
@@ -138,7 +185,8 @@ export class CharacterGenerator {
 
             // Generation
             fillDensity: randomFloat(ranges.fillDensity.min, ranges.fillDensity.max),
-            palette: generateRandomPalette()
+            palette: generateRandomPalette(),
+            seed: Math.floor(Math.random() * 2147483647) // Generate a seed
         };
     }
 
@@ -507,14 +555,17 @@ export class CharacterGenerator {
 
         const fillDensity = params.fillDensity || 0.8;
 
+        // Initialize seeded random
+        const rng = new SeededRandom(params.seed);
+
         // Generate left half, then mirror
         for (let y = 0; y < this.canvasSize; y++) {
             for (let x = 0; x < Math.floor(this.canvasSize / 2); x++) {
                 const probability = heatmap[y][x];
 
-                if (probability > 0.1 && Math.random() < probability * fillDensity) {
+                if (probability > 0.1 && rng.float(0, 1) < probability * fillDensity) {
                     const color = params.palette[
-                        Math.floor(Math.random() * params.palette.length)
+                        rng.int(0, params.palette.length - 1)
                     ];
                     pixels[y][x] = color;
 

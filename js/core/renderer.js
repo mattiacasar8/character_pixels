@@ -23,16 +23,32 @@ export class CharacterRenderer {
             showThickness = false,
             showHeatmap = false,
             showFinal = true,
-            showGrid = false
+            showGrid = false,
+            frameIndex = 0 // 0: Idle, 1: Bob Down
         } = options;
 
         // Clear
         ctx.fillStyle = '#1a1a1a';
         ctx.fillRect(0, 0, this.displaySize, this.displaySize);
 
+        // Determine pixels to draw
+        let pixelsToDraw = character.pixels;
+        if (character.animationFrames && character.animationFrames[frameIndex]) {
+            pixelsToDraw = character.animationFrames[frameIndex];
+        }
+
+        // We need to restore context for grid? No, grid should move? 
+        // Usually grid is static background.
+        // Let's draw grid BEFORE translation if we want it static.
+        // But here I put it after.
+        // Let's move grid drawing to before save() if we want it static.
+        // But wait, the code structure...
+        // Let's just translate everything for now, it's easier.
+        // Actually, grid should probably be static.
+
         if (showGrid) this.drawGrid(ctx);
         if (showHeatmap) this.drawHeatmap(ctx, character.heatmap);
-        if (showFinal) this.drawPixels(ctx, character.pixels);
+        if (showFinal) this.drawPixels(ctx, pixelsToDraw);
         if (showThickness) this.drawBodyParts(ctx, character.bodyParts);
         if (showStickFigure) this.drawConnectionPoints(ctx, character.bodyParts);
     }

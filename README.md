@@ -17,12 +17,12 @@ The visual generation process follows these steps:
 -   **Post-Processing**: Cellular automata smoothing and outlining are applied to clean up the sprite.
 
 ### 2. Name Generation
--   **Monsters**: `js/generators/monster/monster-names.js` (Placeholder)
--   **Humans**: `js/generators/human/human-names.js` (Placeholder)
+-   **Monsters**: `js/generators/monster/monster-names.js` using data from `js/data/monster-names-data.js`. Generates guttural, monstrous names (e.g., "Xogthra", "Vexgor").
+-   **Humans**: `js/generators/name-generator.js` using data from `js/data/human-names-data.js`. Generates fantasy human names with prefixes, suffixes, and titles.
 
 ### 3. Backstory Generation
--   **Monsters**: `js/generators/monster/monster-backstory.js` (Placeholder)
--   **Humans**: `js/generators/human/human-backstory.js`, using data from `js/data/human-backstory-data.js`.
+-   **Monsters**: `js/generators/monster/monster-backstory.js` using data from `js/data/monster-backstory-data.js`. Generates origins, habitats, instincts, and legends.
+-   **Humans**: `js/generators/human/human-backstory.js` (implicit in main logic), using data from `js/data/human-backstory-data.js`.
 
 ## Project Structure
 

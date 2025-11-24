@@ -4,40 +4,40 @@ This document outlines the plan for the next phase of development, focusing on e
 1. Human Creator
 Goal: Create a distinct generator for human-like characters, separate from the current "creature/monster" generator.
 
-Logic: Implement a HumanGenerator class that enforces stricter proportions (head, torso, legs, arms) and limits random mutation.
-Visuals: Use specific color palettes (skin tones, clothing colors) and shapes (less jagged, more organic).
-UI: Add a toggle or tab to switch between "Monster" and "Human" generation modes.
+Logic: Creare una nuova logica di costruzione sprite. Alla base della costruzione del personaggio abbiamo comunque su forme e heatmap.
+Ma utilizzando proporzioni più strette e limitando la mutazione casuale.
+Includiamo anche un passaggio per capelli occhi e bocca.
+A differenza del generatore di mostri, che genera 3-5 colori e li usa per tutto il corpo, qui i colori vanno a zone e sono più specifici.
+Utilizza un set di colori specifico per diverse zone: testa, mani e piedi utilizzano colori pelle. torso, gambe, braccia utilizzano colori vestiti.
+Va modificato il file human palettes.js per aggiungere i colori specifici per le diverse zone.
+
+
 2. Monster Backstory & Names
 Goal: Give monsters their own unique narrative identity, distinct from the current generic/human-leaning backstories.
+Utilizza la stessa logica di human-backstory ma con dataset monster-backstory data prendendo spunto dalla controparte umana.
 
-Names: Create a MonsterNameGenerator using guttural sounds, descriptive titles (e.g., "The Sludge", "Xog'thra"), and less "human" structures.
-Backstory: Create a MonsterBackstoryGenerator with data pools focused on habitats, instincts, legendary feats, and ominous origins (e.g., "Spawned from the abyss", "Created in a lab").
+Names: Sia per humans che per monsters bisogna implementare un name generator. Prendi spunto da name-generator.js e adattalo per i due tipi di personaggi. Includi anche un dataset di nomi per i mostri e uno per gli umani. troverai già dei file placeholder da utilizzare.
+I nomi dovrebbero avere anche un cognome e un eventuale epiteto (es. Mattia Rossi, Mattia Rossi il Grande - oppure Xoltar Mongol il Diabolico per i mostri). Dovrebbero avere un suono fantasy generico, vedi name generator.
+
 3. Animations (Idle State)
 Goal: Bring characters to life with a simple 2-3 frame idle animation.
 
 Implementation:
 Breathing: Slight vertical expansion/contraction of the torso pixels.
-Bobbing: Moving the entire sprite up/down by 1 pixel.
-Glowing: Pulsing colors for magical parts (eyes, cores).
-Rendering: Update renderer.js to handle multi-frame rendering and loop playback in the UI.
+
+La sprite va ridisegnata in 3 frame totali per dare l'idea di respiro e movimento. Per farlo aumentiamo la dimensione del torso e creiamo 3 frame. Per queste tre sprite usiamo la stessa palette di colori, e tutti gli altri dettagli rimangono invariati, al fine di evitare che il movimento si faccia troppo evidente.
+
 4. Enhanced Viewing Mode
-Goal: Improve the detailed view of a character (building on the new Modal).
+Goal: Improve the detailed view of a character (building on the Modal).
 
 Features:
-Zoom: Allow zooming in/out on the pixel art.
-Animation Toggle: Play/pause the idle animation.
-Edit Name/Story: Allow users to manually edit the generated text.
-Navigation: "Next/Previous" buttons to cycle through generated characters without closing the modal.
+Animation - viene mostrata l'animazione idle.
+Navigation - "Next/Previous" buttons to cycle through generated characters without closing the modal.
+Export - viene esportata la sprite in 3 frame.
+
 5. Advanced Export
 Goal: Provide more robust export options for creators.
 
 Formats:
-GIF: Export the idle animation as a GIF.
 Sprite Sheet: Export frames as a horizontal strip (already partially supported, needs refinement for animations).
-Card Export: Download the entire "Card" (Image + Name + Story) as a PNG for sharing.
-Proposed Order of Execution
-Human Creator: Establishes the second major content type.
-Monster Backstory: Polishes the existing monster content.
-Animations: Adds visual polish to both types.
-Enhanced Viewing: Improves how users interact with the new content.
-Advanced Export: Allows users to save their creations in new ways.
+Card Export: Download the entire "Card" (Image + Name + Story) as a PNG for sharing. La card dovrebbe essere verticale 1080x1920 (instagram) e contenere Nome, immagine (upscalata nearest neighbor a 500px), storia. Utilizzando le font corrette e il font size appropriato. Il tutto allineato a sinistra. (questo significa che vengono esportati 3 PNG, uno per ogni frame.)
