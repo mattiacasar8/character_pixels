@@ -64,6 +64,8 @@
                     <div class="control-row checkbox-row">
                         <input type="checkbox" id="showOutline" checked>
                         <label for="showOutline">OUTLINE</label>
+                        <input type="color" id="outlineColor" value="#000000"
+                            style="margin-left: 10px; width: 30px; height: 20px; border: none; padding: 0;">
                     </div>
                 </section>
 
@@ -120,18 +122,46 @@
                                 <div id="slider-thighLength" class="swiss-slider"></div>
                             </div>
 
-                            <!-- Hidden sliders for full functionality but less clutter, 
-                                 can be added back if user requests full control visible -->
-                            <div style="display:none">
-                                <div id="slider-neckWidth"></div><span id="neckWidthDisplay"></span>
-                                <div id="slider-neckHeight"></div><span id="neckHeightDisplay"></span>
-                                <div id="slider-upperArmTopWidth"></div><span id="upperArmTopWidthDisplay"></span>
-                                <div id="slider-forearmTopWidth"></div><span id="forearmTopWidthDisplay"></span>
-                                <div id="slider-armAngle"></div><span id="armAngleDisplay"></span>
-                                <div id="slider-elbowAngle"></div><span id="elbowAngleDisplay"></span>
-                                <div id="slider-thighTopWidth"></div><span id="thighTopWidthDisplay"></span>
-                                <div id="slider-shinTopWidth"></div><span id="shinTopWidthDisplay"></span>
-                                <div id="slider-legAngle"></div><span id="legAngleDisplay"></span>
+                            <!-- Full controls visible -->
+                            <div class="control-group" data-param="neckWidth">
+                                <div class="label-row"><label>NECK W</label><span id="neckWidthDisplay"></span></div>
+                                <div id="slider-neckWidth" class="swiss-slider"></div>
+                            </div>
+                            <div class="control-group" data-param="neckHeight">
+                                <div class="label-row"><label>NECK H</label><span id="neckHeightDisplay"></span></div>
+                                <div id="slider-neckHeight" class="swiss-slider"></div>
+                            </div>
+                            <div class="control-group" data-param="upperArmTopWidth">
+                                <div class="label-row"><label>U.ARM W</label><span id="upperArmTopWidthDisplay"></span>
+                                </div>
+                                <div id="slider-upperArmTopWidth" class="swiss-slider"></div>
+                            </div>
+                            <div class="control-group" data-param="forearmTopWidth">
+                                <div class="label-row"><label>F.ARM W</label><span id="forearmTopWidthDisplay"></span>
+                                </div>
+                                <div id="slider-forearmTopWidth" class="swiss-slider"></div>
+                            </div>
+                            <div class="control-group" data-param="armAngle">
+                                <div class="label-row"><label>ARM ANG</label><span id="armAngleDisplay"></span></div>
+                                <div id="slider-armAngle" class="swiss-slider"></div>
+                            </div>
+                            <div class="control-group" data-param="elbowAngle">
+                                <div class="label-row"><label>ELBOW ANG</label><span id="elbowAngleDisplay"></span>
+                                </div>
+                                <div id="slider-elbowAngle" class="swiss-slider"></div>
+                            </div>
+                            <div class="control-group" data-param="thighTopWidth">
+                                <div class="label-row"><label>THIGH W</label><span id="thighTopWidthDisplay"></span>
+                                </div>
+                                <div id="slider-thighTopWidth" class="swiss-slider"></div>
+                            </div>
+                            <div class="control-group" data-param="shinTopWidth">
+                                <div class="label-row"><label>SHIN W</label><span id="shinTopWidthDisplay"></span></div>
+                                <div id="slider-shinTopWidth" class="swiss-slider"></div>
+                            </div>
+                            <div class="control-group" data-param="legAngle">
+                                <div class="label-row"><label>LEG ANG</label><span id="legAngleDisplay"></span></div>
+                                <div id="slider-legAngle" class="swiss-slider"></div>
                             </div>
                         </div>
                     </details>

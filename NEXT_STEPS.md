@@ -40,4 +40,4 @@ Goal: Provide more robust export options for creators.
 
 Formats:
 Sprite Sheet: Export frames as a horizontal strip (already partially supported, needs refinement for animations).
-Card Export: Download the entire "Card" (Image + Name + Story) as a PNG for sharing. La card dovrebbe essere verticale 1080x1920 (instagram) e contenere Nome, immagine (upscalata nearest neighbor a 500px), storia. Utilizzando le font corrette e il font size appropriato. Il tutto allineato a sinistra. (questo significa che vengono esportati 3 PNG, uno per ogni frame.)
+Card Export: Download the entire "Card" (Image + Name + Story) as a PNG for sharing. La card dovrebbe essere verticale 1080x1920 (instagram) e contenere Nome, immagine (upscalata nearest neighbor a 750px), storia. Utilizzando le font corrette e il font size appropriato. Il tutto allineato a sinistra. (questo significa che vengono esportati 3 PNG, uno per ogni frame.)

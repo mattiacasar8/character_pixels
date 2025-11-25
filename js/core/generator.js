@@ -17,14 +17,19 @@ export class CharacterGenerator {
     generate(params) {
         const bodyParts = this.generateBodyParts(params);
         const heatmap = this.generateHeatmap(bodyParts, params);
+
         // 7. Generate Pixels
-        let pixels = this.generatePixels(heatmap, params);
+        // Use params but disable effects to get raw pixels
+        // This prevents double application of effects and ensures rawPixels are clean
+        const rawParams = { ...params, enableSmoothing: false, showOutline: false };
+        let pixels = this.generatePixels(heatmap, rawParams);
 
         // Store raw pixels for reprocessing (before smoothing/outline)
         // We need to clone it because applySmoothing/Outline mutates the array
         const rawPixels = pixels.map(row => [...row]);
 
-        this.removeIsolatedPixels(pixels);
+        // removeIsolatedPixels is called inside generatePixels, but we can call it again or skip
+        // Since we disabled effects in generatePixels, it only did generation + removeIsolatedPixels
 
         // Apply smoothing if enabled
         if (params.enableSmoothing) {
@@ -33,7 +38,8 @@ export class CharacterGenerator {
 
         // Apply outline if enabled
         if (params.showOutline) {
-            this.applyOutline(pixels, params.palette);
+            const color = this.hexToRgb(params.outlineColor) || { r: 0, g: 0, b: 0 };
+            this.applyOutline(pixels, color);
         }
 
         // Name generation is handled by the app or subclass
@@ -95,6 +101,8 @@ export class CharacterGenerator {
     reprocess(character, newParams) {
         // Restore from raw pixels
         // Clone again to avoid mutating the stored rawPixels
+        if (!character.rawPixels) return character;
+
         const pixels = character.rawPixels.map(row => [...row]);
 
         this.removeIsolatedPixels(pixels);
@@ -104,7 +112,8 @@ export class CharacterGenerator {
         }
 
         if (newParams.showOutline) {
-            this.applyOutline(pixels, character.params.palette);
+            const color = this.hexToRgb(newParams.outlineColor) || { r: 0, g: 0, b: 0 };
+            this.applyOutline(pixels, color);
         }
 
         // Update character
@@ -198,7 +207,7 @@ export class CharacterGenerator {
             torsoHeight: { min: 24, max: 36 },
             torsoY: { min: 16, max: 24 },
             neckWidth: { min: 4, max: 10 },
-            neckHeight: { min: 4, max: 12 },
+            neckHeight: { min: 4, max: 8 },
             headWidth: { min: 12, max: 24 },
             headHeight: { min: 12, max: 24 },
             upperArmTopWidth: { min: 4, max: 12 },
@@ -584,7 +593,8 @@ export class CharacterGenerator {
 
         // Apply outline if enabled
         if (params.showOutline !== false) {
-            this.applyOutline(pixels, params.palette);
+            const color = this.hexToRgb(params.outlineColor) || { r: 0, g: 0, b: 0 };
+            this.applyOutline(pixels, color);
         }
 
         return pixels;
@@ -655,9 +665,9 @@ export class CharacterGenerator {
         });
     }
 
-    applyOutline(pixels, palette) {
+    applyOutline(pixels, color) {
         // Add dark outline around sprites
-        const outlineColor = { r: 20, g: 20, b: 20 }; // Dark outline
+        const outlineColor = color;
         const toOutline = [];
         const size = pixels.length;
 
@@ -715,5 +725,15 @@ export class CharacterGenerator {
         });
 
         return mostCommon;
+    }
+
+    hexToRgb(hex) {
+        if (!hex) return null;
+        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        return result ? {
+            r: parseInt(result[1], 16),
+            g: parseInt(result[2], 16),
+            b: parseInt(result[3], 16)
+        } : null;
     }
 }

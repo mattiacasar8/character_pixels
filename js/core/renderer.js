@@ -28,7 +28,7 @@ export class CharacterRenderer {
         } = options;
 
         // Clear
-        ctx.fillStyle = '#1a1a1a';
+        ctx.fillStyle = '#000000';
         ctx.fillRect(0, 0, this.displaySize, this.displaySize);
 
         // Determine pixels to draw

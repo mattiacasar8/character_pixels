@@ -49,7 +49,46 @@ class App {
 
     setupGeneratorType() {
         const selector = document.getElementById('generatorType');
+        const presetSelector = document.getElementById('bodyPreset');
+
+        const updatePresets = () => {
+            const type = selector.value;
+            // Clear existing options
+            presetSelector.innerHTML = '';
+
+            const options = [
+                { value: 'standard', text: 'Standard' }
+            ];
+
+            if (type === 'monster') {
+                options.push(
+                    { value: 'short', text: 'Short & Sturdy' },
+                    { value: 'tall', text: 'Tall & Lanky' },
+                    { value: 'thin', text: 'Thin / Skeleton' },
+                    { value: 'bulky', text: 'Bulky / Ogre' }
+                );
+            }
+
+            options.push({ value: 'max', text: 'Max Range (Chaos)' });
+
+            options.forEach(opt => {
+                const el = document.createElement('option');
+                el.value = opt.value;
+                el.textContent = opt.text;
+                presetSelector.appendChild(el);
+            });
+
+            // Reset to standard
+            presetSelector.value = 'standard';
+            this.batchOptions.preset = 'standard';
+            this.applyPresetToSliders('standard');
+        };
+
+        // Initial call
+        updatePresets();
+
         selector.addEventListener('change', () => {
+            updatePresets();
             // When switching types, we might want to reset sliders to a default for that type
             // For now, let's just regenerate with current sliders but new logic
             this.generateCharacters(this.characters.length || 1);
@@ -219,7 +258,8 @@ class App {
             fillDensity: getRange('fillDensity'),
 
             enableSmoothing: document.getElementById('enableSmoothing').checked,
-            showOutline: document.getElementById('showOutline').checked
+            showOutline: document.getElementById('showOutline').checked,
+            outlineColor: document.getElementById('outlineColor').value
         };
     }
 
@@ -271,19 +311,6 @@ class App {
             const safeStartPct = ((cfg.safeMin - cfg.hardMin) / (cfg.hardMax - cfg.hardMin)) * 100;
             const safeEndPct = ((cfg.safeMax - cfg.hardMin) / (cfg.hardMax - cfg.hardMin)) * 100;
 
-            // Apply safe zone background gradient
-            // Apply safe zone background gradient
-            // Commented out for Swiss design (minimalist)
-            /*
-            sliderElement.style.background = `linear-gradient(to right,
-                #222 0%,
-                #222 ${safeStartPct}%,
-                #3a3a3a ${safeStartPct}%,
-                #3a3a3a ${safeEndPct}%,
-                #222 ${safeEndPct}%,
-                #222 100%)`;
-            */
-
             // Update display on slider change
             sliderElement.noUiSlider.on('update', (values) => {
                 const vMin = parseFloat(values[0]);
@@ -329,6 +356,15 @@ class App {
                 });
             }
         });
+
+        // Outline color
+        const outlineColor = document.getElementById('outlineColor');
+        if (outlineColor) {
+            outlineColor.addEventListener('input', () => {
+                this.currentParams = this.getParamsFromUI();
+                this.reprocessCurrentCharacters();
+            });
+        }
     }
 
     setupBatchOptions() {
@@ -485,17 +521,22 @@ class App {
         if (this.characters.length === 0) return;
 
         this.characters = this.characters.map(char => {
-            const updatedChar = this.currentGenerator.reprocess(char, this.currentParams);
-            // Reprocessing animation frames is tricky because they are just pixels.
-            // Ideally we should regenerate them if params changed significantly, 
-            // but reprocess is for smoothing/outline which applies to pixels.
-            // So we need to reprocess each frame too.
-            // But wait, reprocess method in Generator takes a character object and modifies its pixels.
-            // It doesn't return new pixels for frames.
-            // Let's just regenerate frames for simplicity since reprocess is fast enough or we can skip it for now.
-            // Actually, if we change smoothing, we want frames to be smoothed too.
-            // So let's regenerate frames using current params.
-            updatedChar.animationFrames = this.currentGenerator.generateAnimationFrames(this.currentParams);
+            // We only want to update rendering flags, keeping dimensions and seed intact.
+            // currentParams contains slider ranges which would overwrite resolved dimensions with objects,
+            // causing NaN in generation.
+            const mergedParams = { ...char.params };
+            mergedParams.enableSmoothing = this.currentParams.enableSmoothing;
+            mergedParams.showOutline = this.currentParams.showOutline;
+            mergedParams.outlineColor = this.currentParams.outlineColor;
+
+            const updatedChar = this.currentGenerator.reprocess(char, mergedParams);
+
+            // Regenerate animation frames with new rendering settings
+            updatedChar.animationFrames = this.currentGenerator.generateAnimationFrames(mergedParams);
+
+            // Update stored params
+            updatedChar.params = mergedParams;
+
             return updatedChar;
         });
 
@@ -590,7 +631,7 @@ class App {
         const ctx = spritesheetCanvas.getContext('2d');
 
         // Fill background
-        ctx.fillStyle = '#1a1a1a';
+        ctx.fillStyle = '#000000';
         ctx.fillRect(0, 0, totalWidth, totalHeight);
 
         // Draw each character to the spritesheet
@@ -631,66 +672,120 @@ class App {
         const char = this.currentModalCharacter;
         if (!char) return;
 
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        const padding = 20;
-        const cardWidth = 400;
-        const imageSize = 300; // Scaled up pixel art
-        const textHeight = 200;
-        const cardHeight = padding + imageSize + padding + textHeight + padding;
+        // Design Specs from Figma
+        const paddingX = 165;
+        const paddingY = 300;
+        const contentWidth = 750;
+        const gapImageName = 24;
+        const gapNameDesc = 24;
+        const imageSize = 750; // Full width of content column
 
-        canvas.width = cardWidth;
-        canvas.height = cardHeight;
+        // Fonts
+        const nameFontSize = 96;
+        const nameFont = `${nameFontSize}px "Instrument Serif", serif`;
+        const descFontSize = 36;
+        const descFont = `${descFontSize}px "Inter", sans-serif`;
+        const descLineHeight = descFontSize * 1.4; // Estimate for leading-normal
+
+        // Text content
+        const nameText = char.name;
+        const descText = char.backstory || "Di Narril si sa poco. Qualcuno sostiene che non invecchi mai davvero.";
+
+        // 1. Calculate Dimensions
+        const tempCanvas = document.createElement('canvas');
+        const tempCtx = tempCanvas.getContext('2d');
+
+        // Measure Name
+        tempCtx.font = nameFont;
+        // Approximate height for name
+        const nameHeight = nameFontSize;
+
+        // Measure Description
+        tempCtx.font = descFont;
+        const wrapText = (ctx, text, maxWidth) => {
+            const words = text.split(' ');
+            let line = '';
+            let lineCount = 1;
+
+            for (let n = 0; n < words.length; n++) {
+                const testLine = line + words[n] + ' ';
+                const metrics = ctx.measureText(testLine);
+                const testWidth = metrics.width;
+                if (testWidth > maxWidth && n > 0) {
+                    line = words[n] + ' ';
+                    lineCount++;
+                } else {
+                    line = testLine;
+                }
+            }
+            return lineCount;
+        };
+
+        const descLineCount = wrapText(tempCtx, descText, contentWidth);
+        const descHeight = descLineCount * descLineHeight;
+
+        const totalHeight = paddingY + imageSize + gapImageName + nameHeight + gapNameDesc + descHeight + paddingY;
+        const totalWidth = paddingX + contentWidth + paddingX;
+
+        // 2. Create Final Canvas
+        const canvas = document.createElement('canvas');
+        canvas.width = totalWidth;
+        canvas.height = totalHeight;
+        const ctx = canvas.getContext('2d');
 
         // Background
-        ctx.fillStyle = '#1a1a1a';
-        ctx.fillRect(0, 0, cardWidth, cardHeight);
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(0, 0, totalWidth, totalHeight);
 
-        // Border
-        ctx.strokeStyle = '#333';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(1, 1, cardWidth - 2, cardHeight - 2);
+        // 3. Draw Content
+        let currentY = paddingY;
+        const startX = paddingX;
 
-        // Draw Character
+        // Draw Image
         // We need a temp canvas to draw the character first at correct resolution then scale
         const charCanvas = this.characterRenderer.createCanvas();
         this.characterRenderer.drawCharacter(charCanvas, char, { showFinal: true });
 
         ctx.imageSmoothingEnabled = false;
-        // Center image
-        const imgX = (cardWidth - imageSize) / 2;
-        ctx.drawImage(charCanvas, imgX, padding, imageSize, imageSize);
+        ctx.drawImage(charCanvas, startX, currentY, imageSize, imageSize);
+
+        currentY += imageSize + gapImageName;
 
         // Draw Name
-        ctx.fillStyle = '#fff';
-        ctx.font = 'bold 24px "Inter", sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText(char.name, cardWidth / 2, padding + imageSize + 40);
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = nameFont;
+        ctx.textBaseline = 'top';
+        ctx.textAlign = 'left';
+        ctx.fillText(nameText, startX, currentY);
 
-        // Draw Backstory (wrap text)
-        ctx.font = '14px "Inter", sans-serif';
-        ctx.fillStyle = '#ccc';
-        const textX = cardWidth / 2;
-        let textY = padding + imageSize + 70;
-        const maxWidth = cardWidth - (padding * 2);
-        const lineHeight = 20;
+        currentY += nameHeight + gapNameDesc;
 
-        const words = (char.backstory || "").split(' ');
-        let line = '';
+        // Draw Description
+        ctx.font = descFont;
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+        ctx.textBaseline = 'top';
 
-        for (let n = 0; n < words.length; n++) {
-            const testLine = line + words[n] + ' ';
-            const metrics = ctx.measureText(testLine);
-            const testWidth = metrics.width;
-            if (testWidth > maxWidth && n > 0) {
-                ctx.fillText(line, textX, textY);
-                line = words[n] + ' ';
-                textY += lineHeight;
-            } else {
-                line = testLine;
+        const drawWrappedText = (ctx, text, x, y, maxWidth, lineHeight) => {
+            const words = text.split(' ');
+            let line = '';
+            let curY = y;
+
+            for (let n = 0; n < words.length; n++) {
+                const testLine = line + words[n] + ' ';
+                const metrics = ctx.measureText(testLine);
+                const testWidth = metrics.width;
+                if (testWidth > maxWidth && n > 0) {
+                    ctx.fillText(line, x, curY);
+                    line = words[n] + ' ';
+                    curY += lineHeight;
+                } else {
+                    line = testLine;
+                }
             }
-        }
-        ctx.fillText(line, textX, textY);
+            ctx.fillText(line, x, curY);
+        };
+
+        drawWrappedText(ctx, descText, startX, currentY, contentWidth, descLineHeight);
 
         // Download
         canvas.toBlob(blob => {

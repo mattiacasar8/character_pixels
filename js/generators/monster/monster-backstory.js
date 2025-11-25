@@ -30,7 +30,7 @@ export class MonsterBackstoryGenerator {
     patternA(name) {
         const place = this.pick(this.data.places, poolNames.PLACES);
         const originFunc = this.pick(this.data.originPhrases, poolNames.ORIGINS);
-        const origin = originFunc(name, place);
+        const origin = this.resolve(originFunc(name, place));
 
         const formation = this.resolve(this.pick(this.data.formationPhrases, poolNames.FORMATIONS));
         const connector = this.pick(this.data.currentConnectors);
@@ -43,7 +43,7 @@ export class MonsterBackstoryGenerator {
     patternB(name) {
         const place = this.pick(this.data.places, poolNames.PLACES);
         const originFunc = this.pick(this.data.originPhrases, poolNames.ORIGINS);
-        const origin = originFunc(name, place);
+        const origin = this.resolve(originFunc(name, place));
 
         const skill = this.resolve(this.pick(this.data.skillPhrases, poolNames.SKILLS));
 
