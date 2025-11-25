@@ -60,38 +60,38 @@ export class HumanGenerator extends CharacterGenerator {
     // - Legs: Calculated to fit remaining space without being too long
     getParamRanges(preset) {
         const baseRanges = {
-            // Torso: Balanced proportions
-            torsoTopWidth: { min: 14, max: 20 },
-            torsoBottomWidth: { min: 12, max: 18 },
-            torsoHeight: { min: 22, max: 28 },      // Increased from 12-16 based on feedback
-            torsoY: { min: 12, max: 16 },           // Adjusted to accommodate larger torso
+            // Torso: Expanded ranges for more body variety
+            torsoTopWidth: { min: 12, max: 24 },
+            torsoBottomWidth: { min: 10, max: 22 },
+            torsoHeight: { min: 20, max: 32 },      // Expanded from 22-28
+            torsoY: { min: 10, max: 18 },           // Expanded to accommodate variety
 
             // Neck
             neckWidth: { min: 4, max: 6 },
-            neckHeight: { min: 3, max: 4 },
+            neckHeight: { min: 3, max: 5 },
 
-            // Head: Proportional
-            headWidth: { min: 12, max: 16 },
-            headHeight: { min: 8, max: 11 },
+            // Head: Expanded for more variety
+            headWidth: { min: 11, max: 18 },
+            headHeight: { min: 7, max: 12 },
 
             // Arms: Thicker and more varied poses
-            upperArmTopWidth: { min: 5, max: 8 },    // Increased from 4-6
-            upperArmBottomWidth: { min: 4, max: 7 },
-            upperArmLength: { min: 12, max: 16 },
-            forearmTopWidth: { min: 4, max: 7 },
-            forearmBottomWidth: { min: 3, max: 6 },
-            forearmLength: { min: 12, max: 16 },
-            armAngle: { min: -85, max: -55 },        // More variety in poses
-            elbowAngle: { min: -5, max: 25 },        // More natural bend range
+            upperArmTopWidth: { min: 6, max: 10 },   // Increased for better proportions
+            upperArmBottomWidth: { min: 5, max: 9 },
+            upperArmLength: { min: 11, max: 18 },    // Expanded range
+            forearmTopWidth: { min: 5, max: 9 },
+            forearmBottomWidth: { min: 4, max: 8 },
+            forearmLength: { min: 11, max: 18 },     // Expanded range
+            armAngle: { min: -95, max: -40 },        // Expanded range for more variety
+            elbowAngle: { min: -15, max: 40 },       // Expanded range for more natural poses
 
-            // Legs: Shorter to avoid being too long
+            // Legs: More variety while avoiding excessive length
             thighTopWidth: { min: 6, max: 10 },      // Thicker for cavallo
             thighBottomWidth: { min: 5, max: 8 },
-            thighLength: { min: 10, max: 14 },       // Reduced significantly
+            thighLength: { min: 9, max: 16 },        // Expanded range
             shinTopWidth: { min: 5, max: 8 },
             shinBottomWidth: { min: 4, max: 7 },
-            shinLength: { min: 10, max: 14 },        // Reduced significantly
-            legAngle: { min: -10, max: 10 },         // More angle for cavallo separation
+            shinLength: { min: 9, max: 16 },         // Expanded range
+            legAngle: { min: -15, max: 15 },         // Expanded for more variety and cavallo separation
 
             // Generation
             fillDensity: { min: 1.0, max: 1.0 }
@@ -256,13 +256,13 @@ export class HumanGenerator extends CharacterGenerator {
             0
         );
 
-        // Joints
-        parts.leftElbow = createJoint(parts.leftUpperArm.bottomCenter, scaledParams.upperArmBottomWidth / 2);
-        parts.rightElbow = createJoint(parts.rightUpperArm.bottomCenter, scaledParams.upperArmBottomWidth / 2);
-        parts.leftKnee = createJoint(parts.leftThigh.bottomCenter, scaledParams.thighBottomWidth / 2);
-        parts.rightKnee = createJoint(parts.rightThigh.bottomCenter, scaledParams.thighBottomWidth / 2);
-        parts.leftShoulder = createJoint(parts.leftUpperArm.center, scaledParams.upperArmTopWidth / 2);
-        parts.rightShoulder = createJoint(parts.rightUpperArm.center, scaledParams.upperArmTopWidth / 2);
+        // Joints - Reduced size to 0.65 of limb width to avoid Popeye effect
+        parts.leftElbow = createJoint(parts.leftUpperArm.bottomCenter, scaledParams.upperArmBottomWidth * 0.325);
+        parts.rightElbow = createJoint(parts.rightUpperArm.bottomCenter, scaledParams.upperArmBottomWidth * 0.325);
+        parts.leftKnee = createJoint(parts.leftThigh.bottomCenter, scaledParams.thighBottomWidth * 0.325);
+        parts.rightKnee = createJoint(parts.rightThigh.bottomCenter, scaledParams.thighBottomWidth * 0.325);
+        parts.leftShoulder = createJoint(parts.leftUpperArm.center, scaledParams.upperArmTopWidth * 0.325);
+        parts.rightShoulder = createJoint(parts.rightUpperArm.center, scaledParams.upperArmTopWidth * 0.325);
 
         // Hands
         const leftHandStart = parts.leftForearm.bottomCenter;
@@ -494,6 +494,25 @@ export class HumanGenerator extends CharacterGenerator {
         let facePixels = null;
         let headBounds = null;
 
+        // CRITICAL: Ensure seed and colors are set ONCE before generating frames
+        // This prevents different colors on each frame
+        if (!params.seed) {
+            params.seed = Math.floor(Math.random() * 2147483647);
+        }
+        if (!params.humanColors) {
+            // Generate colors once using the seed
+            const rng = new SeededRandom(params.seed);
+            const getSeededColor = (arr) => arr[rng.int(0, arr.length - 1)];
+            params.humanColors = {
+                skin: getSeededColor(SKIN_TONES),
+                shirt: getSeededColor(CLOTHING_COLORS),
+                pants: getSeededColor(CLOTHING_COLORS),
+                hair: getSeededColor(HAIR_COLORS),
+                eyes: getSeededColor(EYE_COLORS),
+                mouth: getSeededColor(MOUTH_COLORS)
+            };
+        }
+
         // Frame variations: exhale, neutral, inhale
         const variations = [
             { torsoMult: 0.96, armMult: 1.05, y: 0.5, headBob: 1 },    // Exhale: down, head up
@@ -503,14 +522,7 @@ export class HumanGenerator extends CharacterGenerator {
 
         variations.forEach((variation, index) => {
             const frameParams = { ...params };
-
-            // CRITICAL: Preserve seed and colors across all frames
-            if (!frameParams.seed) {
-                frameParams.seed = Math.floor(Math.random() * 2147483647);
-            }
-            if (!frameParams.humanColors && params.humanColors) {
-                frameParams.humanColors = params.humanColors;
-            }
+            // Seed and humanColors are now guaranteed to be in params, so they'll be copied correctly
 
             // Breathing: adjust torso height
             if (frameParams.torsoHeight) {
