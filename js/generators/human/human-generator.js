@@ -222,7 +222,8 @@ export class HumanGenerator extends CharacterGenerator {
 
         // LEGS: Use specified length instead of calculating to ground
         // This prevents overly long legs
-        const leftHipX = this.centerX - scaledParams.torsoBottomWidth / 2;
+        // Position legs inward by half their width so they sit inside the torso bottom edge
+        const leftHipX = this.centerX - scaledParams.torsoBottomWidth / 2 + scaledParams.thighTopWidth / 2;
         parts.leftThigh = createTrapezoid(
             leftHipX, torsoBottom,
             scaledParams.thighTopWidth, scaledParams.thighBottomWidth,
@@ -239,7 +240,7 @@ export class HumanGenerator extends CharacterGenerator {
             0
         );
 
-        const rightHipX = this.centerX + scaledParams.torsoBottomWidth / 2;
+        const rightHipX = this.centerX + scaledParams.torsoBottomWidth / 2 - scaledParams.thighTopWidth / 2;
         parts.rightThigh = createTrapezoid(
             rightHipX, torsoBottom,
             scaledParams.thighTopWidth, scaledParams.thighBottomWidth,
