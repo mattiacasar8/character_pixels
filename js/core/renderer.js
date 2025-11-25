@@ -37,15 +37,7 @@ export class CharacterRenderer {
             pixelsToDraw = character.animationFrames[frameIndex];
         }
 
-        // We need to restore context for grid? No, grid should move? 
-        // Usually grid is static background.
-        // Let's draw grid BEFORE translation if we want it static.
-        // But here I put it after.
-        // Let's move grid drawing to before save() if we want it static.
-        // But wait, the code structure...
-        // Let's just translate everything for now, it's easier.
-        // Actually, grid should probably be static.
-
+        // Grid is rendered as static background (no transformations applied)
         if (showGrid) this.drawGrid(ctx);
         if (showHeatmap) this.drawHeatmap(ctx, character.heatmap);
         if (showFinal) this.drawPixels(ctx, pixelsToDraw);

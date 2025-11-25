@@ -54,46 +54,99 @@ export class HumanGenerator extends CharacterGenerator {
     }
 
     // Override to enforce human proportions
+    // Canvas is 50px (0-49). Proportions calculated to fit:
+    // - 2px space at top for idle animation
+    // - Head: ~8px (16%)
+    // - Neck: ~2px (4%)
+    // - Torso: ~13px (26%)
+    // - Legs: ~24px (48%)
+    // - Ground at 49
     getParamRanges(preset) {
         const baseRanges = {
-            // Torso: Rectangular-ish
+            // Torso: Rectangular-ish (starts after head+neck)
             torsoTopWidth: { min: 14, max: 20 },
             torsoBottomWidth: { min: 12, max: 18 },
-            torsoHeight: { min: 20, max: 26 },
-            torsoY: { min: 26, max: 30 }, // Shifted down ~20% (was 16-20)
+            torsoHeight: { min: 12, max: 16 },      // Reduced from 20-26
+            torsoY: { min: 10, max: 14 },           // Moved up from 26-30 to leave space for head
 
             // Neck
             neckWidth: { min: 4, max: 6 },
-            neckHeight: { min: 2, max: 4 },
+            neckHeight: { min: 2, max: 3 },         // Slightly reduced
 
-            // Head: Oval-ish (Elongated)
+            // Head: Oval-ish (should fit in top ~10px with idle space)
             headWidth: { min: 11, max: 15 },
-            headHeight: { min: 16, max: 20 },
+            headHeight: { min: 7, max: 9 },         // Reduced from 16-20 to fit in canvas
 
-            // Arms
+            // Arms (proportional to torso)
             upperArmTopWidth: { min: 4, max: 6 },
             upperArmBottomWidth: { min: 3, max: 5 },
-            upperArmLength: { min: 14, max: 18 },
+            upperArmLength: { min: 10, max: 14 },   // Reduced from 14-18
             forearmTopWidth: { min: 3, max: 5 },
             forearmBottomWidth: { min: 2, max: 4 },
-            forearmLength: { min: 14, max: 18 },
-            armAngle: { min: -80, max: -60 }, // Relaxed down
+            forearmLength: { min: 10, max: 14 },    // Reduced from 14-18
+            armAngle: { min: -80, max: -60 },
             elbowAngle: { min: 0, max: 20 },
 
-            // Legs
+            // Legs (take up ~48% of canvas)
             thighTopWidth: { min: 5, max: 8 },
             thighBottomWidth: { min: 4, max: 6 },
-            thighLength: { min: 16, max: 20 },
+            thighLength: { min: 12, max: 15 },      // Reduced from 16-20
             shinTopWidth: { min: 4, max: 6 },
             shinBottomWidth: { min: 3, max: 5 },
-            shinLength: { min: 18, max: 22 },
-            legAngle: { min: -5, max: 5 }, // Straight stance
+            shinLength: { min: 12, max: 15 },       // Reduced from 18-22
+            legAngle: { min: -5, max: 5 },
 
             // Generation
-            fillDensity: { min: 1.0, max: 1.0 } // Solid fill
+            fillDensity: { min: 1.0, max: 1.0 }
         };
 
-        return baseRanges;
+        switch (preset) {
+            case 'athletic':
+                return {
+                    ...baseRanges,
+                    torsoTopWidth: { min: 16, max: 22 },
+                    torsoBottomWidth: { min: 14, max: 20 },
+                    upperArmTopWidth: { min: 5, max: 7 },
+                    thighTopWidth: { min: 6, max: 9 }
+                };
+
+            case 'slim':
+                return {
+                    ...baseRanges,
+                    torsoTopWidth: { min: 12, max: 16 },
+                    torsoBottomWidth: { min: 10, max: 14 },
+                    upperArmTopWidth: { min: 3, max: 5 },
+                    thighTopWidth: { min: 4, max: 6 }
+                };
+
+            case 'stocky':
+                return {
+                    ...baseRanges,
+                    torsoTopWidth: { min: 18, max: 24 },
+                    torsoBottomWidth: { min: 16, max: 22 },
+                    torsoHeight: { min: 14, max: 18 },
+                    upperArmTopWidth: { min: 5, max: 8 },
+                    thighTopWidth: { min: 7, max: 10 },
+                    thighLength: { min: 10, max: 13 },
+                    shinLength: { min: 10, max: 13 }
+                };
+
+            case 'tall':
+                return {
+                    ...baseRanges,
+                    torsoHeight: { min: 14, max: 18 },
+                    torsoY: { min: 8, max: 12 },
+                    headHeight: { min: 6, max: 8 },
+                    upperArmLength: { min: 12, max: 16 },
+                    forearmLength: { min: 12, max: 16 },
+                    thighLength: { min: 14, max: 17 },
+                    shinLength: { min: 14, max: 17 }
+                };
+
+            case 'standard':
+            default:
+                return baseRanges;
+        }
     }
 
     generateBodyParts(params) {
@@ -248,16 +301,11 @@ export class HumanGenerator extends CharacterGenerator {
             }
         }
 
-        // Post-processing for Belt (simple horizontal line search?)
-        // Or just draw it if we find shirt/pants boundary?
-        // Let's do a quick pass for belt.
+        // Add belt at shirt/pants boundary by detecting color transition
         for (let y = 1; y < this.canvasSize - 1; y++) {
             for (let x = 0; x < this.canvasSize; x++) {
                 if (pixels[y][x] && pixels[y + 1][x]) {
-                    // Check if current is shirt and below is pants
-                    // We need to store region in pixels or re-evaluate?
-                    // Re-evaluating is expensive.
-                    // We can compare colors if they are distinct.
+                    // Detect shirt-to-pants transition by comparing color references
                     const c1 = pixels[y][x];
                     const c2 = pixels[y + 1][x];
                     if (c1 === colors.shirt && c2 === colors.pants) {

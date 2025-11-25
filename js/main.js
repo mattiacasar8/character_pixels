@@ -56,9 +56,7 @@ class App {
             // Clear existing options
             presetSelector.innerHTML = '';
 
-            const options = [
-                { value: 'standard', text: 'Standard' }
-            ];
+            let options = [{ value: 'standard', text: 'Standard' }];
 
             if (type === 'monster') {
                 options.push(
@@ -66,6 +64,13 @@ class App {
                     { value: 'tall', text: 'Tall & Lanky' },
                     { value: 'thin', text: 'Thin / Skeleton' },
                     { value: 'bulky', text: 'Bulky / Ogre' }
+                );
+            } else if (type === 'human') {
+                options.push(
+                    { value: 'athletic', text: 'Athletic' },
+                    { value: 'slim', text: 'Slim' },
+                    { value: 'stocky', text: 'Stocky' },
+                    { value: 'tall', text: 'Tall' }
                 );
             }
 
@@ -78,7 +83,7 @@ class App {
                 presetSelector.appendChild(el);
             });
 
-            // Reset to standard
+            // Reset to standard and apply corresponding ranges
             presetSelector.value = 'standard';
             this.batchOptions.preset = 'standard';
             this.applyPresetToSliders('standard');
@@ -89,8 +94,7 @@ class App {
 
         selector.addEventListener('change', () => {
             updatePresets();
-            // When switching types, we might want to reset sliders to a default for that type
-            // For now, let's just regenerate with current sliders but new logic
+            // When switching types, apply standard preset for the new type and regenerate
             this.generateCharacters(this.characters.length || 1);
         });
     }
@@ -451,7 +455,7 @@ class App {
     generateCharacters(count) {
         this.characters = [];
         // Reset pools to ensure variety in new batch
-        // this.backstoryGenerator.resetPools(); // TODO: Add reset to placeholders if needed
+        this.currentBackstoryGenerator.resetPools();
 
         for (let i = 0; i < count; i++) {
             // Always use UI params (which are now updated by presets)
@@ -484,30 +488,29 @@ class App {
     regenerateCurrentCharacters() {
         if (this.characters.length === 0) return;
 
-        // Note: We keep the same names and backstories when just tweaking sliders?
-        // Or should we regenerate everything?
-        // The current logic regenerates the visual character but keeps the object reference if possible?
-        // Actually map creates new array.
-        // Let's keep the name and backstory if we are just regenerating visuals.
-
+        // When sliders are modified, preserve character identity and palette
+        // Only when user clicks "Generate" buttons should everything be new
         const oldCharacters = [...this.characters];
         this.characters = oldCharacters.map((oldChar) => {
             const params = this.currentGenerator.resolveParams({ ...this.currentParams });
 
-            // Keep existing palette if we are just tweaking sliders?
-            // Or generate new one? Original code generated new one.
-            // Let's generate new one consistent with generator type.
-            if (this.currentGenerator instanceof HumanGenerator) {
-                const dummy = this.currentGenerator.randomParamsInRange();
-                params.palette = dummy.palette;
-            } else {
-                params.palette = generateRandomPalette();
+            // Preserve original palette from character
+            params.palette = oldChar.params?.palette || oldChar.palette;
+
+            // For humans, also preserve color scheme
+            if (this.currentGenerator instanceof HumanGenerator && oldChar.params?.humanColors) {
+                params.humanColors = oldChar.params.humanColors;
+            }
+
+            // Preserve seed if available for consistency
+            if (oldChar.params?.seed) {
+                params.seed = oldChar.params.seed;
             }
 
             const newChar = this.currentGenerator.generate(params);
             newChar.animationFrames = this.currentGenerator.generateAnimationFrames(params);
 
-            // Preserve identity
+            // Preserve identity (name and backstory)
             newChar.name = oldChar.name;
             newChar.backstory = oldChar.backstory;
 
@@ -641,7 +644,6 @@ class App {
             const x = col * spriteSize;
             const y = row * spriteSize;
 
-            // Create temporary canvas for this character
             const charCanvas = this.characterRenderer.createCanvas();
             this.characterRenderer.drawCharacter(charCanvas, character, { showFinal: true });
 
@@ -741,8 +743,6 @@ class App {
         let currentY = paddingY;
         const startX = paddingX;
 
-        // Draw Image
-        // We need a temp canvas to draw the character first at correct resolution then scale
         const charCanvas = this.characterRenderer.createCanvas();
         this.characterRenderer.drawCharacter(charCanvas, char, { showFinal: true });
 

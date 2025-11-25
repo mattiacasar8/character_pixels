@@ -7,10 +7,7 @@ export class CharacterGenerator {
     constructor(canvasSize = 50) {
         this.canvasSize = canvasSize;
         this.centerX = this.canvasSize / 2;
-        // Fix floating: Ground should be at the very bottom or 1px up.
-        // If canvas is 50, indices are 0-49.
-        // If we want feet to touch 49, groundY should be 49?
-        // Let's set it to canvasSize - 1.
+        // Ground positioned at bottom pixel for feet to touch
         this.groundY = this.canvasSize - 1;
     }
 
@@ -67,30 +64,22 @@ export class CharacterGenerator {
 
         variations.forEach(variation => {
             const frameParams = { ...params };
-            // Ensure seed is preserved (it should be in params)
-            // Adjust torsoHeight
-            // torsoHeight is in pixels or percentage?
-            // In resolveParams it's resolved to a number (percentage of canvas if coming from UI, but resolved to pixels in generateBodyParts?)
-            // Wait, resolveParams returns raw values (percentages).
-            // generateBodyParts scales them.
-            // So we should modify the percentage value in params.
+            // Note: All size params here are in percentage of canvas (0-100)
+            // They get scaled to pixels later in generateBodyParts() via scaleParams()
+            // So we modify the percentage values directly
 
             if (frameParams.torsoHeight) {
                 frameParams.torsoHeight = frameParams.torsoHeight * (1 + variation);
             }
 
-            // Add arm angle variation for more life
-            // If variation is negative (contract), arms go out slightly?
-            // If variation is positive (expand), arms go in?
-            // Let's just vary angle slightly.
+            // Add subtle arm angle variation synchronized with breathing
+            // Negative variation (exhale): arms move slightly outward
+            // Positive variation (inhale): arms move slightly inward
             if (frameParams.armAngle) {
-                // variation is -0.05, 0, 0.05
-                // Let's multiply angle by (1 + variation * 2)
                 frameParams.armAngle = frameParams.armAngle * (1 + variation * 2);
             }
 
-            // We need to generate the full character for this frame
-            // But we only need the pixels for rendering
+            // Generate full character data but extract only pixels for animation frames
             const char = this.generate(frameParams);
             frames.push(char.pixels);
         });
