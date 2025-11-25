@@ -302,6 +302,8 @@ export class HumanGenerator extends CharacterGenerator {
         }
 
         // Add belt at shirt/pants boundary by detecting color transition
+        // Current approach: O(n²) color reference comparison
+        // Alternative optimization if needed: Track regions during fill (requires ~2x memory)
         for (let y = 1; y < this.canvasSize - 1; y++) {
             for (let x = 0; x < this.canvasSize; x++) {
                 if (pixels[y][x] && pixels[y + 1][x]) {
@@ -329,73 +331,50 @@ export class HumanGenerator extends CharacterGenerator {
             }
         }
 
-        // No smoothing/outline for now to preserve the "crafted" look?
-        // Or maybe just outline.
+        // Apply outline to human characters (black outline for definition)
+        // Note: Outline is drawn OUTSIDE the character on empty adjacent pixels
         if (params.showOutline !== false) {
-            this.applyOutline(pixels, params.palette);
+            const outlineColor = this.hexToRgb(params.outlineColor) || { r: 0, g: 0, b: 0 };
+            this.applyOutline(pixels, outlineColor);
         }
 
         return pixels;
     }
 
-    // Override animation frames to use Pixel Shifting
+    // Override animation frames with breathing + arm/leg movement
     generateAnimationFrames(params) {
-        const basePixels = this.generatePixels(null, params); // Heatmap ignored
+        const frames = [];
+        // Frame variations: exhale, neutral, inhale
+        const variations = [
+            { torsoMult: 0.96, armMult: 1.05, legMult: 1.0, y: 0.5 },   // Exhale: slightly down
+            { torsoMult: 1.0, armMult: 1.0, legMult: 1.0, y: 0 },       // Neutral
+            { torsoMult: 1.04, armMult: 0.95, legMult: 1.0, y: -0.5 }   // Inhale: slightly up
+        ];
 
-        // Frame 0: Contracted (Exhale)
-        // Remove 1 row from torso (e.g., around y=25)
-        // Shift everything above down by 1.
-        const frame0 = this.shiftPixels(basePixels, -1);
+        variations.forEach(variation => {
+            const frameParams = { ...params };
 
-        // Frame 1: Base
-        const frame1 = basePixels;
-
-        // Frame 2: Expanded (Inhale)
-        // Add 1 row to torso? Or just shift up?
-        // Let's shift everything above torso UP by 1.
-        const frame2 = this.shiftPixels(basePixels, 1);
-
-        return [frame0, frame1, frame2];
-    }
-
-    shiftPixels(pixels, dir) {
-        // dir: -1 (contract/down), 1 (expand/up)
-        // We want to stretch/squash the torso.
-        // Let's define a split line around the chest/waist.
-        const splitY = Math.floor(this.canvasSize / 2); // Approx middle
-
-        const newPixels = Array(this.canvasSize).fill(0).map(() => Array(this.canvasSize).fill(null));
-
-        for (let x = 0; x < this.canvasSize; x++) {
-            // Lower half (including splitY row)
-            for (let y = splitY; y < this.canvasSize; y++) {
-                newPixels[y][x] = pixels[y][x];
+            // Breathing: adjust torso height
+            if (frameParams.torsoHeight) {
+                frameParams.torsoHeight = frameParams.torsoHeight * variation.torsoMult;
             }
 
-            // Upper half
-            for (let y = 0; y < splitY; y++) {
-                let srcY = y;
-                if (dir === -1) { // Contract: pixels move down, so newPixels[y] comes from pixels[y-1]
-                    srcY = y - 1;
-                } else if (dir === 1) { // Expand: pixels move up, so newPixels[y] comes from pixels[y+1]
-                    srcY = y + 1;
-                }
-
-                if (srcY >= 0 && srcY < splitY) {
-                    newPixels[y][x] = pixels[srcY][x];
-                }
+            // Breathing: slight vertical position adjustment
+            if (frameParams.torsoY) {
+                frameParams.torsoY = frameParams.torsoY + variation.y;
             }
 
-            // Fill gaps created by shifting
-            if (dir === 1) { // Expand: pixels moved up, so row splitY-1 is now empty. Fill it by duplicating row splitY.
-                if (splitY - 1 >= 0) {
-                    newPixels[splitY - 1][x] = pixels[splitY][x];
-                }
+            // Arm movement: slight angle variation for natural pose
+            if (frameParams.armAngle) {
+                frameParams.armAngle = frameParams.armAngle * variation.armMult;
             }
-            // If dir === -1 (Contract), pixels moved down. Row 0 becomes empty. This is fine, it's usually empty space.
-            // The row at splitY-1 effectively gets removed as its content shifts to splitY.
-        }
 
-        return newPixels;
+            // Generate frame with modified params
+            const heatmap = this.generateHeatmap(this.generateBodyParts(frameParams), frameParams);
+            const pixels = this.generatePixels(heatmap, frameParams);
+            frames.push(pixels);
+        });
+
+        return frames;
     }
 }

@@ -289,6 +289,77 @@ export class MonsterGenerator extends CharacterGenerator {
         return parts;
     }
 
+    // Override animation to keep face consistent across frames
+    generateAnimationFrames(params) {
+        const frames = [];
+        const variations = [-0.05, 0, 0.05];
+
+        // Generate first frame and extract face region
+        let facePixels = null;
+        let headBounds = null;
+
+        variations.forEach((variation, index) => {
+            const frameParams = { ...params };
+
+            // Note: All size params are in percentage of canvas (0-100)
+            if (frameParams.torsoHeight) {
+                frameParams.torsoHeight = frameParams.torsoHeight * (1 + variation);
+            }
+
+            // Add arm angle variation for breathing effect
+            if (frameParams.armAngle) {
+                frameParams.armAngle = frameParams.armAngle * (1 + variation * 2);
+            }
+
+            // Generate frame
+            const char = this.generate(frameParams);
+
+            // Extract face region from first frame
+            if (index === 0) {
+                const bodyParts = char.bodyParts;
+                const head = bodyParts.head;
+
+                if (head && head.points) {
+                    // Calculate head bounding box
+                    const xs = head.points.map(p => p.x);
+                    const ys = head.points.map(p => p.y);
+                    headBounds = {
+                        minX: Math.floor(Math.min(...xs)),
+                        maxX: Math.ceil(Math.max(...xs)),
+                        minY: Math.floor(Math.min(...ys)),
+                        maxY: Math.ceil(Math.max(...ys))
+                    };
+
+                    // Copy face pixels from first frame
+                    facePixels = [];
+                    for (let y = headBounds.minY; y <= headBounds.maxY; y++) {
+                        facePixels[y] = [];
+                        for (let x = headBounds.minX; x <= headBounds.maxX; x++) {
+                            if (y >= 0 && y < this.canvasSize && x >= 0 && x < this.canvasSize) {
+                                facePixels[y][x] = char.pixels[y][x] ? { ...char.pixels[y][x] } : null;
+                            }
+                        }
+                    }
+                }
+            } else if (facePixels && headBounds) {
+                // Replace head pixels with those from first frame
+                for (let y = headBounds.minY; y <= headBounds.maxY; y++) {
+                    for (let x = headBounds.minX; x <= headBounds.maxX; x++) {
+                        if (y >= 0 && y < this.canvasSize && x >= 0 && x < this.canvasSize) {
+                            if (facePixels[y] && facePixels[y][x] !== undefined) {
+                                char.pixels[y][x] = facePixels[y][x] ? { ...facePixels[y][x] } : null;
+                            }
+                        }
+                    }
+                }
+            }
+
+            frames.push(char.pixels);
+        });
+
+        return frames;
+    }
+
     // generateHeatmap is now handled by the base CharacterGenerator
     // fillHeatmapForCircle is now handled by the base CharacterGenerator
     // fillHeatmapForTrapezoid is now handled by the base CharacterGenerator
