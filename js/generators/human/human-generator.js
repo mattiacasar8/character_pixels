@@ -54,47 +54,44 @@ export class HumanGenerator extends CharacterGenerator {
     }
 
     // Override to enforce human proportions
-    // Canvas is 50px (0-49). Proportions calculated to fit:
-    // - 2px space at top for idle animation
-    // - Head: ~8px (16%)
-    // - Neck: ~2px (4%)
-    // - Torso: ~13px (26%)
-    // - Legs: ~24px (48%)
-    // - Ground at 49
+    // Canvas is 50px (0-49). Proportions recalculated based on feedback:
+    // - Head + Neck: ~10-12px
+    // - Torso: ~11-20px (22-40% as suggested)
+    // - Legs: Calculated to fit remaining space without being too long
     getParamRanges(preset) {
         const baseRanges = {
-            // Torso: Rectangular-ish (starts after head+neck)
+            // Torso: Balanced proportions
             torsoTopWidth: { min: 14, max: 20 },
             torsoBottomWidth: { min: 12, max: 18 },
-            torsoHeight: { min: 12, max: 16 },      // Reduced from 20-26
-            torsoY: { min: 10, max: 14 },           // Moved up from 26-30 to leave space for head
+            torsoHeight: { min: 22, max: 28 },      // Increased from 12-16 based on feedback
+            torsoY: { min: 12, max: 16 },           // Adjusted to accommodate larger torso
 
             // Neck
             neckWidth: { min: 4, max: 6 },
-            neckHeight: { min: 2, max: 3 },         // Slightly reduced
+            neckHeight: { min: 3, max: 4 },
 
-            // Head: Oval-ish (should fit in top ~10px with idle space)
-            headWidth: { min: 11, max: 15 },
-            headHeight: { min: 7, max: 9 },         // Reduced from 16-20 to fit in canvas
+            // Head: Proportional
+            headWidth: { min: 12, max: 16 },
+            headHeight: { min: 8, max: 11 },
 
-            // Arms (proportional to torso)
-            upperArmTopWidth: { min: 4, max: 6 },
-            upperArmBottomWidth: { min: 3, max: 5 },
-            upperArmLength: { min: 10, max: 14 },   // Reduced from 14-18
-            forearmTopWidth: { min: 3, max: 5 },
-            forearmBottomWidth: { min: 2, max: 4 },
-            forearmLength: { min: 10, max: 14 },    // Reduced from 14-18
-            armAngle: { min: -80, max: -60 },
-            elbowAngle: { min: 0, max: 20 },
+            // Arms: Thicker and more varied poses
+            upperArmTopWidth: { min: 5, max: 8 },    // Increased from 4-6
+            upperArmBottomWidth: { min: 4, max: 7 },
+            upperArmLength: { min: 12, max: 16 },
+            forearmTopWidth: { min: 4, max: 7 },
+            forearmBottomWidth: { min: 3, max: 6 },
+            forearmLength: { min: 12, max: 16 },
+            armAngle: { min: -85, max: -55 },        // More variety in poses
+            elbowAngle: { min: -5, max: 25 },        // More natural bend range
 
-            // Legs (take up ~48% of canvas)
-            thighTopWidth: { min: 5, max: 8 },
-            thighBottomWidth: { min: 4, max: 6 },
-            thighLength: { min: 12, max: 15 },      // Reduced from 16-20
-            shinTopWidth: { min: 4, max: 6 },
-            shinBottomWidth: { min: 3, max: 5 },
-            shinLength: { min: 12, max: 15 },       // Reduced from 18-22
-            legAngle: { min: -5, max: 5 },
+            // Legs: Shorter to avoid being too long
+            thighTopWidth: { min: 6, max: 10 },      // Thicker for cavallo
+            thighBottomWidth: { min: 5, max: 8 },
+            thighLength: { min: 10, max: 14 },       // Reduced significantly
+            shinTopWidth: { min: 5, max: 8 },
+            shinBottomWidth: { min: 4, max: 7 },
+            shinLength: { min: 10, max: 14 },        // Reduced significantly
+            legAngle: { min: -10, max: 10 },         // More angle for cavallo separation
 
             // Generation
             fillDensity: { min: 1.0, max: 1.0 }
@@ -104,43 +101,50 @@ export class HumanGenerator extends CharacterGenerator {
             case 'athletic':
                 return {
                     ...baseRanges,
-                    torsoTopWidth: { min: 16, max: 22 },
-                    torsoBottomWidth: { min: 14, max: 20 },
-                    upperArmTopWidth: { min: 5, max: 7 },
-                    thighTopWidth: { min: 6, max: 9 }
+                    torsoTopWidth: { min: 18, max: 24 },        // Much wider
+                    torsoBottomWidth: { min: 16, max: 22 },
+                    torsoHeight: { min: 24, max: 30 },
+                    upperArmTopWidth: { min: 6, max: 10 },       // Muscular arms
+                    forearmTopWidth: { min: 5, max: 8 },
+                    thighTopWidth: { min: 8, max: 12 },          // Thick legs
+                    shinTopWidth: { min: 6, max: 10 }
                 };
 
             case 'slim':
                 return {
                     ...baseRanges,
-                    torsoTopWidth: { min: 12, max: 16 },
-                    torsoBottomWidth: { min: 10, max: 14 },
-                    upperArmTopWidth: { min: 3, max: 5 },
-                    thighTopWidth: { min: 4, max: 6 }
+                    torsoTopWidth: { min: 10, max: 14 },         // Much narrower
+                    torsoBottomWidth: { min: 8, max: 12 },
+                    torsoHeight: { min: 20, max: 26 },           // Slightly shorter torso
+                    upperArmTopWidth: { min: 3, max: 5 },        // Thin arms
+                    forearmTopWidth: { min: 3, max: 5 },
+                    thighTopWidth: { min: 4, max: 6 },           // Thin legs
+                    shinTopWidth: { min: 3, max: 5 }
                 };
 
             case 'stocky':
                 return {
                     ...baseRanges,
-                    torsoTopWidth: { min: 18, max: 24 },
-                    torsoBottomWidth: { min: 16, max: 22 },
-                    torsoHeight: { min: 14, max: 18 },
-                    upperArmTopWidth: { min: 5, max: 8 },
-                    thighTopWidth: { min: 7, max: 10 },
-                    thighLength: { min: 10, max: 13 },
-                    shinLength: { min: 10, max: 13 }
+                    torsoTopWidth: { min: 20, max: 26 },         // Very wide
+                    torsoBottomWidth: { min: 18, max: 24 },
+                    torsoHeight: { min: 20, max: 26 },           // Shorter torso
+                    torsoY: { min: 14, max: 18 },                // Lower position
+                    upperArmTopWidth: { min: 6, max: 9 },        // Thick arms
+                    thighTopWidth: { min: 8, max: 12 },          // Very thick legs
+                    thighLength: { min: 8, max: 12 },            // Shorter legs
+                    shinLength: { min: 8, max: 12 }
                 };
 
             case 'tall':
                 return {
                     ...baseRanges,
-                    torsoHeight: { min: 14, max: 18 },
-                    torsoY: { min: 8, max: 12 },
-                    headHeight: { min: 6, max: 8 },
-                    upperArmLength: { min: 12, max: 16 },
-                    forearmLength: { min: 12, max: 16 },
-                    thighLength: { min: 14, max: 17 },
-                    shinLength: { min: 14, max: 17 }
+                    torsoHeight: { min: 26, max: 34 },           // Taller torso
+                    torsoY: { min: 10, max: 14 },                // Higher to fit
+                    headHeight: { min: 7, max: 10 },
+                    upperArmLength: { min: 14, max: 18 },        // Longer limbs
+                    forearmLength: { min: 14, max: 18 },
+                    thighLength: { min: 12, max: 16 },
+                    shinLength: { min: 12, max: 16 }
                 };
 
             case 'standard':
@@ -150,9 +154,152 @@ export class HumanGenerator extends CharacterGenerator {
     }
 
     generateBodyParts(params) {
-        const parts = super.generateBodyParts(params);
+        // First call parent to get base body parts
+        const parts = {};
+        const scale = this.canvasSize / 100;
+        const scaledParams = this.scaleParams(params, scale);
 
-        // Assign materials/regions
+        // Generate torso, neck, head, arms exactly as base class
+        // (code duplicated from base to override leg generation)
+        const torsoTop = scaledParams.torsoY;
+        const torsoBottom = torsoTop + scaledParams.torsoHeight;
+        parts.torso = createTrapezoid(
+            this.centerX, torsoTop,
+            scaledParams.torsoTopWidth, scaledParams.torsoBottomWidth,
+            scaledParams.torsoHeight,
+            0
+        );
+
+        parts.neck = createTrapezoid(
+            this.centerX, torsoTop,
+            scaledParams.neckWidth, scaledParams.neckWidth,
+            -scaledParams.neckHeight,
+            0
+        );
+
+        parts.head = createTrapezoid(
+            this.centerX, torsoTop - scaledParams.neckHeight,
+            scaledParams.headWidth, scaledParams.headWidth,
+            -scaledParams.headHeight,
+            0
+        );
+
+        // Arms (symmetric)
+        const leftShoulderAngle = scaledParams.armAngle;
+        const leftForearmAngle = scaledParams.armAngle + scaledParams.elbowAngle;
+        const rightShoulderAngle = -scaledParams.armAngle;
+        const rightForearmAngle = -scaledParams.armAngle - scaledParams.elbowAngle;
+
+        const leftShoulderX = this.centerX - scaledParams.torsoTopWidth / 2;
+        parts.leftUpperArm = createTrapezoid(
+            leftShoulderX, torsoTop,
+            scaledParams.upperArmTopWidth, scaledParams.upperArmBottomWidth,
+            scaledParams.upperArmLength,
+            leftShoulderAngle
+        );
+        const upperArmEnd = getTrapezoidBottom(parts.leftUpperArm);
+        parts.leftForearm = createTrapezoid(
+            upperArmEnd.x, upperArmEnd.y,
+            scaledParams.forearmTopWidth, scaledParams.forearmBottomWidth,
+            scaledParams.forearmLength,
+            leftForearmAngle
+        );
+
+        const rightShoulderX = this.centerX + scaledParams.torsoTopWidth / 2;
+        parts.rightUpperArm = createTrapezoid(
+            rightShoulderX, torsoTop,
+            scaledParams.upperArmTopWidth, scaledParams.upperArmBottomWidth,
+            scaledParams.upperArmLength,
+            rightShoulderAngle
+        );
+        const rightUpperArmEnd = getTrapezoidBottom(parts.rightUpperArm);
+        parts.rightForearm = createTrapezoid(
+            rightUpperArmEnd.x, rightUpperArmEnd.y,
+            scaledParams.forearmTopWidth, scaledParams.forearmBottomWidth,
+            scaledParams.forearmLength,
+            rightForearmAngle
+        );
+
+        // LEGS: Use specified length instead of calculating to ground
+        // This prevents overly long legs
+        const leftHipX = this.centerX - scaledParams.torsoBottomWidth / 2;
+        parts.leftThigh = createTrapezoid(
+            leftHipX, torsoBottom,
+            scaledParams.thighTopWidth, scaledParams.thighBottomWidth,
+            scaledParams.thighLength,
+            scaledParams.legAngle
+        );
+        const thighEnd = getTrapezoidBottom(parts.leftThigh);
+
+        // Use scaledParams.shinLength directly instead of calculating to ground
+        parts.leftShin = createTrapezoid(
+            thighEnd.x, thighEnd.y,
+            scaledParams.shinTopWidth, scaledParams.shinBottomWidth,
+            scaledParams.shinLength,  // Use params instead of remainingShinLength!
+            0
+        );
+
+        const rightHipX = this.centerX + scaledParams.torsoBottomWidth / 2;
+        parts.rightThigh = createTrapezoid(
+            rightHipX, torsoBottom,
+            scaledParams.thighTopWidth, scaledParams.thighBottomWidth,
+            scaledParams.thighLength,
+            -scaledParams.legAngle
+        );
+        const rightThighEnd = getTrapezoidBottom(parts.rightThigh);
+
+        parts.rightShin = createTrapezoid(
+            rightThighEnd.x, rightThighEnd.y,
+            scaledParams.shinTopWidth, scaledParams.shinBottomWidth,
+            scaledParams.shinLength,  // Use params instead of remainingShinLength!
+            0
+        );
+
+        // Joints
+        parts.leftElbow = createJoint(parts.leftUpperArm.bottomCenter, scaledParams.upperArmBottomWidth / 2);
+        parts.rightElbow = createJoint(parts.rightUpperArm.bottomCenter, scaledParams.upperArmBottomWidth / 2);
+        parts.leftKnee = createJoint(parts.leftThigh.bottomCenter, scaledParams.thighBottomWidth / 2);
+        parts.rightKnee = createJoint(parts.rightThigh.bottomCenter, scaledParams.thighBottomWidth / 2);
+        parts.leftShoulder = createJoint(parts.leftUpperArm.center, scaledParams.upperArmTopWidth / 2);
+        parts.rightShoulder = createJoint(parts.rightUpperArm.center, scaledParams.upperArmTopWidth / 2);
+
+        // Hands
+        const leftHandStart = parts.leftForearm.bottomCenter;
+        parts.leftHand = createTrapezoid(
+            leftHandStart.x, leftHandStart.y,
+            scaledParams.forearmBottomWidth * 1.2,
+            scaledParams.forearmBottomWidth * 0.8,
+            scaledParams.forearmBottomWidth * 1.5,
+            leftForearmAngle
+        );
+        const rightHandStart = parts.rightForearm.bottomCenter;
+        parts.rightHand = createTrapezoid(
+            rightHandStart.x, rightHandStart.y,
+            scaledParams.forearmBottomWidth * 1.2,
+            scaledParams.forearmBottomWidth * 0.8,
+            scaledParams.forearmBottomWidth * 1.5,
+            rightForearmAngle
+        );
+
+        // Feet
+        const leftFootStart = parts.leftShin.bottomCenter;
+        parts.leftFoot = createTrapezoid(
+            leftFootStart.x, leftFootStart.y,
+            scaledParams.shinBottomWidth,
+            scaledParams.shinBottomWidth * 1.2,
+            scaledParams.shinBottomWidth * 0.8,
+            90
+        );
+        const rightFootStart = parts.rightShin.bottomCenter;
+        parts.rightFoot = createTrapezoid(
+            rightFootStart.x, rightFootStart.y,
+            scaledParams.shinBottomWidth,
+            scaledParams.shinBottomWidth * 1.2,
+            scaledParams.shinBottomWidth * 0.8,
+            90
+        );
+
+        // Assign materials/regions for human rendering
         parts.head.region = 'head';
         parts.neck.region = 'skin';
         parts.leftHand.region = 'skin';
@@ -161,7 +308,7 @@ export class HumanGenerator extends CharacterGenerator {
         parts.torso.region = 'shirt';
         parts.leftUpperArm.region = 'shirt';
         parts.rightUpperArm.region = 'shirt';
-        parts.leftForearm.region = 'shirt'; // Long sleeves
+        parts.leftForearm.region = 'shirt';
         parts.rightForearm.region = 'shirt';
 
         parts.leftThigh.region = 'pants';
@@ -172,7 +319,6 @@ export class HumanGenerator extends CharacterGenerator {
         parts.leftFoot.region = 'shoes';
         parts.rightFoot.region = 'shoes';
 
-        // Joints
         parts.leftShoulder.region = 'shirt';
         parts.rightShoulder.region = 'shirt';
         parts.leftElbow.region = 'shirt';
@@ -341,18 +487,29 @@ export class HumanGenerator extends CharacterGenerator {
         return pixels;
     }
 
-    // Override animation frames with breathing + arm/leg movement
+    // Override animation frames with breathing + arm movement + head bobbing
     generateAnimationFrames(params) {
         const frames = [];
+        let facePixels = null;
+        let headBounds = null;
+
         // Frame variations: exhale, neutral, inhale
         const variations = [
-            { torsoMult: 0.96, armMult: 1.05, legMult: 1.0, y: 0.5 },   // Exhale: slightly down
-            { torsoMult: 1.0, armMult: 1.0, legMult: 1.0, y: 0 },       // Neutral
-            { torsoMult: 1.04, armMult: 0.95, legMult: 1.0, y: -0.5 }   // Inhale: slightly up
+            { torsoMult: 0.96, armMult: 1.05, y: 0.5, headBob: 1 },    // Exhale: down, head up
+            { torsoMult: 1.0, armMult: 1.0, y: 0, headBob: 0 },         // Neutral
+            { torsoMult: 1.04, armMult: 0.95, y: -0.5, headBob: -1 }   // Inhale: up, head down
         ];
 
-        variations.forEach(variation => {
+        variations.forEach((variation, index) => {
             const frameParams = { ...params };
+
+            // CRITICAL: Preserve seed and colors across all frames
+            if (!frameParams.seed) {
+                frameParams.seed = Math.floor(Math.random() * 2147483647);
+            }
+            if (!frameParams.humanColors && params.humanColors) {
+                frameParams.humanColors = params.humanColors;
+            }
 
             // Breathing: adjust torso height
             if (frameParams.torsoHeight) {
@@ -370,8 +527,60 @@ export class HumanGenerator extends CharacterGenerator {
             }
 
             // Generate frame with modified params
-            const heatmap = this.generateHeatmap(this.generateBodyParts(frameParams), frameParams);
+            const bodyParts = this.generateBodyParts(frameParams);
+            const heatmap = this.generateHeatmap(bodyParts, frameParams);
             const pixels = this.generatePixels(heatmap, frameParams);
+
+            // Extract and preserve face from first frame
+            if (index === 0) {
+                const head = bodyParts.head;
+                if (head && head.points) {
+                    const xs = head.points.map(p => p.x);
+                    const ys = head.points.map(p => p.y);
+                    headBounds = {
+                        minX: Math.floor(Math.min(...xs)),
+                        maxX: Math.ceil(Math.max(...xs)),
+                        minY: Math.floor(Math.min(...ys)),
+                        maxY: Math.ceil(Math.max(...ys))
+                    };
+
+                    // Extract face pixels from first frame
+                    facePixels = [];
+                    for (let y = headBounds.minY; y <= headBounds.maxY; y++) {
+                        facePixels[y] = [];
+                        for (let x = headBounds.minX; x <= headBounds.maxX; x++) {
+                            if (y >= 0 && y < this.canvasSize && x >= 0 && x < this.canvasSize) {
+                                facePixels[y][x] = pixels[y][x] ? { ...pixels[y][x] } : null;
+                            }
+                        }
+                    }
+                }
+            } else if (facePixels && headBounds) {
+                // Apply consistent face with head bobbing
+                const yOffset = variation.headBob;
+
+                // Clear current head area first
+                for (let y = headBounds.minY - 1; y <= headBounds.maxY + 1; y++) {
+                    for (let x = headBounds.minX; x <= headBounds.maxX; x++) {
+                        if (y >= 0 && y < this.canvasSize && x >= 0 && x < this.canvasSize) {
+                            pixels[y][x] = null;
+                        }
+                    }
+                }
+
+                // Apply face with offset
+                for (let y = headBounds.minY; y <= headBounds.maxY; y++) {
+                    for (let x = headBounds.minX; x <= headBounds.maxX; x++) {
+                        const targetY = y + yOffset;
+                        if (targetY >= 0 && targetY < this.canvasSize && x >= 0 && x < this.canvasSize) {
+                            if (facePixels[y] && facePixels[y][x] !== undefined) {
+                                pixels[targetY][x] = facePixels[y][x] ? { ...facePixels[y][x] } : null;
+                            }
+                        }
+                    }
+                }
+            }
+
             frames.push(pixels);
         });
 

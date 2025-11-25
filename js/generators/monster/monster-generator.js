@@ -289,10 +289,11 @@ export class MonsterGenerator extends CharacterGenerator {
         return parts;
     }
 
-    // Override animation to keep face consistent across frames
+    // Override animation to keep face consistent across frames with head bobbing
     generateAnimationFrames(params) {
         const frames = [];
         const variations = [-0.05, 0, 0.05];
+        const headBobbing = [1, 0, -1];  // Head vertical offset for each frame
 
         // Generate first frame and extract face region
         let facePixels = null;
@@ -342,12 +343,15 @@ export class MonsterGenerator extends CharacterGenerator {
                     }
                 }
             } else if (facePixels && headBounds) {
-                // Replace head pixels with those from first frame
+                // Apply head bobbing: shift face pixels vertically
+                const yOffset = headBobbing[index];
+
                 for (let y = headBounds.minY; y <= headBounds.maxY; y++) {
                     for (let x = headBounds.minX; x <= headBounds.maxX; x++) {
-                        if (y >= 0 && y < this.canvasSize && x >= 0 && x < this.canvasSize) {
+                        const targetY = y + yOffset;
+                        if (targetY >= 0 && targetY < this.canvasSize && x >= 0 && x < this.canvasSize) {
                             if (facePixels[y] && facePixels[y][x] !== undefined) {
-                                char.pixels[y][x] = facePixels[y][x] ? { ...facePixels[y][x] } : null;
+                                char.pixels[targetY][x] = facePixels[y][x] ? { ...facePixels[y][x] } : null;
                             }
                         }
                     }
