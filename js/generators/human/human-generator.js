@@ -1,7 +1,7 @@
 import { CharacterGenerator } from '../../core/generator.js';
 import { SKIN_TONES, CLOTHING_COLORS, HAIR_COLORS, EYE_COLORS, MOUTH_COLORS } from '../../data/human-palettes.js';
 import { randomFloat, randomInt, SeededRandom, hash } from '../../utils/random.js';
-import { isPointInPolygon } from '../../utils/math.js';
+import { createTrapezoid, createJoint, getTrapezoidBottom, isPointInPolygon } from '../../utils/math.js';
 import { FaceGenerator } from './face-generator.js';
 import { nameGenerator } from '../name-generator.js';
 
