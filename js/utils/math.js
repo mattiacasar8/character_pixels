@@ -2,38 +2,54 @@
 
 export function createTrapezoid(centerX, centerY, topWidth, bottomWidth, length, angleDeg) {
     const angleRad = (angleDeg * Math.PI) / 180;
+    const cos = Math.cos(angleRad);
+    const sin = Math.sin(angleRad);
+
+    // Calculate the center of the top edge (pivot point)
+    // We assume (centerX, centerY) is the top-center pivot
+    const topCenterX = centerX;
+    const topCenterY = centerY;
+
+    // Calculate top corners relative to top-center, then rotate
+    // Top edge is perpendicular to the length vector
+    // Vector along the top edge: (cos, -sin) * width/2  <-- Perpendicular to (sin, cos)
+    // Actually, if direction is (sin, cos), perpendicular is (cos, -sin)
+
+    // Direction vector of the limb (downwards-ish)
+    const dirX = sin;
+    const dirY = cos;
+
+    // Perpendicular vector (rightwards-ish)
+    const perpX = cos;
+    const perpY = -sin;
 
     const topLeft = {
-        x: centerX - topWidth / 2,
-        y: centerY
+        x: topCenterX - perpX * (topWidth / 2),
+        y: topCenterY - perpY * (topWidth / 2)
     };
     const topRight = {
-        x: centerX + topWidth / 2,
-        y: centerY
+        x: topCenterX + perpX * (topWidth / 2),
+        y: topCenterY + perpY * (topWidth / 2)
     };
 
-    const dx = Math.sin(angleRad) * length;
-    const dy = Math.cos(angleRad) * length;
-
-    const bottomCenter = {
-        x: centerX + dx,
-        y: centerY + dy
-    };
+    // Bottom center
+    const bottomCenterX = topCenterX + dirX * length;
+    const bottomCenterY = topCenterY + dirY * length;
 
     const bottomLeft = {
-        x: bottomCenter.x - bottomWidth / 2,
-        y: bottomCenter.y
+        x: bottomCenterX - perpX * (bottomWidth / 2),
+        y: bottomCenterY - perpY * (bottomWidth / 2)
     };
     const bottomRight = {
-        x: bottomCenter.x + bottomWidth / 2,
-        y: bottomCenter.y
+        x: bottomCenterX + perpX * (bottomWidth / 2),
+        y: bottomCenterY + perpY * (bottomWidth / 2)
     };
 
     return {
         type: 'trapezoid',
         points: [topLeft, topRight, bottomRight, bottomLeft],
-        center: { x: centerX, y: centerY },
-        bottomCenter: bottomCenter,
+        center: { x: centerX, y: centerY }, // Keep original center ref if needed, though top-center is pivot
+        bottomCenter: { x: bottomCenterX, y: bottomCenterY },
         topWidth,
         bottomWidth,
         length,

@@ -43,29 +43,34 @@ export class FaceGenerator {
 
         for (let y = 0; y < height; y++) {
             for (let x = 0; x < width; x++) {
-                // Rounded corners logic
+                // Skull/Egg shape logic
+                // Normalize coordinates -1 to 1
                 const nx = (x - centerX + 0.5) / (width / 2);
                 const ny = (y - height / 2 + 0.5) / (height / 2);
-                const dist = Math.sqrt(nx * nx + ny * ny);
+
+                // Skull shape: Top is rounder (circle), bottom is slightly tapered (jaw)
+                // We can use a modified distance check
+                // Top half (ny < 0): Circle
+                // Bottom half (ny > 0): Tapered ellipse
+
+                let dist = Math.sqrt(nx * nx + ny * ny);
+                if (ny > 0) {
+                    // Taper width as we go down
+                    // effective width reduces
+                    const taper = 1 - (ny * 0.2); // slight taper
+                    const tnx = nx / taper;
+                    dist = Math.sqrt(tnx * tnx + ny * ny);
+                }
 
                 if (dist < 0.95) {
                     let shouldDraw = true;
-                    // Sculpting corners
-                    if (y > height * 0.6) { // Jawline
-                        const taperFactor = (y - height * 0.6) / (height * 0.4);
-                        const maxWidthAtY = (width / 2) * (1 - taperFactor * 0.3);
-                        if (Math.abs(x - centerX + 0.5) > maxWidthAtY) shouldDraw = false;
-                    }
-                    if (y < height * 0.2) { // Top corners
-                        if (Math.abs(x - centerX + 0.5) > width * 0.35 && y < height * 0.1) shouldDraw = false;
-                    }
 
                     if (shouldDraw) {
                         let color = baseSkin;
                         // Shading edges
-                        if (x === 0 || x === width - 1 || y >= height - 2) color = shadowSkin;
+                        if (dist > 0.8) color = shadowSkin;
                         // Forehead highlight
-                        else if (y < height / 3 && x > width * 0.2 && x < width * 0.8) color = highlightSkin;
+                        else if (ny < -0.2 && Math.abs(nx) < 0.5) color = highlightSkin;
 
                         setPixel(x, y, color);
                     }
@@ -146,32 +151,71 @@ export class FaceGenerator {
         const hairColor = colors.hair;
         const hairHighlight = tint(hairColor, 0.3);
         const hairShadow = shade(hairColor, 0.3);
-        const hairStyle = hash(seed, 20, seed);
+        const hairStyle = hash(seed, 20, seed); // 0-1
 
-        // Top
-        const hairStartY = Math.floor(height * 0.2);
-        for (let y = 0; y <= hairStartY; y++) {
-            for (let x = 0; x < width; x++) {
-                // Check oval bounds roughly
-                const nx = (x - centerX + 0.5) / (width / 2);
-                if (Math.abs(nx) < 0.95) {
-                    if (chance(0.9, x * y)) {
-                        setPixel(x, y, hairColor);
-                        if (chance(0.2, x * y + 1) && y < hairStartY - 1) setPixel(x, y, hairHighlight);
+        // Hair Styles:
+        // 0.0-0.2: Short/Bald
+        // 0.2-0.4: Medium Messy
+        // 0.4-0.6: Long Straight
+        // 0.6-0.8: Long Wavy
+        // 0.8-1.0: Mohawk/Punk
+
+        const hairStartY = Math.floor(height * 0.15); // Higher hairline
+
+        // Helper to draw hair pixel
+        const drawHair = (x, y, isHighlight = false) => {
+            if (x >= 0 && x < width && y >= 0 && y < height) {
+                setPixel(x, y, isHighlight ? hairHighlight : hairColor);
+            }
+        };
+
+        if (hairStyle > 0.1) { // Not bald
+            // Top coverage
+            for (let y = 0; y <= hairStartY + 2; y++) {
+                for (let x = 0; x < width; x++) {
+                    const nx = (x - centerX + 0.5) / (width / 2);
+                    const ny = (y - height / 2 + 0.5) / (height / 2);
+                    let dist = Math.sqrt(nx * nx + ny * ny);
+
+                    if (dist < 1.05) { // Slightly larger than head
+                        if (chance(0.95, x * y)) {
+                            drawHair(x, y, chance(0.2, x * y));
+                        }
                     }
                 }
             }
-        }
 
-        // Sides
-        const hairLength = hairStyle > 0.5 ? height : height / 2;
-        for (let y = hairStartY; y < Math.min(height, hairStartY + hairLength); y++) {
-            // Left
-            if (chance(0.9, y)) setPixel(0, y, hairColor);
-            if (chance(0.6, y + 1)) setPixel(1, y, hairShadow);
-            // Right
-            if (chance(0.9, y + 2)) setPixel(width - 1, y, hairColor);
-            if (chance(0.6, y + 3)) setPixel(width - 2, y, hairShadow);
+            // Sides/Back based on style
+            if (hairStyle > 0.2 && hairStyle < 0.4) { // Medium Messy
+                const len = height * 0.5;
+                for (let y = hairStartY; y < len; y++) {
+                    if (chance(0.8, y)) drawHair(0, y);
+                    if (chance(0.8, y)) drawHair(width - 1, y);
+                }
+            } else if (hairStyle >= 0.4 && hairStyle < 0.6) { // Long Straight
+                const len = height;
+                for (let y = hairStartY; y < len; y++) {
+                    drawHair(0, y);
+                    drawHair(1, y);
+                    drawHair(width - 1, y);
+                    drawHair(width - 2, y);
+                }
+            } else if (hairStyle >= 0.6 && hairStyle < 0.8) { // Long Wavy
+                const len = height;
+                for (let y = hairStartY; y < len; y++) {
+                    const wave = Math.sin(y * 0.5) * 2;
+                    drawHair(0 + wave, y);
+                    drawHair(1 + wave, y);
+                    drawHair(width - 1 + wave, y);
+                    drawHair(width - 2 + wave, y);
+                }
+            } else if (hairStyle >= 0.8) { // Mohawk
+                for (let y = 0; y < height * 0.4; y++) {
+                    for (let x = centerX - 2; x <= centerX + 2; x++) {
+                        drawHair(x, y - 3); // Stick up
+                    }
+                }
+            }
         }
 
         // --- Layer 4: Details ---

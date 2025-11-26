@@ -54,44 +54,45 @@ export class HumanGenerator extends CharacterGenerator {
     }
 
     // Override to enforce human proportions
-    // Canvas is 50px (0-49). Proportions recalculated based on feedback:
-    // - Head + Neck: ~10-12px
-    // - Torso: ~11-20px (22-40% as suggested)
-    // - Legs: Calculated to fit remaining space without being too long
+    // Canvas is 50px (0-49). Proportions recalculated based on feedback.
     getParamRanges(preset) {
         const baseRanges = {
-            // Torso: Expanded ranges for more body variety
-            torsoTopWidth: { min: 12, max: 24 },
-            torsoBottomWidth: { min: 10, max: 22 },
-            torsoHeight: { min: 20, max: 32 },      // Expanded from 22-28
-            torsoY: { min: 10, max: 18 },           // Expanded to accommodate variety
+            // Torso (17-35%, 14-27%, 20-41%)
+            torsoTopWidth: { min: 17, max: 35 },
+            torsoBottomWidth: { min: 14, max: 27 },
+            torsoHeight: { min: 20, max: 41 },
+            // Position: Dynamic based on height
+            // We override torsoY in generateBodyParts to center the character
+            torsoY: { min: 28, max: 34 },
 
-            // Neck
+            // Neck (4-6%, 2-4%)
             neckWidth: { min: 4, max: 6 },
-            neckHeight: { min: 3, max: 5 },
+            neckHeight: { min: 2, max: 4 },
 
-            // Head: Expanded for more variety
-            headWidth: { min: 11, max: 18 },
-            headHeight: { min: 7, max: 12 },
+            // Head (14-24%)
+            headWidth: { min: 14, max: 24 },
+            headHeight: { min: 14, max: 24 },
 
-            // Arms: Thicker and more varied poses
-            upperArmTopWidth: { min: 6, max: 10 },   // Increased for better proportions
-            upperArmBottomWidth: { min: 5, max: 9 },
-            upperArmLength: { min: 11, max: 18 },    // Expanded range
-            forearmTopWidth: { min: 5, max: 9 },
-            forearmBottomWidth: { min: 4, max: 8 },
-            forearmLength: { min: 11, max: 18 },     // Expanded range
-            armAngle: { min: -95, max: -40 },        // Expanded range for more variety
-            elbowAngle: { min: -15, max: 40 },       // Expanded range for more natural poses
+            // Arms (Len: 14-22%, W: 9-14%, 6-9%)
+            upperArmTopWidth: { min: 9, max: 14 },
+            upperArmBottomWidth: { min: 7, max: 11 }, // Slightly tapered
+            upperArmLength: { min: 14, max: 22 },
+            forearmTopWidth: { min: 6, max: 9 },
+            forearmBottomWidth: { min: 5, max: 8 },
+            forearmLength: { min: 14, max: 22 },
 
-            // Legs: More variety while avoiding excessive length
-            thighTopWidth: { min: 6, max: 10 },      // Thicker for cavallo
-            thighBottomWidth: { min: 5, max: 8 },
-            thighLength: { min: 9, max: 16 },        // Expanded range
+            // Angles
+            armAngle: { min: -40, max: 0 },
+            elbowAngle: { min: -5, max: 35 },
+
+            // Legs (Len: 12-18%, W: 7-12%, 5-8%)
+            thighTopWidth: { min: 7, max: 12 },
+            thighBottomWidth: { min: 6, max: 10 },
+            thighLength: { min: 12, max: 18 },
             shinTopWidth: { min: 5, max: 8 },
             shinBottomWidth: { min: 4, max: 7 },
-            shinLength: { min: 9, max: 16 },         // Expanded range
-            legAngle: { min: -15, max: 15 },         // Expanded for more variety and cavallo separation
+            shinLength: { min: 12, max: 18 },
+            legAngle: { min: -25, max: 0 },
 
             // Generation
             fillDensity: { min: 1.0, max: 1.0 }
@@ -160,8 +161,24 @@ export class HumanGenerator extends CharacterGenerator {
         const scaledParams = this.scaleParams(params, scale);
 
         // Generate torso, neck, head, arms exactly as base class
-        // (code duplicated from base to override leg generation)
-        const torsoTop = scaledParams.torsoY;
+
+        // We want the feet to be at a consistent "ground" level (90% of canvas).
+        const groundY = this.canvasSize * 0.9;
+        const legVertical = scaledParams.thighLength + scaledParams.shinLength;
+        const calculatedTorsoY = groundY - scaledParams.torsoHeight - legVertical;
+
+        // Ensure we don't go too high (cut off head)
+        const minHeadTop = 2; // 2px margin
+        const impliedHeadTop = calculatedTorsoY - scaledParams.neckHeight - scaledParams.headHeight;
+
+        let torsoTop = calculatedTorsoY;
+        if (impliedHeadTop < minHeadTop) {
+            torsoTop = minHeadTop + scaledParams.headHeight + scaledParams.neckHeight;
+        }
+
+        // Apply the calculated Y
+        scaledParams.torsoY = torsoTop;
+
         const torsoBottom = torsoTop + scaledParams.torsoHeight;
         parts.torso = createTrapezoid(
             this.centerX, torsoTop,
@@ -351,16 +368,43 @@ export class HumanGenerator extends CharacterGenerator {
             };
         }
 
-        // Determine Clothing Patterns (Once per generation)
+        // Determine Clothing Patterns & Styles
+
+        // Shirt Patterns
         const shirtPatternVal = rng.next();
         let shirtPattern = 'none';
-        if (shirtPatternVal < 0.25) shirtPattern = 'stripes';
-        else if (shirtPatternVal < 0.5) shirtPattern = 'checkers';
-        else if (shirtPatternVal < 0.75) shirtPattern = 'buttons';
+        let shirtProps = {};
 
+        if (shirtPatternVal < 0.25) {
+            shirtPattern = 'stripes';
+            shirtProps.orientation = rng.next() > 0.5 ? 'vertical' : 'horizontal';
+        } else if (shirtPatternVal < 0.5) {
+            shirtPattern = 'checkers';
+            const sub = rng.next();
+            if (sub < 0.33) shirtProps.shape = 'square';
+            else if (sub < 0.66) shirtProps.shape = 'triangle';
+            else shirtProps.shape = 'circle';
+        } else if (shirtPatternVal < 0.75) {
+            shirtPattern = 'buttons';
+            const sub = rng.next();
+            if (sub < 0.33) shirtProps.align = 'left';
+            else if (sub < 0.66) shirtProps.align = 'right';
+            else shirtProps.align = 'center';
+        } else {
+            shirtPattern = 'tunic';
+            shirtProps.long = rng.next() < 0.3; // 30% chance of long tunic/robe
+        }
+
+        // Pants Patterns
         const pantsPatternVal = rng.next();
         let pantsPattern = 'none';
-        if (pantsPatternVal < 0.3) pantsPattern = 'stripes';
+        let pantsProps = {};
+        if (pantsPatternVal < 0.3) {
+            pantsPattern = 'stripes';
+            pantsProps.orientation = rng.next() > 0.5 ? 'vertical' : 'horizontal';
+        } else if (pantsPatternVal < 0.5) {
+            pantsPattern = 'patches';
+        }
 
         const bodyParts = this.generateBodyParts(params);
 
@@ -396,7 +440,16 @@ export class HumanGenerator extends CharacterGenerator {
             for (const key in bodyParts) {
                 if (key === 'head') continue; // Skip head
                 if (bodyParts[key].region) {
-                    if (bodyParts[key].points && isPointInPolygon(point, bodyParts[key].points)) return bodyParts[key].region;
+                    if (bodyParts[key].points && isPointInPolygon(point, bodyParts[key].points)) {
+                        let region = bodyParts[key].region;
+
+                        // LONG TUNIC OVERRIDE
+                        if (shirtPattern === 'tunic' && shirtProps.long) {
+                            if (region === 'pants') return 'shirt'; // Cover legs
+                        }
+
+                        return region;
+                    }
                     if (bodyParts[key].type === 'circle' || (bodyParts[key].center && bodyParts[key].radius)) {
                         const dx = x - bodyParts[key].center.x;
                         const dy = y - bodyParts[key].center.y;
@@ -409,7 +462,26 @@ export class HumanGenerator extends CharacterGenerator {
 
         // Helper to shade color
         const shade = (c, percent) => ({ r: Math.max(0, c.r * (1 - percent)), g: Math.max(0, c.g * (1 - percent)), b: Math.max(0, c.b * (1 - percent)) });
-        const tint = (c, percent) => ({ r: Math.min(255, c.r + (255 - c.r) * percent), g: Math.min(255, c.g + (255 - c.g) * percent), b: Math.min(255, c.b + (255 - c.b) * percent) });
+        const tint = (c, percent) => ({ r: Math.min(255, c.r + (255 - c.r) * percent), g: Math.min(255, c.g + (255 - c.r) * percent), b: Math.min(255, c.b + (255 - c.b) * percent) });
+
+        // Accessories Generation
+        const hasNecklace = rng.next() < 0.3; // 30% chance
+        let necklace = null;
+        if (hasNecklace) {
+            necklace = {
+                color: rng.next() < 0.5 ? { r: 255, g: 215, b: 0 } : { r: 192, g: 192, b: 192 }, // Gold or Silver
+                length: rng.next() < 0.5 ? 'short' : 'long',
+                pendant: ['circle', 'diamond', 'square', 'cross', 'gem'][rng.int(0, 4)]
+            };
+            if (necklace.pendant === 'gem') {
+                necklace.pendantColor = { r: 231, g: 76, b: 60 }; // Ruby default
+                if (rng.next() < 0.33) necklace.pendantColor = { r: 46, g: 204, b: 113 }; // Emerald
+                else if (rng.next() < 0.66) necklace.pendantColor = { r: 52, g: 152, b: 219 }; // Sapphire
+            }
+        }
+
+        const hasCuts = rng.next() < 0.15; // 15% chance of cuts/tears
+        const hasPockets = rng.next() < 0.4; // 40% chance of pockets
 
         // Fill Loop
         for (let y = 0; y < this.canvasSize; y++) {
@@ -421,36 +493,150 @@ export class HumanGenerator extends CharacterGenerator {
                     if (region === 'skin') color = colors.skin;
                     else if (region === 'shirt') color = colors.shirt;
                     else if (region === 'pants') color = colors.pants;
-                    else if (region === 'shoes') color = { r: 30, g: 30, b: 30 };
+                    else if (region === 'shoes') color = { r: 40, g: 30, b: 20 }; // Leather boots default
 
                     if (color) {
-                        // Clothing Details
+                        // Clothing Details & Patterns
                         if (region === 'shirt') {
                             if (shirtPattern === 'stripes') {
-                                if (y % 4 === 0) color = shade(color, 0.15);
+                                if (shirtProps.orientation === 'horizontal') {
+                                    if (y % 4 === 0) color = shade(color, 0.15);
+                                } else {
+                                    if (x % 4 === 0) color = shade(color, 0.15);
+                                }
                             } else if (shirtPattern === 'checkers') {
-                                if ((Math.floor(x / 3) + Math.floor(y / 3)) % 2 === 0) color = shade(color, 0.1);
+                                const cx = Math.floor(x / 3);
+                                const cy = Math.floor(y / 3);
+                                const isCheck = (cx + cy) % 2 === 0;
+
+                                if (isCheck) {
+                                    if (shirtProps.shape === 'square') {
+                                        color = shade(color, 0.1);
+                                    } else if (shirtProps.shape === 'triangle') {
+                                        // Diagonal split
+                                        if ((x % 3) + (y % 3) < 3) color = shade(color, 0.1);
+                                    } else {
+                                        // Circle/Dot (center of 3x3)
+                                        if (x % 3 === 1 && y % 3 === 1) color = shade(color, 0.2);
+                                    }
+                                }
                             } else if (shirtPattern === 'buttons') {
-                                if (Math.abs(x - this.centerX) <= 1) {
+                                let btnX = this.centerX;
+                                if (shirtProps.align === 'left') btnX -= 3;
+                                if (shirtProps.align === 'right') btnX += 3;
+
+                                if (Math.abs(x - btnX) <= 1) {
                                     color = shade(color, 0.1); // Placket
                                     if (y % 5 === 0 && y > minY + 5) color = tint(color, 0.3); // Button
+                                }
+                            } else if (shirtPattern === 'tunic') {
+                                // Vertical trim (lighter center)
+                                if (Math.abs(x - this.centerX) <= 2) color = tint(color, 0.15);
+                                // Bottom trim
+                                if (y > maxY - 2) color = tint(color, 0.1);
+
+                                // Tunic buttons
+                                if (Math.abs(x - this.centerX) === 0 && y % 6 === 0 && y > minY + 5) {
+                                    color = shade(color, 0.2); // Dark buttons
                                 }
                             }
                         } else if (region === 'pants') {
                             if (pantsPattern === 'stripes') {
-                                if (x % 3 === 0) color = shade(color, 0.1);
+                                if (pantsProps.orientation === 'vertical') {
+                                    if (x % 3 === 0) color = shade(color, 0.1);
+                                } else {
+                                    if (y % 3 === 0) color = shade(color, 0.1);
+                                }
+                            } else if (pantsPattern === 'patches') {
+                                // 3x3 patches
+                                const px = Math.floor(x / 3);
+                                const py = Math.floor(y / 3);
+                                const patchHash = Math.sin(px * 12.9898 + py * 78.233) * 43758.5453;
+                                if ((patchHash - Math.floor(patchHash)) > 0.9) {
+                                    color = shade(color, 0.2);
+                                }
                             }
                         }
 
-                        pixels[y][x] = color;
+                        // Pockets
+                        if (hasPockets) {
+                            // Simple side pockets
+                            if (Math.abs(x - this.centerX) >= 4 && Math.abs(x - this.centerX) <= 7) {
+                                if (y >= minY + 20 && y <= minY + 24) { // Approx hip level
+                                    color = shade(color, 0.1);
+                                }
+                            }
+                        }
                     }
+
+                    // Cuts/Tears (Global on clothes)
+                    if (hasCuts && (region === 'shirt' || region === 'pants')) {
+                        // Random noise for cuts
+                        const cutHash = Math.sin(x * 45.123 + y * 91.532) * 12345.678;
+                        if ((cutHash - Math.floor(cutHash)) > 0.98) { // 2% chance per pixel
+                            color = shade(color, 0.4); // Dark cut
+                            // Or show skin?
+                            // color = colors.skin; 
+                        }
+                    }
+
+                    pixels[y][x] = color;
+                }
+            }
+        }
+
+        // Post-Process: Necklace
+        if (necklace) {
+            const neckY = minY + 3; // Approx neck base
+            const chainColor = necklace.color;
+
+            // Draw Chain
+            const chainLength = necklace.length === 'long' ? 10 : 6;
+            for (let i = 0; i <= chainLength; i++) {
+                // V shape
+                const dy = i;
+                const dx = Math.floor(i * 0.7);
+
+                // Left side
+                if (pixels[neckY + dy] && pixels[neckY + dy][this.centerX - dx])
+                    pixels[neckY + dy][this.centerX - dx] = chainColor;
+
+                // Right side
+                if (pixels[neckY + dy] && pixels[neckY + dy][this.centerX + dx])
+                    pixels[neckY + dy][this.centerX + dx] = chainColor;
+            }
+
+            // Draw Pendant
+            const pendantY = neckY + chainLength;
+            const pendantX = this.centerX;
+            const pColor = necklace.pendant === 'gem' ? necklace.pendantColor : chainColor;
+
+            if (pixels[pendantY] && pixels[pendantY][pendantX]) {
+                pixels[pendantY][pendantX] = pColor;
+                // Simple shapes
+                if (necklace.pendant === 'diamond' || necklace.pendant === 'gem') {
+                    if (pixels[pendantY - 1]) pixels[pendantY - 1][pendantX] = pColor;
+                    if (pixels[pendantY + 1]) pixels[pendantY + 1][pendantX] = pColor;
+                    pixels[pendantY][pendantX - 1] = pColor;
+                    pixels[pendantY][pendantX + 1] = pColor;
+                } else if (necklace.pendant === 'square') {
+                    pixels[pendantY][pendantX - 1] = pColor;
+                    pixels[pendantY][pendantX + 1] = pColor;
+                    if (pixels[pendantY + 1]) {
+                        pixels[pendantY + 1][pendantX] = pColor;
+                        pixels[pendantY + 1][pendantX - 1] = pColor;
+                        pixels[pendantY + 1][pendantX + 1] = pColor;
+                    }
+                } else if (necklace.pendant === 'cross') {
+                    if (pixels[pendantY + 1]) pixels[pendantY + 1][pendantX] = pColor;
+                    if (pixels[pendantY + 2]) pixels[pendantY + 2][pendantX] = pColor;
+                    pixels[pendantY][pendantX - 1] = pColor;
+                    pixels[pendantY][pendantX + 1] = pColor;
                 }
             }
         }
 
         // Add belt at shirt/pants boundary by detecting color transition
-        // Current approach: O(n²) color reference comparison
-        // Alternative optimization if needed: Track regions during fill (requires ~2x memory)
         for (let y = 1; y < this.canvasSize - 1; y++) {
             for (let x = 0; x < this.canvasSize; x++) {
                 if (pixels[y][x] && pixels[y + 1][x]) {
@@ -478,14 +664,64 @@ export class HumanGenerator extends CharacterGenerator {
             }
         }
 
+        // 4. Apply Directional Lighting (Top-Right Source)
+        this.applyLighting(pixels);
+
         // Apply outline to human characters (black outline for definition)
-        // Note: Outline is drawn OUTSIDE the character on empty adjacent pixels
         if (params.showOutline !== false) {
             const outlineColor = this.hexToRgb(params.outlineColor) || { r: 0, g: 0, b: 0 };
             this.applyOutline(pixels, outlineColor);
         }
 
         return pixels;
+    }
+
+    applyLighting(pixels) {
+        // Light Source: Top-Right
+        // Highlights: Top edges, Right edges
+        // Shadows: Bottom edges, Left edges
+
+        const shade = (c, percent) => ({
+            r: Math.max(0, c.r * (1 - percent)),
+            g: Math.max(0, c.g * (1 - percent)),
+            b: Math.max(0, c.b * (1 - percent))
+        });
+        const tint = (c, percent) => ({
+            r: Math.min(255, c.r + (255 - c.r) * percent),
+            g: Math.min(255, c.g + (255 - c.g) * percent),
+            b: Math.min(255, c.b + (255 - c.b) * percent)
+        });
+
+        // We need a copy or to be careful not to propagate lighting changes immediately if we scan
+        // But for simple edge lighting, immediate update is usually okay if we don't read from updated pixels for neighbors.
+        // Actually, we check neighbors to decide if WE are an edge.
+        // Neighbors are not changing their "existence" (null/not null), only color.
+        // So we can modify in place.
+
+        for (let y = 0; y < this.canvasSize; y++) {
+            for (let x = 0; x < this.canvasSize; x++) {
+                const color = pixels[y][x];
+                if (!color) continue;
+
+                // Check neighbors (0 is empty/null)
+                const top = (y > 0) ? pixels[y - 1][x] : null;
+                const bottom = (y < this.canvasSize - 1) ? pixels[y + 1][x] : null;
+                const left = (x > 0) ? pixels[y][x - 1] : null;
+                const right = (x < this.canvasSize - 1) ? pixels[y][x + 1] : null;
+
+                let newColor = color;
+
+                // Highlights (Top & Right)
+                if (!top) newColor = tint(newColor, 0.2);
+                if (!right) newColor = tint(newColor, 0.15);
+
+                // Shadows (Bottom & Left)
+                if (!bottom) newColor = shade(newColor, 0.2);
+                if (!left) newColor = shade(newColor, 0.15);
+
+                pixels[y][x] = newColor;
+            }
+        }
     }
 
     // Override animation frames with breathing + arm movement + head bobbing
@@ -573,10 +809,12 @@ export class HumanGenerator extends CharacterGenerator {
                 const yOffset = variation.headBob;
 
                 // Clear current head area first
-                for (let y = headBounds.minY - 1; y <= headBounds.maxY + 1; y++) {
+                for (let y = headBounds.minY - 2; y <= headBounds.maxY + 2; y++) {
                     for (let x = headBounds.minX; x <= headBounds.maxX; x++) {
                         if (y >= 0 && y < this.canvasSize && x >= 0 && x < this.canvasSize) {
-                            pixels[y][x] = null;
+                            // Only clear if it was likely part of the head/face in the previous frame
+                            // This is tricky without a mask.
+                            // Simplification: Just overwrite with face pixels, and if moving up, fill neck.
                         }
                     }
                 }
@@ -588,6 +826,30 @@ export class HumanGenerator extends CharacterGenerator {
                         if (targetY >= 0 && targetY < this.canvasSize && x >= 0 && x < this.canvasSize) {
                             if (facePixels[y] && facePixels[y][x] !== undefined) {
                                 pixels[targetY][x] = facePixels[y][x] ? { ...facePixels[y][x] } : null;
+                            }
+                        }
+                    }
+                }
+
+                // Fix Neck Separation: If head moves up, fill the gap below.
+                if (yOffset < 0) { // Head moved up
+                    // Find the bottom of the head/face
+                    const neckTopY = headBounds.maxY + yOffset + 1;
+
+                    // Scan the bottom row of the face and extend downwards if needed
+                    for (let x = headBounds.minX; x <= headBounds.maxX; x++) {
+                        // If we have a face pixel at the bottom of the moved face
+                        const faceBottomY = headBounds.maxY + yOffset;
+                        if (pixels[faceBottomY] && pixels[faceBottomY][x]) {
+                            // Check if there's a gap below
+                            if (pixels[faceBottomY + 1] && !pixels[faceBottomY + 1][x]) {
+                                // Fill it with the pixel below that (if it exists) or the face pixel color (neck color)
+                                if (pixels[faceBottomY + 2] && pixels[faceBottomY + 2][x]) {
+                                    pixels[faceBottomY + 1][x] = { ...pixels[faceBottomY + 2][x] };
+                                } else {
+                                    // Fallback: extend neck down
+                                    pixels[faceBottomY + 1][x] = { ...pixels[faceBottomY][x] }; // Extend face/neck down
+                                }
                             }
                         }
                     }

@@ -1,43 +1,54 @@
-Feature Roadmap & Implementation Plan
-This document outlines the plan for the next phase of development, focusing on expanding the content generation capabilities and enhancing the user experience.
+Dobbiamo implementare sostanziali cambiamenti al modo in cui vengono generati gli umani in human-generator e tutti i relativi file associati (controlla con attenzione dipendenze e flusso di informazioni)innanzitutto i valori “standard” devono diventare i seguenti:
 
-1. Human Creator
-Goal: Create a distinct generator for human-like characters, separate from the current "creature/monster" generator.
+TORSO TOP
+17 - 35%
+TORSO BOT
+14 - 27%
+TORSO H
+20 - 41%
+HEAD SIZE
+14 - 24%
+ARM LEN
+14 - 22%
+LEG LEN
+12 - 18%
+NECK W
+4 - 6%
+NECK H
+2 - 4%
+U.ARM W
+9 - 14%
+F.ARM W
+6 - 9%
+ARM ANG
+-40 to 0°
+ELBOW ANG
+-5 to 35°
+THIGH W
+7 - 12%
+SHIN W
+5 - 8%
+LEG ANG
+-25 to 0°
 
-Logic: Creare una nuova logica di costruzione sprite. Alla base della costruzione del personaggio abbiamo comunque su forme e heatmap.
-Ma utilizzando proporzioni più strette e limitando la mutazione casuale.
-Includiamo anche un passaggio per capelli occhi e bocca.
-A differenza del generatore di mostri, che genera 3-5 colori e li usa per tutto il corpo, qui i colori vanno a zone e sono più specifici.
-Utilizza un set di colori specifico per diverse zone: testa, mani e piedi utilizzano colori pelle. torso, gambe, braccia utilizzano colori vestiti.
-Va modificato il file human palettes.js per aggiungere i colori specifici per le diverse zone.
+il che significa poi che gli altri preset dovranno essere delle variazioni di questi valori.
 
+—Ci sono dei problemi nella costruzione della figura (a partire da bones/shapes layer) - La testa dovrebbe essere più rotonda, a forma di cranio, ora è troppo squadrata.
 
-2. Monster Backstory & Names
-Goal: Give monsters their own unique narrative identity, distinct from the current generic/human-leaning backstories.
-Utilizza la stessa logica di human-backstory ma con dataset monster-backstory data prendendo spunto dalla controparte umana.
+Le braccia hanno un problema nella rotazione, la spalla dovrebbe fungere da pivot, ma invece quando cambia l’angolo non ruotano veramente. Questo fa in modo che quando l’angolo è -90 lo spessore delle braccia diventa quasi zero (il trapezio viene appiattito!) va fissata questa cosa.
 
-Names: Sia per humans che per monsters bisogna implementare un name generator. Prendi spunto da name-generator.js e adattalo per i due tipi di personaggi. Includi anche un dataset di nomi per i mostri e uno per gli umani. troverai già dei file placeholder da utilizzare.
-I nomi dovrebbero avere anche un cognome e un eventuale epiteto (es. Mattia Rossi, Mattia Rossi il Grande - oppure Xoltar Mongol il Diabolico per i mostri). Dovrebbero avere un suono fantasy generico, vedi name generator.
+L’intera figura sembra troppo vicina al bordo superiore e la testa spesso viene tagliata, questo fa si che molti personaggi appaiano “pelati” con i capelli superiori tagliati, sposterei tutto lo shapes layer di poco più in basso, permettendo alla generazione di coprire sempre il top della testa e lasciando anche un pochino di spazio in più per capelli.
 
-3. Animations (Idle State)
-Goal: Bring characters to life with a simple 2-3 frame idle animation.
+—
 
-Implementation:
-Breathing: Slight vertical expansion/contraction of the torso pixels.
+Infine, dal punto di vista estetico, va notevolmente raffinato l’algoritmo di colorazione.
 
-La sprite va ridisegnata in 3 frame totali per dare l'idea di respiro e movimento. Per farlo aumentiamo la dimensione del torso e creiamo 3 frame. Per queste tre sprite usiamo la stessa palette di colori, e tutti gli altri dettagli rimangono invariati, al fine di evitare che il movimento si faccia troppo evidente.
+In generale ai vestiti va dato un po di shading, ad esempio aggiungendo un leggero bordo o qualche dettaglio di riflesso. Immaginiamo una luce che colpisce il nostro personaggio e gli da un po di shadow in alcuni punti della maglietta/pantaloni.
 
-4. Enhanced Viewing Mode
-Goal: Improve the detailed view of a character (building on the Modal).
+I colori e i pattern degli indumenti devono essere molto più fantasy/medievali e ci devono essere maggiori combinazioni e pattern possibili.prendi letteralmente ispirazione da veri vestiti medievali, i loro colori, possibili combinazioni  e cerchiamo di fare una serie di algoritmi che vanno a simulare queste combinazioni (per ora abbiamo qualche pattern, tipo quadrati, bottoni, ecc.) dobbiamo espandere drasticamente e renderli più fantasy.
 
-Features:
-Animation - viene mostrata l'animazione idle.
-Navigation - "Next/Previous" buttons to cycle through generated characters without closing the modal.
-Export - viene esportata la sprite in 3 frame.
+Lo stesso vale per lo stile dei capelli, le espressioni facciali e le acconciature. Tenendo conto ovviamente delle limitazioni che abbiamo.
 
-5. Advanced Export
-Goal: Provide more robust export options for creators.
+—
 
-Formats:
-Sprite Sheet: Export frames as a horizontal strip (already partially supported, needs refinement for animations).
-Card Export: Download the entire "Card" (Image + Name + Story) as a PNG for sharing. La card dovrebbe essere verticale 1080x1920 (instagram) e contenere Nome, immagine (upscalata nearest neighbor a 750px), storia. Utilizzando le font corrette e il font size appropriato. Il tutto allineato a sinistra. (questo significa che vengono esportati 3 PNG, uno per ogni frame.)
+Per quanto riguarda infine le animazioni, attualmente funziona abbastanza bene, ma quando la testa si sposta verso l’alto il collo viene separato dalla parte sottostante, va quindi copiata la fila di pixel sottostante quando la testa si alza in modo che non risulti fluttuante.
