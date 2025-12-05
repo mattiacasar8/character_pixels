@@ -269,12 +269,13 @@ This is organization only - no visual changes.
 - [x] Refactor `monster-backstory.js` to extend base
 - [x] Verified in browser - all working
 
-#### 1.3 Split Main.js
-- [ ] Create `js/app/UIManager.js` - extract slider/checkbox/preset logic
-- [ ] Create `js/app/ExportManager.js` - extract all export functions
-- [ ] Create `js/app/ModalManager.js` - extract modal logic
-- [ ] Slim down `main.js` to just App class initialization
-- [ ] Test all functionality still works
+#### 1.3 Split Main.js ✅
+- [x] Create `js/app/UIManager.js` - slider/checkbox/preset logic
+- [x] Create `js/app/ExportManager.js` - all export functions
+- [x] Create `js/app/ModalManager.js` - modal logic
+- [x] Slim down `main.js` from ~930 to ~200 lines
+- [x] Fixed initialization order issues
+- [x] All functionality verified working
 
 #### 1.4 Create Shared Processors
 - [ ] Create `js/core/processors/` directory
