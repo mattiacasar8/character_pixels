@@ -2,6 +2,7 @@
 import { createTrapezoid, createJoint, getTrapezoidBottom, isPointInPolygon, distance } from '../utils/math.js';
 import { randomFloat, randomInt, generateRandomPalette, SeededRandom } from '../utils/random.js';
 import { PARAM_CONFIG } from '../config.js';
+import { processorManager } from './processors/ProcessorManager.js';
 
 export class CharacterGenerator {
     constructor(canvasSize = 50) {
@@ -18,7 +19,7 @@ export class CharacterGenerator {
         // 7. Generate Pixels
         // Use params but disable effects to get raw pixels
         // This prevents double application of effects and ensures rawPixels are clean
-        const rawParams = { ...params, enableSmoothing: false, showOutline: false };
+        const rawParams = { ...params, enableSmoothing: false, enableLighting: false, showOutline: false };
         let pixels = this.generatePixels(heatmap, rawParams);
 
         // Store raw pixels for reprocessing (before smoothing/outline)
@@ -28,16 +29,15 @@ export class CharacterGenerator {
         // removeIsolatedPixels is called inside generatePixels, but we can call it again or skip
         // Since we disabled effects in generatePixels, it only did generation + removeIsolatedPixels
 
-        // Apply smoothing if enabled
-        if (params.enableSmoothing) {
-            this.applySmoothing(pixels, params.palette);
-        }
-
-        // Apply outline if enabled
-        if (params.showOutline) {
-            const color = this.hexToRgb(params.outlineColor) || { r: 0, g: 0, b: 0 };
-            this.applyOutline(pixels, color);
-        }
+        // Apply all enabled effects via ProcessorManager
+        // Convert legacy params to new effects format for backward compatibility
+        const effects = params.effects || {
+            smoothing: params.enableSmoothing !== false,
+            lighting: params.enableLighting !== false,
+            outline: params.showOutline !== false
+        };
+        const effectParams = { ...params, effects, outlineColor: params.outlineColor };
+        pixels = processorManager.applyAll(pixels, effectParams, this.canvasSize);
 
         // Name generation is handled by the app or subclass
         const name = params.name || "Unknown";
@@ -92,18 +92,18 @@ export class CharacterGenerator {
         // Clone again to avoid mutating the stored rawPixels
         if (!character.rawPixels) return character;
 
-        const pixels = character.rawPixels.map(row => [...row]);
+        let pixels = character.rawPixels.map(row => [...row]);
 
         this.removeIsolatedPixels(pixels);
 
-        if (newParams.enableSmoothing) {
-            this.applySmoothing(pixels, character.params.palette);
-        }
-
-        if (newParams.showOutline) {
-            const color = this.hexToRgb(newParams.outlineColor) || { r: 0, g: 0, b: 0 };
-            this.applyOutline(pixels, color);
-        }
+        // Apply all enabled effects via ProcessorManager
+        const effects = newParams.effects || {
+            smoothing: newParams.enableSmoothing !== false,
+            lighting: newParams.enableLighting !== false,
+            outline: newParams.showOutline !== false
+        };
+        const effectParams = { ...newParams, effects, outlineColor: newParams.outlineColor };
+        pixels = processorManager.applyAll(pixels, effectParams, this.canvasSize);
 
         // Update character
         character.pixels = pixels;

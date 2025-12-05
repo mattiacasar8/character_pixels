@@ -4,6 +4,7 @@ import { randomFloat, randomInt, SeededRandom, hash } from '../../utils/random.j
 import { createTrapezoid, createJoint, getTrapezoidBottom, isPointInPolygon } from '../../utils/math.js';
 import { FaceGenerator } from './face-generator.js';
 import { nameGenerator } from '../name-generator.js';
+import { processorManager } from '../../core/processors/ProcessorManager.js';
 
 export class HumanGenerator extends CharacterGenerator {
     constructor(canvasSize = 50) {
@@ -664,64 +665,10 @@ export class HumanGenerator extends CharacterGenerator {
             }
         }
 
-        // 4. Apply Directional Lighting (Top-Right Source)
-        this.applyLighting(pixels);
-
-        // Apply outline to human characters (black outline for definition)
-        if (params.showOutline !== false) {
-            const outlineColor = this.hexToRgb(params.outlineColor) || { r: 0, g: 0, b: 0 };
-            this.applyOutline(pixels, outlineColor);
-        }
+        // Effects (smoothing, lighting, outline) are now applied by ProcessorManager
+        // in the base CharacterGenerator.generate() method
 
         return pixels;
-    }
-
-    applyLighting(pixels) {
-        // Light Source: Top-Right
-        // Highlights: Top edges, Right edges
-        // Shadows: Bottom edges, Left edges
-
-        const shade = (c, percent) => ({
-            r: Math.max(0, c.r * (1 - percent)),
-            g: Math.max(0, c.g * (1 - percent)),
-            b: Math.max(0, c.b * (1 - percent))
-        });
-        const tint = (c, percent) => ({
-            r: Math.min(255, c.r + (255 - c.r) * percent),
-            g: Math.min(255, c.g + (255 - c.g) * percent),
-            b: Math.min(255, c.b + (255 - c.b) * percent)
-        });
-
-        // We need a copy or to be careful not to propagate lighting changes immediately if we scan
-        // But for simple edge lighting, immediate update is usually okay if we don't read from updated pixels for neighbors.
-        // Actually, we check neighbors to decide if WE are an edge.
-        // Neighbors are not changing their "existence" (null/not null), only color.
-        // So we can modify in place.
-
-        for (let y = 0; y < this.canvasSize; y++) {
-            for (let x = 0; x < this.canvasSize; x++) {
-                const color = pixels[y][x];
-                if (!color) continue;
-
-                // Check neighbors (0 is empty/null)
-                const top = (y > 0) ? pixels[y - 1][x] : null;
-                const bottom = (y < this.canvasSize - 1) ? pixels[y + 1][x] : null;
-                const left = (x > 0) ? pixels[y][x - 1] : null;
-                const right = (x < this.canvasSize - 1) ? pixels[y][x + 1] : null;
-
-                let newColor = color;
-
-                // Highlights (Top & Right)
-                if (!top) newColor = tint(newColor, 0.2);
-                if (!right) newColor = tint(newColor, 0.15);
-
-                // Shadows (Bottom & Left)
-                if (!bottom) newColor = shade(newColor, 0.2);
-                if (!left) newColor = shade(newColor, 0.15);
-
-                pixels[y][x] = newColor;
-            }
-        }
     }
 
     // Override animation frames with breathing + arm movement + head bobbing
@@ -758,7 +705,6 @@ export class HumanGenerator extends CharacterGenerator {
 
         variations.forEach((variation, index) => {
             const frameParams = { ...params };
-            // Seed and humanColors are now guaranteed to be in params, so they'll be copied correctly
 
             // Breathing: adjust torso height
             if (frameParams.torsoHeight) {
@@ -778,7 +724,7 @@ export class HumanGenerator extends CharacterGenerator {
             // Generate frame with modified params
             const bodyParts = this.generateBodyParts(frameParams);
             const heatmap = this.generateHeatmap(bodyParts, frameParams);
-            const pixels = this.generatePixels(heatmap, frameParams);
+            let pixels = this.generatePixels(heatmap, frameParams); // Use let to allow reassignment
 
             // Extract and preserve face from first frame
             if (index === 0) {
@@ -793,7 +739,6 @@ export class HumanGenerator extends CharacterGenerator {
                         maxY: Math.ceil(Math.max(...ys))
                     };
 
-                    // Extract face pixels from first frame
                     facePixels = [];
                     for (let y = headBounds.minY; y <= headBounds.maxY; y++) {
                         facePixels[y] = [];
@@ -808,17 +753,6 @@ export class HumanGenerator extends CharacterGenerator {
                 // Apply consistent face with head bobbing
                 const yOffset = variation.headBob;
 
-                // Clear current head area first
-                for (let y = headBounds.minY - 2; y <= headBounds.maxY + 2; y++) {
-                    for (let x = headBounds.minX; x <= headBounds.maxX; x++) {
-                        if (y >= 0 && y < this.canvasSize && x >= 0 && x < this.canvasSize) {
-                            // Only clear if it was likely part of the head/face in the previous frame
-                            // This is tricky without a mask.
-                            // Simplification: Just overwrite with face pixels, and if moving up, fill neck.
-                        }
-                    }
-                }
-
                 // Apply face with offset
                 for (let y = headBounds.minY; y <= headBounds.maxY; y++) {
                     for (let x = headBounds.minX; x <= headBounds.maxX; x++) {
@@ -830,31 +764,24 @@ export class HumanGenerator extends CharacterGenerator {
                         }
                     }
                 }
-
-                // Fix Neck Separation: If head moves up, fill the gap below.
-                if (yOffset < 0) { // Head moved up
-                    // Find the bottom of the head/face
-                    const neckTopY = headBounds.maxY + yOffset + 1;
-
-                    // Scan the bottom row of the face and extend downwards if needed
-                    for (let x = headBounds.minX; x <= headBounds.maxX; x++) {
-                        // If we have a face pixel at the bottom of the moved face
-                        const faceBottomY = headBounds.maxY + yOffset;
-                        if (pixels[faceBottomY] && pixels[faceBottomY][x]) {
-                            // Check if there's a gap below
-                            if (pixels[faceBottomY + 1] && !pixels[faceBottomY + 1][x]) {
-                                // Fill it with the pixel below that (if it exists) or the face pixel color (neck color)
-                                if (pixels[faceBottomY + 2] && pixels[faceBottomY + 2][x]) {
-                                    pixels[faceBottomY + 1][x] = { ...pixels[faceBottomY + 2][x] };
-                                } else {
-                                    // Fallback: extend neck down
-                                    pixels[faceBottomY + 1][x] = { ...pixels[faceBottomY][x] }; // Extend face/neck down
-                                }
-                            }
-                        }
-                    }
-                }
             }
+
+            // Apply Processors (Smoothing, Lighting, Outline)
+            // Prepare effect params
+            const effects = frameParams.effects || {
+                smoothing: frameParams.enableSmoothing !== false,
+                lighting: frameParams.enableLighting !== false,
+                outline: frameParams.showOutline !== false
+            };
+
+            const effectParams = {
+                ...frameParams,
+                effects,
+                outlineColor: frameParams.outlineColor,
+                lightDirection: frameParams.lightDirection
+            };
+
+            pixels = processorManager.applyAll(pixels, effectParams, this.canvasSize);
 
             frames.push(pixels);
         });

@@ -55,17 +55,32 @@
                         <div id="slider-fillDensity" class="swiss-slider"></div>
                         <span id="fillDensityDisplay" class="value-display">0.70 - 0.90</span>
                     </div>
+                </section>
 
-                    <div class="control-row checkbox-row">
-                        <input type="checkbox" id="enableSmoothing" checked>
-                        <label for="enableSmoothing">SMOOTHING</label>
-                    </div>
-
-                    <div class="control-row checkbox-row">
-                        <input type="checkbox" id="showOutline" checked>
-                        <label for="showOutline">OUTLINE</label>
-                        <input type="color" id="outlineColor" value="#000000"
-                            style="margin-left: 10px; width: 30px; height: 20px; border: none; padding: 0;">
+                <!-- Effects Panel -->
+                <section class="control-section">
+                    <h2>EFFECTS</h2>
+                    <div class="checkbox-grid">
+                        <div class="control-row checkbox-row">
+                            <input type="checkbox" id="enableSmoothing" checked>
+                            <label for="enableSmoothing">SMOOTHING</label>
+                        </div>
+                        <div class="control-row checkbox-row">
+                            <input type="checkbox" id="enableLighting" checked>
+                            <label for="enableLighting">LIGHTING</label>
+                            <select id="lightDirection" class="mini-select">
+                                <option value="top-right">↗</option>
+                                <option value="top-left">↖</option>
+                                <option value="bottom-right">↘</option>
+                                <option value="bottom-left">↙</option>
+                            </select>
+                        </div>
+                        <div class="control-row checkbox-row">
+                            <input type="checkbox" id="showOutline" checked>
+                            <label for="showOutline">OUTLINE</label>
+                            <input type="color" id="outlineColor" value="#000000"
+                                style="margin-left: 10px; width: 30px; height: 20px; border: none; padding: 0;">
+                        </div>
                     </div>
                 </section>
 

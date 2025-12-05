@@ -101,6 +101,8 @@ class App {
             const mergedParams = {
                 ...params,
                 enableSmoothing: this.currentParams.enableSmoothing,
+                enableLighting: this.currentParams.enableLighting,
+                lightDirection: this.currentParams.lightDirection,
                 showOutline: this.currentParams.showOutline,
                 outlineColor: this.currentParams.outlineColor
             };
@@ -131,6 +133,8 @@ class App {
             const mergedParams = {
                 ...params,
                 enableSmoothing: this.currentParams.enableSmoothing,
+                enableLighting: this.currentParams.enableLighting,
+                lightDirection: this.currentParams.lightDirection,
                 showOutline: this.currentParams.showOutline,
                 outlineColor: this.currentParams.outlineColor
             };
@@ -152,11 +156,17 @@ class App {
             const newParams = {
                 ...char.params,
                 enableSmoothing: this.currentParams.enableSmoothing,
+                enableLighting: this.currentParams.enableLighting,
+                lightDirection: this.currentParams.lightDirection,
                 showOutline: this.currentParams.showOutline,
                 outlineColor: this.currentParams.outlineColor
             };
 
             const reprocessed = this.currentGenerator.reprocess(char, newParams);
+
+            // Regenerate animation frames with new effects
+            reprocessed.animationFrames = this.currentGenerator.generateAnimationFrames(newParams);
+
             reprocessed.name = char.name;
             reprocessed.backstory = char.backstory;
             return reprocessed;

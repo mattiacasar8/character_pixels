@@ -128,7 +128,8 @@ export class UIManager {
             });
         });
 
-        const reprocessingCheckboxes = ['enableSmoothing', 'showOutline'];
+        // Effects checkboxes that require reprocessing
+        const reprocessingCheckboxes = ['enableSmoothing', 'enableLighting', 'showOutline'];
 
         reprocessingCheckboxes.forEach(id => {
             const el = document.getElementById(id);
@@ -143,6 +144,14 @@ export class UIManager {
         const outlineColor = document.getElementById('outlineColor');
         if (outlineColor) {
             outlineColor.addEventListener('input', () => {
+                this.app.currentParams = this.getParamsFromUI();
+                this.app.reprocessCurrentCharacters();
+            });
+        }
+
+        const lightDirection = document.getElementById('lightDirection');
+        if (lightDirection) {
+            lightDirection.addEventListener('change', () => {
                 this.app.currentParams = this.getParamsFromUI();
                 this.app.reprocessCurrentCharacters();
             });
@@ -278,7 +287,10 @@ export class UIManager {
 
             fillDensity: getRange('fillDensity'),
 
+            // Effects
             enableSmoothing: document.getElementById('enableSmoothing').checked,
+            enableLighting: document.getElementById('enableLighting').checked,
+            lightDirection: document.getElementById('lightDirection').value,
             showOutline: document.getElementById('showOutline').checked,
             outlineColor: document.getElementById('outlineColor').value
         };
