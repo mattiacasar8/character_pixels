@@ -18,222 +18,188 @@
 
 <body>
     <div class="layout-grid">
-        <aside class="sidebar">
-            <header class="sidebar-header">
-                <h1>CPG_v1.0</h1>
-            </header>
+        <aside class="sidebar left-sidebar">
+            <div class="sidebar-header">
+                <h1>CPG_v2.0</h1>
+            </div>
+
+            <!-- Mode Toggle -->
+            <div class="mode-toggle">
+                <button id="mode-batch" class="mode-btn active">Batch</button>
+                <button id="mode-single" class="mode-btn">Single</button>
+            </div>
 
             <div class="controls-container">
-                <!-- Mode Selection -->
-                <section class="control-section">
-                    <h2>MODE</h2>
+                <!-- GLOBAL CONTROLS (Always Visible) -->
+
+                <!-- Generator Type -->
+                <div class="control-section">
+                    <h2>Generator</h2>
                     <div class="control-row">
                         <select id="generatorType">
-                            <option value="monster">Creature / Monster</option>
-                            <option value="human">Humanoid</option>
+                            <option value="human">Human</option>
+                            <option value="monster">Monster</option>
                         </select>
                     </div>
-                </section>
+                </div>
 
-                <!-- Generation Controls -->
-                <section class="control-section">
-                    <h2>GENERATION</h2>
-
-                    <div class="control-row">
-                        <label>PRESET</label>
-                        <select id="bodyPreset">
-                            <option value="standard">Standard</option>
-                            <option value="bulky">Bulky</option>
-                            <option value="tall">Tall</option>
-                            <option value="monster">Monstrous</option>
-                            <option value="max">Chaotic</option>
-                        </select>
+                <!-- Density (Global/Batch param) - Moving purely global logic here if applicable, 
+                     but density is often per-character. However user asked for it on Left. 
+                     We'll create a placeholder or move the slider here.
+                     Actually, standard sliders are generated in 'slidersContainer'. 
+                     I will need to specially handle 'fillDensity' in UIManager to render it here 
+                     OR just hardcode it here and bind it manually. 
+                     For now I'll create the container for it. -->
+                <div class="control-section">
+                    <h2>Density</h2>
+                    <div id="densityControlContainer">
+                        <!-- Density Slider will be moved here by JS or created here -->
                     </div>
+                </div>
 
-                    <div class="control-row">
-                        <label>DENSITY</label>
-                        <div id="slider-fillDensity" class="swiss-slider"></div>
-                        <span id="fillDensityDisplay" class="value-display">0.70 - 0.90</span>
-                    </div>
-                </section>
-
-                <!-- Effects Panel -->
-                <section class="control-section">
-                    <h2>EFFECTS</h2>
+                <!-- Generation Settings / Effects -->
+                <div class="control-section">
+                    <h2>Effects</h2>
                     <div class="checkbox-grid">
-                        <div class="control-row checkbox-row">
+                        <div class="checkbox-row">
                             <input type="checkbox" id="enableSmoothing" checked>
-                            <label for="enableSmoothing">SMOOTHING</label>
+                            <label for="enableSmoothing">Smoothing</label>
                         </div>
-                        <div class="control-row checkbox-row">
+                        <div class="checkbox-row">
+                            <input type="checkbox" id="showOutline">
+                            <label for="showOutline">Outline</label>
+                            <input type="color" id="outlineColor" value="#2a2a2a"
+                                style="width: 20px; height: 20px; border: none; padding: 0; margin-left: 5px;">
+                        </div>
+                        <div class="checkbox-row">
                             <input type="checkbox" id="enableLighting" checked>
-                            <label for="enableLighting">LIGHTING</label>
-                            <select id="lightDirection" class="mini-select">
-                                <option value="top-right">↗</option>
+                            <label for="enableLighting">Lighting</label>
+                            <select id="lightDirection" class="mini-select" title="Light Direction">
                                 <option value="top-left">↖</option>
-                                <option value="bottom-right">↘</option>
-                                <option value="bottom-left">↙</option>
+                                <option value="top">↑</option>
+                                <option value="top-right">↗</option>
+                                <option value="left">←</option>
+                                <option value="right">→</option>
                             </select>
                         </div>
-                        <div class="control-row checkbox-row">
-                            <input type="checkbox" id="showOutline" checked>
-                            <label for="showOutline">OUTLINE</label>
-                            <input type="color" id="outlineColor" value="#000000"
-                                style="margin-left: 10px; width: 30px; height: 20px; border: none; padding: 0;">
-                        </div>
                     </div>
-                </section>
+                </div>
 
-                <!-- Advanced Controls (Collapsible) -->
+                <!-- Display Options (Global View) -->
                 <section class="control-section">
-                    <details>
-                        <summary>ADVANCED PARAMETERS</summary>
-                        <div class="advanced-content">
-                            <div class="control-group" data-param="torsoTopWidth">
-                                <div class="label-row">
-                                    <label>TORSO TOP</label>
-                                    <span id="torsoTopWidthDisplay">20-28%</span>
-                                </div>
-                                <div id="slider-torsoTopWidth" class="swiss-slider"></div>
-                            </div>
-
-                            <div class="control-group" data-param="torsoBottomWidth">
-                                <div class="label-row">
-                                    <label>TORSO BOT</label>
-                                    <span id="torsoBottomWidthDisplay">16-24%</span>
-                                </div>
-                                <div id="slider-torsoBottomWidth" class="swiss-slider"></div>
-                            </div>
-
-                            <div class="control-group" data-param="torsoHeight">
-                                <div class="label-row">
-                                    <label>TORSO H</label>
-                                    <span id="torsoHeightDisplay">26-34%</span>
-                                </div>
-                                <div id="slider-torsoHeight" class="swiss-slider"></div>
-                            </div>
-
-                            <div class="control-group" data-param="headWidth">
-                                <div class="label-row">
-                                    <label>HEAD SIZE</label>
-                                    <span id="headWidthDisplay">14-22%</span>
-                                </div>
-                                <div id="slider-headWidth" class="swiss-slider"></div>
-                            </div>
-
-                            <div class="control-group" data-param="upperArmLength">
-                                <div class="label-row">
-                                    <label>ARM LEN</label>
-                                    <span id="upperArmLengthDisplay">18-26%</span>
-                                </div>
-                                <div id="slider-upperArmLength" class="swiss-slider"></div>
-                            </div>
-
-                            <div class="control-group" data-param="thighLength">
-                                <div class="label-row">
-                                    <label>LEG LEN</label>
-                                    <span id="thighLengthDisplay">18-26%</span>
-                                </div>
-                                <div id="slider-thighLength" class="swiss-slider"></div>
-                            </div>
-
-                            <!-- Full controls visible -->
-                            <div class="control-group" data-param="neckWidth">
-                                <div class="label-row"><label>NECK W</label><span id="neckWidthDisplay"></span></div>
-                                <div id="slider-neckWidth" class="swiss-slider"></div>
-                            </div>
-                            <div class="control-group" data-param="neckHeight">
-                                <div class="label-row"><label>NECK H</label><span id="neckHeightDisplay"></span></div>
-                                <div id="slider-neckHeight" class="swiss-slider"></div>
-                            </div>
-                            <div class="control-group" data-param="upperArmTopWidth">
-                                <div class="label-row"><label>U.ARM W</label><span id="upperArmTopWidthDisplay"></span>
-                                </div>
-                                <div id="slider-upperArmTopWidth" class="swiss-slider"></div>
-                            </div>
-                            <div class="control-group" data-param="forearmTopWidth">
-                                <div class="label-row"><label>F.ARM W</label><span id="forearmTopWidthDisplay"></span>
-                                </div>
-                                <div id="slider-forearmTopWidth" class="swiss-slider"></div>
-                            </div>
-                            <div class="control-group" data-param="armAngle">
-                                <div class="label-row"><label>ARM ANG</label><span id="armAngleDisplay"></span></div>
-                                <div id="slider-armAngle" class="swiss-slider"></div>
-                            </div>
-                            <div class="control-group" data-param="elbowAngle">
-                                <div class="label-row"><label>ELBOW ANG</label><span id="elbowAngleDisplay"></span>
-                                </div>
-                                <div id="slider-elbowAngle" class="swiss-slider"></div>
-                            </div>
-                            <div class="control-group" data-param="thighTopWidth">
-                                <div class="label-row"><label>THIGH W</label><span id="thighTopWidthDisplay"></span>
-                                </div>
-                                <div id="slider-thighTopWidth" class="swiss-slider"></div>
-                            </div>
-                            <div class="control-group" data-param="shinTopWidth">
-                                <div class="label-row"><label>SHIN W</label><span id="shinTopWidthDisplay"></span></div>
-                                <div id="slider-shinTopWidth" class="swiss-slider"></div>
-                            </div>
-                            <div class="control-group" data-param="legAngle">
-                                <div class="label-row"><label>LEG ANG</label><span id="legAngleDisplay"></span></div>
-                                <div id="slider-legAngle" class="swiss-slider"></div>
-                            </div>
-                        </div>
-                    </details>
-                </section>
-
-                <!-- Display Options -->
-                <section class="control-section">
-                    <h2>DISPLAY</h2>
+                    <h2>Display</h2>
                     <div class="checkbox-grid">
                         <div class="control-row checkbox-row">
                             <input type="checkbox" id="showFinal" checked>
-                            <label for="showFinal">PIXELS</label>
+                            <label for="showFinal">Pixels</label>
                         </div>
                         <div class="control-row checkbox-row">
                             <input type="checkbox" id="showGrid">
-                            <label for="showGrid">GRID</label>
+                            <label for="showGrid">Grid</label>
                         </div>
                         <div class="control-row checkbox-row">
                             <input type="checkbox" id="showHeatmap">
-                            <label for="showHeatmap">HEATMAP</label>
+                            <label for="showHeatmap">Heatmap</label>
                         </div>
                         <div class="control-row checkbox-row">
                             <input type="checkbox" id="showStickFigure">
-                            <label for="showStickFigure">BONES</label>
+                            <label for="showStickFigure">Bones</label>
                         </div>
                         <div class="control-row checkbox-row">
                             <input type="checkbox" id="showThickness">
-                            <label for="showThickness">SHAPES</label>
+                            <label for="showThickness">Shapes</label>
+                        </div>
+                        <!-- Hidden debug options -->
+                        <div class="checkbox-row" style="display:none">
+                            <input type="checkbox" id="showShapes">
+                            <label for="showShapes">Raw Shapes</label>
+                        </div>
+                        <div class="checkbox-row" style="display:none">
+                            <input type="checkbox" id="showAnalysis">
+                            <label for="showAnalysis">Analysis</label>
                         </div>
                     </div>
 
-                    <div class="control-row">
-                        <label>SIZE</label>
+                    <div class="control-row" style="margin-top: 15px;">
+                        <label>Size</label>
                         <input type="range" id="canvasSize" min="20" max="70" value="50" step="10" class="simple-range">
                         <span id="canvasSizeValue" class="value-display">50</span>
                     </div>
                 </section>
 
-                <!-- Actions -->
-                <section class="action-section">
-                    <div class="button-grid">
-                        <button type="button" id="generateOne">GENERATE 1</button>
-                        <button type="button" id="generateTen">GENERATE 10</button>
-                        <button type="button" id="generateHundred">GENERATE 100</button>
-                        <button type="button" id="randomize">RANDOMIZE</button>
-                    </div>
-                    <div class="export-grid">
-                        <button type="button" id="exportSpritesheet" class="btn-outline">EXPORT SHEET</button>
-                        <button type="button" id="exportZip" class="btn-outline">EXPORT ZIP</button>
-                    </div>
-                </section>
+                <!-- Hidden inputs -->
+                <input type="hidden" id="gridSize" value="64">
+
             </div>
         </aside>
 
         <main class="main-content">
             <div id="canvasGrid" class="grid-container"></div>
         </main>
+
+        <aside class="sidebar right-sidebar" id="right-sidebar">
+            <div class="sidebar-header">
+                <h2>Controls</h2>
+                <!-- Randomize Button (Global or Contextual) -->
+                <button id="randomize" class="btn-small">RANDOMIZE</button>
+            </div>
+
+            <div class="controls-container" id="rightControlsContainer">
+
+                <!-- BATCH ACTIONS (Default View) -->
+                <div id="batch-actions">
+                    <div class="control-section">
+                        <h2>Batch Generation</h2>
+                        <div class="button-grid">
+                            <button type="button" id="generateOne">GENERATE 1</button>
+                            <button type="button" id="generateTen">GENERATE 10</button>
+                            <button type="button" id="generateHundred">GENERATE 100</button>
+                        </div>
+                    </div>
+
+                    <div class="control-section">
+                        <h2>Export</h2>
+                        <div class="button-grid">
+                            <button type="button" id="exportSpritesheet">EXPORT SHEET</button>
+                            <button type="button" id="exportZip">EXPORT ZIP</button>
+                        </div>
+                    </div>
+
+                    <!-- Presets (Batch) -->
+                    <div class="control-section">
+                        <h2>Presets</h2>
+                        <div class="button-grid" id="presetButtons">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Sliders (Batch Distribution) -->
+                    <div class="control-section">
+                        <h2>Batch Parameters</h2>
+                        <div class="button-grid">
+                            <button id="randomizeSliders">Randomize Sliders</button>
+                        </div>
+                        <div id="slidersContainer">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SINGLE MODE ACTIONS (Dynamically shown) -->
+                <div id="single-controls" style="display: none;">
+                    <div class="control-section">
+                        <h2>Character Editor</h2>
+                        <!-- Back Button? -->
+                        <!-- <button id="backToBatchBtn">Back to Batch</button> -->
+                    </div>
+
+                    <div id="singleParamsContainer">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+            </div>
+        </aside>
     </div>
 
     <!-- Modal -->
@@ -249,6 +215,7 @@
 
                     <div class="modal-controls">
                         <button id="toggleAnimation" title="Play/Pause Animation">⏸</button>
+                        <button id="editCharBtn" class="btn-primary" style="margin-left: 10px;">EDIT PARAMETERS</button>
                     </div>
 
                     <div class="modal-actions">

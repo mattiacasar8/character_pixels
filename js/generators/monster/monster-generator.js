@@ -1,7 +1,7 @@
 import { CharacterGenerator } from '../../core/generator.js';
 import { MONSTER_PALETTES } from '../../data/monster-palettes.js';
 import { MonsterNameGenerator } from './monster-names.js';
-import { PARAM_CONFIG } from '../../config.js';
+import { PARAM_CONFIG, BODY_PROPORTIONS } from '../../config.js';
 import { createTrapezoid, createJoint, getTrapezoidBottom } from '../../utils/math.js';
 import { SeededRandom } from '../../utils/random.js';
 
@@ -18,8 +18,8 @@ export class MonsterGenerator extends CharacterGenerator {
         const characterData = super.generate(params);
 
         // Generate a monster-specific name
-        const nameGen = new MonsterNameGenerator();
-        characterData.name = nameGen.generate();
+        characterData.name = this.nameGenerator.generate();
+        characterData.type = 'monster';
 
         return characterData;
     }
@@ -42,82 +42,17 @@ export class MonsterGenerator extends CharacterGenerator {
     }
 
     getParamRanges(preset) {
-        // All size parameters are now in % of canvas size
-        const baseRanges = {
-            torsoTopWidth: { min: 16, max: 32 },
-            torsoBottomWidth: { min: 12, max: 28 },
-            torsoHeight: { min: 24, max: 36 },
-            torsoY: { min: 16, max: 24 },
-            neckWidth: { min: 4, max: 10 },
-            neckHeight: { min: 4, max: 12 },
-            headWidth: { min: 12, max: 24 },
-            headHeight: { min: 12, max: 24 },
-            upperArmTopWidth: { min: 4, max: 12 },
-            upperArmBottomWidth: { min: 3, max: 10 },
-            upperArmLength: { min: 16, max: 28 },
-            forearmTopWidth: { min: 3, max: 10 },
-            forearmBottomWidth: { min: 2, max: 8 },
-            forearmLength: { min: 16, max: 28 },
-            armAngle: { min: -80, max: -10 },
-            elbowAngle: { min: -70, max: 70 },
-            thighTopWidth: { min: 6, max: 16 },
-            thighBottomWidth: { min: 4, max: 12 },
-            thighLength: { min: 16, max: 28 },
-            shinTopWidth: { min: 4, max: 12 },
-            shinBottomWidth: { min: 3, max: 10 },
-            shinLength: { min: 20, max: 32 },
-            legAngle: { min: -25, max: 0 },
-            fillDensity: { min: 0.7, max: 1.0 }
-        };
+        // Use centralized body proportions from config
+        const baseRanges = { ...BODY_PROPORTIONS.monster.base };
 
-        switch (preset) {
-            case 'short':
-                return {
-                    ...baseRanges,
-                    torsoHeight: { min: 24, max: 30 },
-                    torsoY: { min: 24, max: 32 },
-                    thighLength: { min: 12, max: 20 },
-                    shinLength: { min: 16, max: 24 }
-                };
-
-            case 'tall':
-                return {
-                    ...baseRanges,
-                    torsoHeight: { min: 32, max: 44 },
-                    torsoY: { min: 12, max: 20 },
-                    thighLength: { min: 24, max: 36 },
-                    shinLength: { min: 28, max: 40 },
-                    upperArmLength: { min: 24, max: 36 },
-                    forearmLength: { min: 24, max: 36 }
-                };
-
-            case 'thin':
-                return {
-                    ...baseRanges,
-                    torsoTopWidth: { min: 12, max: 20 },
-                    torsoBottomWidth: { min: 10, max: 18 },
-                    upperArmTopWidth: { min: 3, max: 6 },
-                    forearmTopWidth: { min: 2, max: 5 },
-                    thighTopWidth: { min: 4, max: 8 },
-                    shinTopWidth: { min: 3, max: 6 }
-                };
-
-            case 'bulky':
-                return {
-                    ...baseRanges,
-                    torsoTopWidth: { min: 24, max: 36 },
-                    torsoBottomWidth: { min: 20, max: 32 },
-                    upperArmTopWidth: { min: 8, max: 16 },
-                    forearmTopWidth: { min: 6, max: 12 },
-                    thighTopWidth: { min: 10, max: 20 },
-                    shinTopWidth: { min: 8, max: 16 },
-                    headWidth: { min: 16, max: 28 }
-                };
-
-            case 'standard':
-            default:
-                return baseRanges;
+        if (preset && BODY_PROPORTIONS.monster.presets[preset]) {
+            return {
+                ...baseRanges,
+                ...BODY_PROPORTIONS.monster.presets[preset]
+            };
         }
+
+        return baseRanges;
     }
 
     // scaleParams is now handled by the base CharacterGenerator

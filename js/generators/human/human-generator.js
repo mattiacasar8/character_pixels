@@ -20,6 +20,7 @@ export class HumanGenerator extends CharacterGenerator {
     generate(params) {
         const characterData = super.generate(params);
         characterData.name = nameGenerator.generate();
+        characterData.type = 'human';
         return characterData;
     }
 

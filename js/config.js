@@ -1,5 +1,14 @@
 // Configuration and Constants
 
+// PARAM_CONFIG: UI Slider Definitions & Constraints
+// This block defines the "Physical Sliders" available in the UI.
+// - hardMin/hardMax: Absolute limits for the slider.
+// - safeMin/safeMax: "Safe" ranges for random generation (overridden by presets).
+// - step/label/suffix: UI formatting options.
+//
+// NOTE: Random generation logic (safeMin/safeMax) here is mostly fallback.
+// Actual body proportions for generation are now in BODY_PROPORTIONS below.
+
 export const PARAM_CONFIG = {
     torsoTopWidth: {
         hardMin: 5, hardMax: 50,
@@ -196,9 +205,66 @@ export const BODY_PROPORTIONS = {
                 shinLength: { min: 12, max: 16 }
             }
         }
+    },
+    monster: {
+        base: {
+            torsoTopWidth: { min: 16, max: 32 },
+            torsoBottomWidth: { min: 12, max: 28 },
+            torsoHeight: { min: 24, max: 36 },
+            torsoY: { min: 16, max: 24 },
+            neckWidth: { min: 4, max: 10 },
+            neckHeight: { min: 4, max: 12 },
+            headWidth: { min: 12, max: 24 },
+            headHeight: { min: 12, max: 24 },
+            upperArmTopWidth: { min: 4, max: 12 },
+            upperArmBottomWidth: { min: 3, max: 10 },
+            upperArmLength: { min: 16, max: 28 },
+            forearmTopWidth: { min: 3, max: 10 },
+            forearmBottomWidth: { min: 2, max: 8 },
+            forearmLength: { min: 16, max: 28 },
+            armAngle: { min: -80, max: -10 },
+            elbowAngle: { min: -70, max: 70 },
+            thighTopWidth: { min: 6, max: 16 },
+            thighBottomWidth: { min: 4, max: 12 },
+            thighLength: { min: 16, max: 28 },
+            shinTopWidth: { min: 4, max: 12 },
+            shinBottomWidth: { min: 3, max: 10 },
+            shinLength: { min: 20, max: 32 },
+            legAngle: { min: -25, max: 0 },
+            fillDensity: { min: 0.7, max: 1.0 }
+        },
+        presets: {
+            short: {
+                torsoHeight: { min: 24, max: 30 },
+                torsoY: { min: 24, max: 32 },
+                thighLength: { min: 12, max: 20 },
+                shinLength: { min: 16, max: 24 }
+            },
+            tall: {
+                torsoHeight: { min: 32, max: 44 },
+                torsoY: { min: 12, max: 20 },
+                thighLength: { min: 24, max: 36 },
+                shinLength: { min: 28, max: 40 },
+                upperArmLength: { min: 24, max: 36 },
+                forearmLength: { min: 24, max: 36 }
+            },
+            thin: {
+                torsoTopWidth: { min: 12, max: 20 },
+                torsoBottomWidth: { min: 10, max: 18 },
+                upperArmTopWidth: { min: 3, max: 6 },
+                forearmTopWidth: { min: 2, max: 5 },
+                thighTopWidth: { min: 4, max: 8 },
+                shinTopWidth: { min: 3, max: 6 }
+            },
+            bulky: {
+                torsoTopWidth: { min: 24, max: 36 },
+                torsoBottomWidth: { min: 20, max: 32 },
+                upperArmTopWidth: { min: 8, max: 16 },
+                forearmTopWidth: { min: 6, max: 12 },
+                thighTopWidth: { min: 10, max: 20 },
+                shinTopWidth: { min: 8, max: 16 },
+                headWidth: { min: 16, max: 28 }
+            }
+        }
     }
 };
-
-
-
-

@@ -284,17 +284,17 @@ This is organization only - no visual changes.
 - [x] Extract `outline-processor.js` (OutlineProcessor.js)
 - [x] Add processor toggle support in presets (via UIManager)
 
-#### 1.5 Clean Up Human Generator
-- [ ] Create `clothing-generator.js` - extract pattern logic
-- [ ] Create `accessory-generator.js` - extract necklace/belt logic
-- [ ] Fix necklace generation quality issues
-- [ ] Improve poor-quality patterns
+#### 1.5 Clean Up Human Generator (DONE)
+- [x] Create `clothing-generator.js` and extract pattern logic.
+- [x] Create `accessory-generator.js` and extract necklace/belt logic.
+- [x] Fix necklace generation quality issues.
+- [x] Improve poor-quality patterns.
 
-#### 1.6 Organize Proportions
-- [ ] Add `BODY_PROPORTIONS` to `config.js`
-- [ ] Move magic numbers from generators to config
-- [ ] Ensure NO visual changes (just organization)
-- [ ] Verify all presets still produce same results
+#### 1.6 Organize Proportions (DONE)
+- [x] Add `BODY_PROPORTIONS` to `config.js`
+- [x] Move magic numbers from generators to config
+- [x] Ensure NO visual changes (just organization)
+- [x] Verify all presets still produce same results
 
 ---
 

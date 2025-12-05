@@ -14,6 +14,7 @@ import { CharacterRenderer } from './core/renderer.js';
 import { UIManager } from './app/UIManager.js';
 import { ModalManager } from './app/ModalManager.js';
 import { ExportManager } from './app/ExportManager.js';
+import { CharacterManager } from './app/CharacterManager.js';
 
 class App {
     constructor() {
@@ -32,6 +33,7 @@ class App {
         this.characterRenderer = new CharacterRenderer(3, this.canvasSize);
 
         // Initialize managers
+        this.characterManager = new CharacterManager();
         this.uiManager = new UIManager(this);
         this.modalManager = new ModalManager(this);
         this.exportManager = new ExportManager(this);
@@ -40,7 +42,11 @@ class App {
         this.currentParams = null;
         this.displayOptions = null;
 
+        // Expose for debugging
+        window.characterManager = this.characterManager;
+
         this.init();
+        this.setupModalEdit();
     }
 
     init() {
@@ -205,25 +211,51 @@ class App {
     renderCharacters() {
         const grid = document.getElementById('canvasGrid');
         grid.innerHTML = '';
+        this.canvasGrid.innerHTML = '';
+        this.canvasGrid.className = 'grid-container'; // Reset class for grid view
 
         this.characters.forEach((character) => {
             const card = document.createElement('div');
             card.className = 'char-card';
             card.style.cursor = 'pointer';
-            card.title = 'Click to see backstory';
+            card.title = 'Click to view details';
             card.addEventListener('click', () => this.modalManager.show(character));
 
             const canvas = this.characterRenderer.createCanvas();
             this.characterRenderer.drawCharacter(canvas, character, this.displayOptions);
+            card.appendChild(canvas);
 
-            const nameDiv = document.createElement('div');
-            nameDiv.className = 'char-name';
-            nameDiv.textContent = character.name;
+            // Add name label if in array
+            if (character.name) {
+                const label = document.createElement('div');
+                label.className = 'char-name';
+                label.textContent = character.name;
+                card.appendChild(label);
+            }
 
-            const storyDiv = document.createElement('div');
-            storyDiv.className = 'char-story';
-            storyDiv.textContent = character.backstory || "Nessuna storia disponibile.";
+            this.canvasGrid.appendChild(card);
+        });
+    }
 
+    setupModalEdit() {
+        // Setup the "EDIT" button in the modal
+        const editBtn = document.getElementById('editCharBtn');
+        if (editBtn) {
+            editBtn.addEventListener('click', () => {
+                const character = this.modalManager.currentCharacter;
+                if (!character) return;
+
+                // Close modal
+                this.modalManager.hide();
+
+                // Switch to edit mode
+                this.characterManager.selectCharacter(character);
+                this.uiManager.switchMode('single');
+                this.uiManager.populateSingleModeControls(character);
+
+                // Ensure the view updates to show only this character
+                this.renderSingleCharacterView(character);
+            });
             card.appendChild(canvas);
             card.appendChild(nameDiv);
             card.appendChild(storyDiv);
