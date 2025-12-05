@@ -115,6 +115,90 @@ export const PARAM_CONFIG = {
     }
 };
 
+export const BODY_PROPORTIONS = {
+    human: {
+        base: {
+            // Torso (17-35%, 14-27%, 20-41%)
+            torsoTopWidth: { min: 17, max: 35 },
+            torsoBottomWidth: { min: 14, max: 27 },
+            torsoHeight: { min: 20, max: 41 },
+            // Position: Dynamic based on height
+            torsoY: { min: 28, max: 34 },
+
+            // Neck (4-6%, 2-4%)
+            neckWidth: { min: 4, max: 6 },
+            neckHeight: { min: 2, max: 4 },
+
+            // Head (14-24%)
+            headWidth: { min: 14, max: 24 },
+            headHeight: { min: 14, max: 24 },
+
+            // Arms (Len: 14-22%, W: 9-14%, 6-9%)
+            upperArmTopWidth: { min: 9, max: 14 },
+            upperArmBottomWidth: { min: 7, max: 11 }, // Slightly tapered
+            upperArmLength: { min: 14, max: 22 },
+            forearmTopWidth: { min: 6, max: 9 },
+            forearmBottomWidth: { min: 5, max: 8 },
+            forearmLength: { min: 14, max: 22 },
+
+            // Angles
+            armAngle: { min: -40, max: 0 },
+            elbowAngle: { min: -5, max: 35 },
+
+            // Legs (Len: 12-18%, W: 7-12%, 5-8%)
+            thighTopWidth: { min: 7, max: 12 },
+            thighBottomWidth: { min: 6, max: 10 },
+            thighLength: { min: 12, max: 18 },
+            shinTopWidth: { min: 5, max: 8 },
+            shinBottomWidth: { min: 4, max: 7 },
+            shinLength: { min: 12, max: 18 },
+            legAngle: { min: -25, max: 0 },
+
+            // Generation
+            fillDensity: { min: 1.0, max: 1.0 }
+        },
+        presets: {
+            athletic: {
+                torsoTopWidth: { min: 18, max: 24 },        // Much wider
+                torsoBottomWidth: { min: 16, max: 22 },
+                torsoHeight: { min: 24, max: 30 },
+                upperArmTopWidth: { min: 6, max: 10 },       // Muscular arms
+                forearmTopWidth: { min: 5, max: 8 },
+                thighTopWidth: { min: 8, max: 12 },          // Thick legs
+                shinTopWidth: { min: 6, max: 10 }
+            },
+            slim: {
+                torsoTopWidth: { min: 10, max: 14 },         // Much narrower
+                torsoBottomWidth: { min: 8, max: 12 },
+                torsoHeight: { min: 20, max: 26 },           // Slightly shorter torso
+                upperArmTopWidth: { min: 3, max: 5 },        // Thin arms
+                forearmTopWidth: { min: 3, max: 5 },
+                thighTopWidth: { min: 4, max: 6 },           // Thin legs
+                shinTopWidth: { min: 3, max: 5 }
+            },
+            stocky: {
+                torsoTopWidth: { min: 20, max: 26 },         // Very wide
+                torsoBottomWidth: { min: 18, max: 24 },
+                torsoHeight: { min: 20, max: 26 },           // Shorter torso
+                torsoY: { min: 14, max: 18 },                // Lower position
+                upperArmTopWidth: { min: 6, max: 9 },        // Thick arms
+                thighTopWidth: { min: 8, max: 12 },          // Very thick legs
+                thighLength: { min: 8, max: 12 },            // Shorter legs
+                shinLength: { min: 8, max: 12 }
+            },
+            tall: {
+                torsoHeight: { min: 26, max: 34 },           // Taller torso
+                torsoY: { min: 10, max: 14 },                // Higher to fit
+                headHeight: { min: 7, max: 10 },
+                upperArmLength: { min: 14, max: 18 },        // Longer limbs
+                forearmLength: { min: 14, max: 18 },
+                thighLength: { min: 12, max: 16 },
+                shinLength: { min: 12, max: 16 }
+            }
+        }
+    }
+};
+
 
 
 

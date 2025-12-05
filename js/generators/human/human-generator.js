@@ -1,15 +1,20 @@
 import { CharacterGenerator } from '../../core/generator.js';
 import { SKIN_TONES, CLOTHING_COLORS, HAIR_COLORS, EYE_COLORS, MOUTH_COLORS } from '../../data/human-palettes.js';
-import { randomFloat, randomInt, SeededRandom, hash } from '../../utils/random.js';
+import { randomFloat, randomInt, SeededRandom } from '../../utils/random.js';
 import { createTrapezoid, createJoint, getTrapezoidBottom, isPointInPolygon } from '../../utils/math.js';
 import { FaceGenerator } from './face-generator.js';
 import { nameGenerator } from '../name-generator.js';
 import { processorManager } from '../../core/processors/ProcessorManager.js';
+import { ClothingGenerator } from './clothing-generator.js';
+import { AccessoryGenerator } from './accessory-generator.js';
+import { BODY_PROPORTIONS } from '../../config.js';
 
 export class HumanGenerator extends CharacterGenerator {
     constructor(canvasSize = 50) {
         super(canvasSize);
         this.faceGenerator = new FaceGenerator();
+        this.clothingGenerator = new ClothingGenerator();
+        this.accessoryGenerator = new AccessoryGenerator();
     }
 
     generate(params) {
@@ -19,23 +24,40 @@ export class HumanGenerator extends CharacterGenerator {
     }
 
     // Override to use human palettes
-    randomParamsInRange(preset = 'standard') {
-        const params = super.randomParamsInRange(preset);
+    randomParamsInRange(preset = 'standard', existingSeed = null) {
+        const seed = existingSeed !== null ? existingSeed : Math.floor(Math.random() * 2147483647);
+        const params = super.randomParamsInRange(preset, seed);
 
-        // Select colors
-        const skinTone = this.getRandomColor(SKIN_TONES);
+        // Select colors deterministically using the seed
+        // We use a salted seed for colors to avoid correlation with size params if desired,
+        // but using the same RNG sequence involves less boilerplate.
+        // Let's create a new seeded RNG specifically for colors to keep it clean.
+        // We can just use the next values from the rng initialized in super if we passed rng back,
+        // but super returns params object.
+        // So we re-initialize rng with the same seed + salt for colors.
 
-        // Clothing: Shirt and Pants
-        const shirtColor = this.getRandomColor(CLOTHING_COLORS);
-        let pantsColor = this.getRandomColor(CLOTHING_COLORS);
+        // Actually, super.randomParamsInRange returns params.seed.
+        // Let's use a simple integer salt to ensure colors are distinct from geometry but deterministic.
+        // We use integer addition because SeededRandom works best with integer seeds.
+        // hash() returns a float 0-1 which is bad for SeededRandom initialization.
+        const rng = new SeededRandom(params.seed + 12345); // Salted with integer
+
+        const getRandomColor = (array) => array[rng.int(0, array.length - 1)];
+
+        const skinTone = getRandomColor(SKIN_TONES);
+        const shirtColor = getRandomColor(CLOTHING_COLORS);
+        let pantsColor = getRandomColor(CLOTHING_COLORS);
+
         // Ensure pants are different from shirt
-        while (pantsColor === shirtColor && CLOTHING_COLORS.length > 1) {
-            pantsColor = this.getRandomColor(CLOTHING_COLORS);
+        let attempts = 0;
+        while (pantsColor === shirtColor && CLOTHING_COLORS.length > 1 && attempts < 10) {
+            pantsColor = getRandomColor(CLOTHING_COLORS);
+            attempts++;
         }
 
-        const hairColor = this.getRandomColor(HAIR_COLORS);
-        const eyeColor = this.getRandomColor(EYE_COLORS);
-        const mouthColor = this.getRandomColor(MOUTH_COLORS);
+        const hairColor = getRandomColor(HAIR_COLORS);
+        const eyeColor = getRandomColor(EYE_COLORS);
+        const mouthColor = getRandomColor(MOUTH_COLORS);
 
         params.humanColors = {
             skin: skinTone,
@@ -51,108 +73,23 @@ export class HumanGenerator extends CharacterGenerator {
     }
 
     getRandomColor(array) {
+        // Fallback for non-seeded calls if any
         return array[Math.floor(Math.random() * array.length)];
     }
 
     // Override to enforce human proportions
     // Canvas is 50px (0-49). Proportions recalculated based on feedback.
     getParamRanges(preset) {
-        const baseRanges = {
-            // Torso (17-35%, 14-27%, 20-41%)
-            torsoTopWidth: { min: 17, max: 35 },
-            torsoBottomWidth: { min: 14, max: 27 },
-            torsoHeight: { min: 20, max: 41 },
-            // Position: Dynamic based on height
-            // We override torsoY in generateBodyParts to center the character
-            torsoY: { min: 28, max: 34 },
+        const baseRanges = { ...BODY_PROPORTIONS.human.base };
 
-            // Neck (4-6%, 2-4%)
-            neckWidth: { min: 4, max: 6 },
-            neckHeight: { min: 2, max: 4 },
-
-            // Head (14-24%)
-            headWidth: { min: 14, max: 24 },
-            headHeight: { min: 14, max: 24 },
-
-            // Arms (Len: 14-22%, W: 9-14%, 6-9%)
-            upperArmTopWidth: { min: 9, max: 14 },
-            upperArmBottomWidth: { min: 7, max: 11 }, // Slightly tapered
-            upperArmLength: { min: 14, max: 22 },
-            forearmTopWidth: { min: 6, max: 9 },
-            forearmBottomWidth: { min: 5, max: 8 },
-            forearmLength: { min: 14, max: 22 },
-
-            // Angles
-            armAngle: { min: -40, max: 0 },
-            elbowAngle: { min: -5, max: 35 },
-
-            // Legs (Len: 12-18%, W: 7-12%, 5-8%)
-            thighTopWidth: { min: 7, max: 12 },
-            thighBottomWidth: { min: 6, max: 10 },
-            thighLength: { min: 12, max: 18 },
-            shinTopWidth: { min: 5, max: 8 },
-            shinBottomWidth: { min: 4, max: 7 },
-            shinLength: { min: 12, max: 18 },
-            legAngle: { min: -25, max: 0 },
-
-            // Generation
-            fillDensity: { min: 1.0, max: 1.0 }
-        };
-
-        switch (preset) {
-            case 'athletic':
-                return {
-                    ...baseRanges,
-                    torsoTopWidth: { min: 18, max: 24 },        // Much wider
-                    torsoBottomWidth: { min: 16, max: 22 },
-                    torsoHeight: { min: 24, max: 30 },
-                    upperArmTopWidth: { min: 6, max: 10 },       // Muscular arms
-                    forearmTopWidth: { min: 5, max: 8 },
-                    thighTopWidth: { min: 8, max: 12 },          // Thick legs
-                    shinTopWidth: { min: 6, max: 10 }
-                };
-
-            case 'slim':
-                return {
-                    ...baseRanges,
-                    torsoTopWidth: { min: 10, max: 14 },         // Much narrower
-                    torsoBottomWidth: { min: 8, max: 12 },
-                    torsoHeight: { min: 20, max: 26 },           // Slightly shorter torso
-                    upperArmTopWidth: { min: 3, max: 5 },        // Thin arms
-                    forearmTopWidth: { min: 3, max: 5 },
-                    thighTopWidth: { min: 4, max: 6 },           // Thin legs
-                    shinTopWidth: { min: 3, max: 5 }
-                };
-
-            case 'stocky':
-                return {
-                    ...baseRanges,
-                    torsoTopWidth: { min: 20, max: 26 },         // Very wide
-                    torsoBottomWidth: { min: 18, max: 24 },
-                    torsoHeight: { min: 20, max: 26 },           // Shorter torso
-                    torsoY: { min: 14, max: 18 },                // Lower position
-                    upperArmTopWidth: { min: 6, max: 9 },        // Thick arms
-                    thighTopWidth: { min: 8, max: 12 },          // Very thick legs
-                    thighLength: { min: 8, max: 12 },            // Shorter legs
-                    shinLength: { min: 8, max: 12 }
-                };
-
-            case 'tall':
-                return {
-                    ...baseRanges,
-                    torsoHeight: { min: 26, max: 34 },           // Taller torso
-                    torsoY: { min: 10, max: 14 },                // Higher to fit
-                    headHeight: { min: 7, max: 10 },
-                    upperArmLength: { min: 14, max: 18 },        // Longer limbs
-                    forearmLength: { min: 14, max: 18 },
-                    thighLength: { min: 12, max: 16 },
-                    shinLength: { min: 12, max: 16 }
-                };
-
-            case 'standard':
-            default:
-                return baseRanges;
+        if (preset && BODY_PROPORTIONS.human.presets[preset]) {
+            return {
+                ...baseRanges,
+                ...BODY_PROPORTIONS.human.presets[preset]
+            };
         }
+
+        return baseRanges;
     }
 
     generateBodyParts(params) {
@@ -359,6 +296,11 @@ export class HumanGenerator extends CharacterGenerator {
         const rng = new SeededRandom(params.seed);
         if (!colors) {
             const getSeededColor = (arr) => arr[rng.int(0, arr.length - 1)];
+
+            // To maintain determinism, we need to replicate the color selection order if params aren't present
+            // But usually generatePixels is called with params generated by randomParamsInRange/generateFrames
+            // which should have colors.
+            // If we are here, we might need a fallback.
             colors = {
                 skin: getSeededColor(SKIN_TONES),
                 shirt: getSeededColor(CLOTHING_COLORS),
@@ -370,42 +312,10 @@ export class HumanGenerator extends CharacterGenerator {
         }
 
         // Determine Clothing Patterns & Styles
+        const clothingPatterns = this.clothingGenerator.generatePatterns(rng);
 
-        // Shirt Patterns
-        const shirtPatternVal = rng.next();
-        let shirtPattern = 'none';
-        let shirtProps = {};
-
-        if (shirtPatternVal < 0.25) {
-            shirtPattern = 'stripes';
-            shirtProps.orientation = rng.next() > 0.5 ? 'vertical' : 'horizontal';
-        } else if (shirtPatternVal < 0.5) {
-            shirtPattern = 'checkers';
-            const sub = rng.next();
-            if (sub < 0.33) shirtProps.shape = 'square';
-            else if (sub < 0.66) shirtProps.shape = 'triangle';
-            else shirtProps.shape = 'circle';
-        } else if (shirtPatternVal < 0.75) {
-            shirtPattern = 'buttons';
-            const sub = rng.next();
-            if (sub < 0.33) shirtProps.align = 'left';
-            else if (sub < 0.66) shirtProps.align = 'right';
-            else shirtProps.align = 'center';
-        } else {
-            shirtPattern = 'tunic';
-            shirtProps.long = rng.next() < 0.3; // 30% chance of long tunic/robe
-        }
-
-        // Pants Patterns
-        const pantsPatternVal = rng.next();
-        let pantsPattern = 'none';
-        let pantsProps = {};
-        if (pantsPatternVal < 0.3) {
-            pantsPattern = 'stripes';
-            pantsProps.orientation = rng.next() > 0.5 ? 'vertical' : 'horizontal';
-        } else if (pantsPatternVal < 0.5) {
-            pantsPattern = 'patches';
-        }
+        // Generate Accessories
+        const accessories = this.accessoryGenerator.generateAccessories(rng);
 
         const bodyParts = this.generateBodyParts(params);
 
@@ -445,7 +355,7 @@ export class HumanGenerator extends CharacterGenerator {
                         let region = bodyParts[key].region;
 
                         // LONG TUNIC OVERRIDE
-                        if (shirtPattern === 'tunic' && shirtProps.long) {
+                        if (clothingPatterns.shirt.pattern === 'tunic' && clothingPatterns.shirt.props.long) {
                             if (region === 'pants') return 'shirt'; // Cover legs
                         }
 
@@ -461,29 +371,6 @@ export class HumanGenerator extends CharacterGenerator {
             return null;
         };
 
-        // Helper to shade color
-        const shade = (c, percent) => ({ r: Math.max(0, c.r * (1 - percent)), g: Math.max(0, c.g * (1 - percent)), b: Math.max(0, c.b * (1 - percent)) });
-        const tint = (c, percent) => ({ r: Math.min(255, c.r + (255 - c.r) * percent), g: Math.min(255, c.g + (255 - c.r) * percent), b: Math.min(255, c.b + (255 - c.b) * percent) });
-
-        // Accessories Generation
-        const hasNecklace = rng.next() < 0.3; // 30% chance
-        let necklace = null;
-        if (hasNecklace) {
-            necklace = {
-                color: rng.next() < 0.5 ? { r: 255, g: 215, b: 0 } : { r: 192, g: 192, b: 192 }, // Gold or Silver
-                length: rng.next() < 0.5 ? 'short' : 'long',
-                pendant: ['circle', 'diamond', 'square', 'cross', 'gem'][rng.int(0, 4)]
-            };
-            if (necklace.pendant === 'gem') {
-                necklace.pendantColor = { r: 231, g: 76, b: 60 }; // Ruby default
-                if (rng.next() < 0.33) necklace.pendantColor = { r: 46, g: 204, b: 113 }; // Emerald
-                else if (rng.next() < 0.66) necklace.pendantColor = { r: 52, g: 152, b: 219 }; // Sapphire
-            }
-        }
-
-        const hasCuts = rng.next() < 0.15; // 15% chance of cuts/tears
-        const hasPockets = rng.next() < 0.4; // 40% chance of pockets
-
         // Fill Loop
         for (let y = 0; y < this.canvasSize; y++) {
             for (let x = 0; x < this.canvasSize; x++) {
@@ -497,88 +384,10 @@ export class HumanGenerator extends CharacterGenerator {
                     else if (region === 'shoes') color = { r: 40, g: 30, b: 20 }; // Leather boots default
 
                     if (color) {
-                        // Clothing Details & Patterns
-                        if (region === 'shirt') {
-                            if (shirtPattern === 'stripes') {
-                                if (shirtProps.orientation === 'horizontal') {
-                                    if (y % 4 === 0) color = shade(color, 0.15);
-                                } else {
-                                    if (x % 4 === 0) color = shade(color, 0.15);
-                                }
-                            } else if (shirtPattern === 'checkers') {
-                                const cx = Math.floor(x / 3);
-                                const cy = Math.floor(y / 3);
-                                const isCheck = (cx + cy) % 2 === 0;
-
-                                if (isCheck) {
-                                    if (shirtProps.shape === 'square') {
-                                        color = shade(color, 0.1);
-                                    } else if (shirtProps.shape === 'triangle') {
-                                        // Diagonal split
-                                        if ((x % 3) + (y % 3) < 3) color = shade(color, 0.1);
-                                    } else {
-                                        // Circle/Dot (center of 3x3)
-                                        if (x % 3 === 1 && y % 3 === 1) color = shade(color, 0.2);
-                                    }
-                                }
-                            } else if (shirtPattern === 'buttons') {
-                                let btnX = this.centerX;
-                                if (shirtProps.align === 'left') btnX -= 3;
-                                if (shirtProps.align === 'right') btnX += 3;
-
-                                if (Math.abs(x - btnX) <= 1) {
-                                    color = shade(color, 0.1); // Placket
-                                    if (y % 5 === 0 && y > minY + 5) color = tint(color, 0.3); // Button
-                                }
-                            } else if (shirtPattern === 'tunic') {
-                                // Vertical trim (lighter center)
-                                if (Math.abs(x - this.centerX) <= 2) color = tint(color, 0.15);
-                                // Bottom trim
-                                if (y > maxY - 2) color = tint(color, 0.1);
-
-                                // Tunic buttons
-                                if (Math.abs(x - this.centerX) === 0 && y % 6 === 0 && y > minY + 5) {
-                                    color = shade(color, 0.2); // Dark buttons
-                                }
-                            }
-                        } else if (region === 'pants') {
-                            if (pantsPattern === 'stripes') {
-                                if (pantsProps.orientation === 'vertical') {
-                                    if (x % 3 === 0) color = shade(color, 0.1);
-                                } else {
-                                    if (y % 3 === 0) color = shade(color, 0.1);
-                                }
-                            } else if (pantsPattern === 'patches') {
-                                // 3x3 patches
-                                const px = Math.floor(x / 3);
-                                const py = Math.floor(y / 3);
-                                const patchHash = Math.sin(px * 12.9898 + py * 78.233) * 43758.5453;
-                                if ((patchHash - Math.floor(patchHash)) > 0.9) {
-                                    color = shade(color, 0.2);
-                                }
-                            }
-                        }
-
-                        // Pockets
-                        if (hasPockets) {
-                            // Simple side pockets
-                            if (Math.abs(x - this.centerX) >= 4 && Math.abs(x - this.centerX) <= 7) {
-                                if (y >= minY + 20 && y <= minY + 24) { // Approx hip level
-                                    color = shade(color, 0.1);
-                                }
-                            }
-                        }
-                    }
-
-                    // Cuts/Tears (Global on clothes)
-                    if (hasCuts && (region === 'shirt' || region === 'pants')) {
-                        // Random noise for cuts
-                        const cutHash = Math.sin(x * 45.123 + y * 91.532) * 12345.678;
-                        if ((cutHash - Math.floor(cutHash)) > 0.98) { // 2% chance per pixel
-                            color = shade(color, 0.4); // Dark cut
-                            // Or show skin?
-                            // color = colors.skin; 
-                        }
+                        // Apply Patterns
+                        color = this.clothingGenerator.applyPattern(
+                            x, y, color, region, clothingPatterns, this.centerX, minY, maxY
+                        );
                     }
 
                     pixels[y][x] = color;
@@ -586,70 +395,11 @@ export class HumanGenerator extends CharacterGenerator {
             }
         }
 
-        // Post-Process: Necklace
-        if (necklace) {
-            const neckY = minY + 3; // Approx neck base
-            const chainColor = necklace.color;
+        // Post-Process: Accessories
+        this.accessoryGenerator.drawAccessories(pixels, accessories, this.centerX, minY, this.canvasSize);
+        // Special case for belt which needs colors
+        this.accessoryGenerator.drawBelt(pixels, this.centerX, this.canvasSize, colors);
 
-            // Draw Chain
-            const chainLength = necklace.length === 'long' ? 10 : 6;
-            for (let i = 0; i <= chainLength; i++) {
-                // V shape
-                const dy = i;
-                const dx = Math.floor(i * 0.7);
-
-                // Left side
-                if (pixels[neckY + dy] && pixels[neckY + dy][this.centerX - dx])
-                    pixels[neckY + dy][this.centerX - dx] = chainColor;
-
-                // Right side
-                if (pixels[neckY + dy] && pixels[neckY + dy][this.centerX + dx])
-                    pixels[neckY + dy][this.centerX + dx] = chainColor;
-            }
-
-            // Draw Pendant
-            const pendantY = neckY + chainLength;
-            const pendantX = this.centerX;
-            const pColor = necklace.pendant === 'gem' ? necklace.pendantColor : chainColor;
-
-            if (pixels[pendantY] && pixels[pendantY][pendantX]) {
-                pixels[pendantY][pendantX] = pColor;
-                // Simple shapes
-                if (necklace.pendant === 'diamond' || necklace.pendant === 'gem') {
-                    if (pixels[pendantY - 1]) pixels[pendantY - 1][pendantX] = pColor;
-                    if (pixels[pendantY + 1]) pixels[pendantY + 1][pendantX] = pColor;
-                    pixels[pendantY][pendantX - 1] = pColor;
-                    pixels[pendantY][pendantX + 1] = pColor;
-                } else if (necklace.pendant === 'square') {
-                    pixels[pendantY][pendantX - 1] = pColor;
-                    pixels[pendantY][pendantX + 1] = pColor;
-                    if (pixels[pendantY + 1]) {
-                        pixels[pendantY + 1][pendantX] = pColor;
-                        pixels[pendantY + 1][pendantX - 1] = pColor;
-                        pixels[pendantY + 1][pendantX + 1] = pColor;
-                    }
-                } else if (necklace.pendant === 'cross') {
-                    if (pixels[pendantY + 1]) pixels[pendantY + 1][pendantX] = pColor;
-                    if (pixels[pendantY + 2]) pixels[pendantY + 2][pendantX] = pColor;
-                    pixels[pendantY][pendantX - 1] = pColor;
-                    pixels[pendantY][pendantX + 1] = pColor;
-                }
-            }
-        }
-
-        // Add belt at shirt/pants boundary by detecting color transition
-        for (let y = 1; y < this.canvasSize - 1; y++) {
-            for (let x = 0; x < this.canvasSize; x++) {
-                if (pixels[y][x] && pixels[y + 1][x]) {
-                    // Detect shirt-to-pants transition by comparing color references
-                    const c1 = pixels[y][x];
-                    const c2 = pixels[y + 1][x];
-                    if (c1 === colors.shirt && c2 === colors.pants) {
-                        pixels[y][x] = { r: 50, g: 30, b: 20 }; // Belt color
-                    }
-                }
-            }
-        }
 
         // 3. Stamp Face
         for (let fy = 0; fy < headH; fy++) {

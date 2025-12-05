@@ -124,11 +124,27 @@ class App {
         }
 
         const count = this.characters.length;
+        // Store old characters to preserve identity (seed, name, backstory, palette)
+        const oldCharacters = [...this.characters];
+
         this.characters = [];
         this.currentBackstoryGenerator.resetPools();
 
         for (let i = 0; i < count; i++) {
-            const params = this.currentGenerator.randomParamsInRange(this.batchOptions.preset);
+            const oldChar = oldCharacters[i];
+            const seed = oldChar.params.seed || Math.floor(Math.random() * 2147483647);
+
+            // Resolve parameters using the current UI ranges but with the character's original seed.
+            // This ensures that:
+            // 1. Changing a slider (range) updates the character's proportions naturally.
+            // 2. The character's "identity" (relative proportions) remains consistent.
+            const params = this.currentGenerator.resolveParams(this.currentParams, seed);
+
+            // Restore colors/palette from original character to ensure visual identity is preserved
+            params.palette = oldChar.params.palette;
+            if (oldChar.params.humanColors) {
+                params.humanColors = oldChar.params.humanColors;
+            }
 
             const mergedParams = {
                 ...params,
@@ -140,9 +156,14 @@ class App {
             };
 
             const character = this.currentGenerator.generate(mergedParams);
+
+            // Restore name and backstory
+            character.name = oldChar.name;
+            character.backstory = oldChar.backstory;
+
             // Generate animation frames for the modal animation
             character.animationFrames = this.currentGenerator.generateAnimationFrames(mergedParams);
-            character.backstory = this.currentBackstoryGenerator.generate(character.name);
+
             this.characters.push(character);
         }
 

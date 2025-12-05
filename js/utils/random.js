@@ -8,10 +8,13 @@ export function randomInt(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-export function generateRandomPalette() {
-    const hue = Math.floor(Math.random() * 360);
-    const saturation = randomInt(40, 80);
-    const lightness = randomInt(40, 70);
+export function generateRandomPalette(rng) {
+    const random = rng ? () => rng.next() : Math.random;
+    const randInt = rng ? (min, max) => rng.int(min, max) : randomInt;
+
+    const hue = Math.floor(random() * 360);
+    const saturation = randInt(40, 80);
+    const lightness = randInt(40, 70);
 
     const color1 = hslToRgb(hue, saturation, lightness);
     const color2 = hslToRgb((hue + 30) % 360, saturation, lightness);

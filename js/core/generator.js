@@ -111,7 +111,9 @@ export class CharacterGenerator {
     }
 
     // Resolve range objects {min, max} to random values
-    resolveParams(rangeParams) {
+    resolveParams(rangeParams, existingSeed = null) {
+        const seed = existingSeed !== null ? existingSeed : Math.floor(Math.random() * 2147483647);
+        const rng = new SeededRandom(seed);
         const resolved = {};
 
         Object.keys(rangeParams).forEach(key => {
@@ -119,7 +121,7 @@ export class CharacterGenerator {
 
             // If it's a range object, resolve to random value
             if (value && typeof value === 'object' && 'min' in value && 'max' in value) {
-                resolved[key] = randomFloat(value.min, value.max);
+                resolved[key] = rng.float(value.min, value.max);
             } else {
                 // Otherwise keep the value as-is (e.g., boolean flags, torsoY)
                 resolved[key] = value;
@@ -137,6 +139,9 @@ export class CharacterGenerator {
             resolved.shinLength = 24; // Fixed at 24%
         }
 
+        // Ensure seed is preserved
+        resolved.seed = seed;
+
         return resolved;
     }
 
@@ -144,47 +149,51 @@ export class CharacterGenerator {
         return this.randomParamsInRange('standard');
     }
 
-    randomParamsInRange(preset = 'standard') {
+    randomParamsInRange(preset = 'standard', existingSeed = null) {
+        // Use existing seed if provided, otherwise generate a new one
+        const seed = existingSeed !== null ? existingSeed : Math.floor(Math.random() * 2147483647);
+        const rng = new SeededRandom(seed);
+
         const ranges = this.getParamRanges(preset);
 
         return {
             // Torso (anchor)
-            torsoTopWidth: randomFloat(ranges.torsoTopWidth.min, ranges.torsoTopWidth.max),
-            torsoBottomWidth: randomFloat(ranges.torsoBottomWidth.min, ranges.torsoBottomWidth.max),
-            torsoHeight: randomFloat(ranges.torsoHeight.min, ranges.torsoHeight.max),
-            torsoY: randomFloat(ranges.torsoY.min, ranges.torsoY.max),
+            torsoTopWidth: rng.float(ranges.torsoTopWidth.min, ranges.torsoTopWidth.max),
+            torsoBottomWidth: rng.float(ranges.torsoBottomWidth.min, ranges.torsoBottomWidth.max),
+            torsoHeight: rng.float(ranges.torsoHeight.min, ranges.torsoHeight.max),
+            torsoY: rng.float(ranges.torsoY.min, ranges.torsoY.max),
 
             // Neck
-            neckWidth: randomFloat(ranges.neckWidth.min, ranges.neckWidth.max),
-            neckHeight: randomFloat(ranges.neckHeight.min, ranges.neckHeight.max),
+            neckWidth: rng.float(ranges.neckWidth.min, ranges.neckWidth.max),
+            neckHeight: rng.float(ranges.neckHeight.min, ranges.neckHeight.max),
 
             // Head
-            headWidth: randomFloat(ranges.headWidth.min, ranges.headWidth.max),
-            headHeight: randomFloat(ranges.headHeight.min, ranges.headHeight.max),
+            headWidth: rng.float(ranges.headWidth.min, ranges.headWidth.max),
+            headHeight: rng.float(ranges.headHeight.min, ranges.headHeight.max),
 
             // Arms
-            upperArmTopWidth: randomFloat(ranges.upperArmTopWidth.min, ranges.upperArmTopWidth.max),
-            upperArmBottomWidth: randomFloat(ranges.upperArmBottomWidth.min, ranges.upperArmBottomWidth.max),
-            upperArmLength: randomFloat(ranges.upperArmLength.min, ranges.upperArmLength.max),
-            forearmTopWidth: randomFloat(ranges.forearmTopWidth.min, ranges.forearmTopWidth.max),
-            forearmBottomWidth: randomFloat(ranges.forearmBottomWidth.min, ranges.forearmBottomWidth.max),
-            forearmLength: randomFloat(ranges.forearmLength.min, ranges.forearmLength.max),
-            armAngle: randomFloat(ranges.armAngle.min, ranges.armAngle.max),
-            elbowAngle: randomFloat(ranges.elbowAngle.min, ranges.elbowAngle.max),
+            upperArmTopWidth: rng.float(ranges.upperArmTopWidth.min, ranges.upperArmTopWidth.max),
+            upperArmBottomWidth: rng.float(ranges.upperArmBottomWidth.min, ranges.upperArmBottomWidth.max),
+            upperArmLength: rng.float(ranges.upperArmLength.min, ranges.upperArmLength.max),
+            forearmTopWidth: rng.float(ranges.forearmTopWidth.min, ranges.forearmTopWidth.max),
+            forearmBottomWidth: rng.float(ranges.forearmBottomWidth.min, ranges.forearmBottomWidth.max),
+            forearmLength: rng.float(ranges.forearmLength.min, ranges.forearmLength.max),
+            armAngle: rng.float(ranges.armAngle.min, ranges.armAngle.max),
+            elbowAngle: rng.float(ranges.elbowAngle.min, ranges.elbowAngle.max),
 
             // Legs
-            thighTopWidth: randomFloat(ranges.thighTopWidth.min, ranges.thighTopWidth.max),
-            thighBottomWidth: randomFloat(ranges.thighBottomWidth.min, ranges.thighBottomWidth.max),
-            thighLength: randomFloat(ranges.thighLength.min, ranges.thighLength.max),
-            shinTopWidth: randomFloat(ranges.shinTopWidth.min, ranges.shinTopWidth.max),
-            shinBottomWidth: randomFloat(ranges.shinBottomWidth.min, ranges.shinBottomWidth.max),
-            shinLength: randomFloat(ranges.shinLength.min, ranges.shinLength.max),
-            legAngle: randomFloat(ranges.legAngle.min, ranges.legAngle.max),
+            thighTopWidth: rng.float(ranges.thighTopWidth.min, ranges.thighTopWidth.max),
+            thighBottomWidth: rng.float(ranges.thighBottomWidth.min, ranges.thighBottomWidth.max),
+            thighLength: rng.float(ranges.thighLength.min, ranges.thighLength.max),
+            shinTopWidth: rng.float(ranges.shinTopWidth.min, ranges.shinTopWidth.max),
+            shinBottomWidth: rng.float(ranges.shinBottomWidth.min, ranges.shinBottomWidth.max),
+            shinLength: rng.float(ranges.shinLength.min, ranges.shinLength.max),
+            legAngle: rng.float(ranges.legAngle.min, ranges.legAngle.max),
 
             // Generation
-            fillDensity: randomFloat(ranges.fillDensity.min, ranges.fillDensity.max),
-            palette: generateRandomPalette(),
-            seed: Math.floor(Math.random() * 2147483647) // Generate a seed
+            fillDensity: rng.float(ranges.fillDensity.min, ranges.fillDensity.max),
+            palette: generateRandomPalette(rng),
+            seed: seed
         };
     }
 

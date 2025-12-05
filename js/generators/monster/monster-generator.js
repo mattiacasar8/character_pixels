@@ -3,6 +3,7 @@ import { MONSTER_PALETTES } from '../../data/monster-palettes.js';
 import { MonsterNameGenerator } from './monster-names.js';
 import { PARAM_CONFIG } from '../../config.js';
 import { createTrapezoid, createJoint, getTrapezoidBottom } from '../../utils/math.js';
+import { SeededRandom } from '../../utils/random.js';
 
 export class MonsterGenerator extends CharacterGenerator {
     constructor(canvasSize = 50) {
@@ -27,12 +28,14 @@ export class MonsterGenerator extends CharacterGenerator {
     // resolveParams is now handled by the base CharacterGenerator
     // randomParams is now handled by the base CharacterGenerator
 
-    randomParamsInRange(preset = 'standard') {
-        const ranges = this.getParamRanges(preset);
-        const params = super.randomParamsInRange(preset);
+    randomParamsInRange(preset = 'standard', existingSeed = null) {
+        const seed = existingSeed !== null ? existingSeed : Math.floor(Math.random() * 2147483647);
+        const params = super.randomParamsInRange(preset, seed);
 
         // Override palette with a monster one
-        const paletteIndex = Math.floor(Math.random() * MONSTER_PALETTES.length);
+        // Use seeded RNG for palette selection
+        const rng = new SeededRandom(seed);
+        const paletteIndex = rng.int(0, MONSTER_PALETTES.length - 1);
         params.palette = [...MONSTER_PALETTES[paletteIndex]];
 
         return params;
