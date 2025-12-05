@@ -45,11 +45,6 @@ export class ProcessorManager {
     applyAll(pixels, params, canvasSize) {
         let result = pixels;
 
-        // Debug: Count filled pixels initially
-        let initialFilled = 0;
-        result.forEach(row => row.forEach(p => { if (p) initialFilled++; }));
-        console.log(`ProcessorManager starting. Filled pixels: ${initialFilled}`, params.effects);
-
         this.processors.forEach(processor => {
             // Check if processor is enabled in params
             const config = processor.getUIConfig();
@@ -61,16 +56,7 @@ export class ProcessorManager {
             // (handled by defaults in individual processors usually, but check here)
 
             if (isEnabled) {
-                // Pre-process count
-                let preCount = 0;
-                result.forEach(row => row.forEach(p => { if (p) preCount++; }));
-                console.log(`Applying ${processor.name}... (Px: ${preCount})`);
-
                 result = processor.apply(result, params, canvasSize);
-
-                let postCount = 0;
-                result.forEach(row => row.forEach(p => { if (p) postCount++; }));
-                console.log(`Applied ${processor.name}. (Px: ${postCount})`);
             }
         });
 

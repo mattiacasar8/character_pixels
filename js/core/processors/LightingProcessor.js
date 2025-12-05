@@ -27,9 +27,6 @@ export class LightingProcessor {
      * @returns {Array<Array>} Modified pixel array
      */
     static apply(pixels, params, canvasSize) {
-        // Debug log to check if called for humans
-        console.log('LightingProcessor applied', { lighting: params.effects?.lighting, direction: params.lightDirection });
-
         const size = pixels.length;
         const direction = params.lightDirection || LightingProcessor.defaultDirection;
         const result = pixels.map(row => [...row]); // Create new buffer for output

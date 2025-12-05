@@ -277,12 +277,12 @@ This is organization only - no visual changes.
 - [x] Fixed initialization order issues
 - [x] All functionality verified working
 
-#### 1.4 Create Shared Processors
-- [ ] Create `js/core/processors/` directory
-- [ ] Extract `lighting-processor.js` from human-generator
-- [ ] Make lighting work for monsters too
-- [ ] Extract `outline-processor.js` 
-- [ ] Add processor toggle support in presets
+#### 1.4 Create Shared Processors ✅
+- [x] Create `js/core/processors/` directory
+- [x] Extract `lighting-processor.js` (LightingProcessor.js)
+- [x] Make lighting work for monsters too (automatic via base class)
+- [x] Extract `outline-processor.js` (OutlineProcessor.js)
+- [x] Add processor toggle support in presets (via UIManager)
 
 #### 1.5 Clean Up Human Generator
 - [ ] Create `clothing-generator.js` - extract pattern logic
@@ -358,10 +358,10 @@ This is organization only - no visual changes.
 - [ ] More hair style variety
 - [ ] Better hair-head integration
 
-#### 4.2 Monster Lighting
-- [ ] Apply lighting processor to monsters
-- [ ] Test with all monster presets
-- [ ] Add toggle in monster presets
+#### 4.2 Monster Lighting ✅
+- [x] Apply lighting processor to monsters
+- [x] Test with all monster presets
+- [x] Add toggle in monster presets
 
 #### 4.3 Pattern & Accessory Fixes
 - [ ] Improve necklace generation
