@@ -1,33 +1,46 @@
-import { humanNameData } from '../data/human-names-data.js';
+/**
+ * Unified Name Generator
+ * Provides a single interface for generating names for any character type.
+ * Delegates to type-specific generators (human, monster).
+ */
+import { HumanNameGenerator } from './human/human-names.js';
+import { MonsterNameGenerator } from './monster/monster-names.js';
 
-export class NameGenerator {
+class NameGeneratorManager {
     constructor() {
-        this.prefixes = humanNameData.prefixes;
-        this.suffixes = humanNameData.suffixes;
-        this.titles = humanNameData.titles;
+        this.humanGenerator = new HumanNameGenerator();
+        this.monsterGenerator = new MonsterNameGenerator();
     }
 
-    generate() {
-        const prefix = this.prefixes[Math.floor(Math.random() * this.prefixes.length)];
-        const suffix = this.suffixes[Math.floor(Math.random() * this.suffixes.length)];
-        const name = prefix + suffix;
-
-        // 30% chance to add a title
-        if (Math.random() < 0.3) {
-            const title = this.titles[Math.floor(Math.random() * this.titles.length)];
-            return `${name} ${title}`;
+    /**
+     * Generate a name for the specified type.
+     * @param {string} type - 'human' or 'monster'
+     * @returns {string} Generated name
+     */
+    generate(type = 'human') {
+        switch (type) {
+            case 'monster':
+                return this.monsterGenerator.generate();
+            case 'human':
+            default:
+                return this.humanGenerator.generate();
         }
-
-        return name;
     }
 
+    /**
+     * Generate a unique filename from a character name.
+     * @param {string} baseName - The character's name
+     * @returns {string} Safe filename with unique ID
+     */
     generateUniqueFilename(baseName) {
-        // Add random ID for file uniqueness
         const randomID = Math.floor(Math.random() * 9999).toString().padStart(4, '0');
-        // Remove spaces and special characters for filename safety
         const safeName = baseName.replace(/[^a-zA-Z0-9-]/g, '_');
         return `${safeName}_${randomID}`;
     }
 }
 
-export const nameGenerator = new NameGenerator();
+// Export singleton instance for convenience
+export const nameGenerator = new NameGeneratorManager();
+
+// Also export the class and type-specific generators for direct use
+export { NameGeneratorManager, HumanNameGenerator, MonsterNameGenerator };

@@ -6,6 +6,7 @@ import { HumanBackstoryGenerator } from './generators/human/human-backstory.js';
 import { CharacterRenderer } from './core/renderer.js';
 import { PARAM_CONFIG } from './config.js';
 import { generateRandomPalette } from './utils/random.js';
+import { nameGenerator } from './generators/name-generator.js';
 
 class App {
     constructor() {

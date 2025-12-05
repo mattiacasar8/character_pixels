@@ -1,106 +1,55 @@
+/**
+ * Human Backstory Generator
+ * Generates procedural fantasy backstories for human characters.
+ * Extends BackstoryGenerator for shared utilities.
+ */
+import { BackstoryGenerator } from '../backstory-generator.js';
 import { data, poolNames } from '../../data/human-backstory-data.js';
 
-export class HumanBackstoryGenerator {
+export class HumanBackstoryGenerator extends BackstoryGenerator {
     constructor() {
-        this.shuffledPools = new Map();
+        super();
+        this.data = data;
+        this.poolNames = poolNames;
     }
 
-    // --- CORE UTILITIES ---
-
-    /**
-     * Resolves nested templates like {a|b|c}
-     */
-    resolve(template) {
-        let result = template;
-        let safety = 10; // Prevent infinite loops
-
-        while (result.includes('{') && safety > 0) {
-            result = result.replace(/\{([^{}]+)\}/g, (match, content) => {
-                const options = content.split('|');
-                return options[Math.floor(Math.random() * options.length)];
-            });
-            safety--;
-        }
-
-        return result;
-    }
-
-    /**
-     * Fisher-Yates shuffle
-     */
-    shuffleArray(array) {
-        const shuffled = [...array];
-        for (let i = shuffled.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-        }
-        return shuffled;
-    }
-
-    /**
-     * Picks an element from a pool using shuffle logic to avoid repetitions
-     */
-    pick(array, poolName = null) {
-        if (!array || array.length === 0) return "???";
-
-        if (!poolName) {
-            return array[Math.floor(Math.random() * array.length)];
-        }
-
-        let pool = this.shuffledPools.get(poolName);
-        if (!pool || pool.length === 0) {
-            pool = this.shuffleArray(array);
-            this.shuffledPools.set(poolName, pool);
-        }
-
-        return pool.pop();
-    }
-
-    /**
-     * Resets all shuffled pools
-     */
-    resetPools() {
-        this.shuffledPools.clear();
-    }
-
-    // --- GENERATORS ---
+    // --- DATA GETTERS ---
 
     getPlace() {
-        return this.pick(data.places, poolNames.PLACES);
+        return this.pick(this.data.places, this.poolNames.PLACES);
     }
 
     getOrigin(name, place) {
-        const phraseFn = this.pick(data.originPhrases, poolNames.ORIGINS);
+        const phraseFn = this.pick(this.data.originPhrases, this.poolNames.ORIGINS);
         return this.resolve(phraseFn(name, place));
     }
 
     getFormation() {
-        const phrase = this.pick(data.formationPhrases, poolNames.FORMATIONS);
+        const phrase = this.pick(this.data.formationPhrases, this.poolNames.FORMATIONS);
         return this.resolve(phrase);
     }
 
     getSkill() {
-        const phrase = this.pick(data.skillPhrases, poolNames.SKILLS);
+        const phrase = this.pick(this.data.skillPhrases, this.poolNames.SKILLS);
         return this.resolve(phrase);
     }
 
     getReputation() {
-        const source = this.pick(data.reputationSources, poolNames.REP_SOURCES);
-        const claim = this.pick(data.reputationClaims, poolNames.REP_CLAIMS);
+        const source = this.pick(this.data.reputationSources, this.poolNames.REP_SOURCES);
+        const claim = this.pick(this.data.reputationClaims, this.poolNames.REP_CLAIMS);
         return `${source} ${this.resolve(claim)}`;
     }
 
     getCurrentState() {
-        const connector = this.pick(data.currentConnectors); // No pool needed for connectors usually, or use random
-        const state = this.pick(data.currentStates, poolNames.CURRENTS);
+        const connector = this.pick(this.data.currentConnectors);
+        const state = this.pick(this.data.currentStates, this.poolNames.CURRENTS);
         return `${connector}, ${this.resolve(state)}`;
     }
 
     // --- PATTERNS ---
 
     generate(name, patternKey = null) {
-        // Capitalize name just in case
-        const cleanName = name.charAt(0).toUpperCase() + name.slice(1);
+        const cleanName = this.capitalize(name);
 
         const patterns = {
             patternA: () => {
@@ -109,7 +58,7 @@ export class HumanBackstoryGenerator {
                 const origin = this.getOrigin(cleanName, place);
                 const formation = this.getFormation();
                 const current = this.getCurrentState();
-                return `${origin}. ${formation}. ${current}.`;
+                return `${origin}. ${this.capitalize(formation)}. ${current}.`;
             },
             patternB: () => {
                 // Origin + Skill + Reputation
@@ -117,12 +66,12 @@ export class HumanBackstoryGenerator {
                 const origin = this.getOrigin(cleanName, place);
                 const skill = this.getSkill();
                 const reputation = this.getReputation();
-                return `${origin}. ${skill}. ${reputation}.`;
+                return `${origin}. ${this.capitalize(skill)}. ${reputation}.`;
             },
             patternC: () => {
                 // Skill + Mystery + Current
                 const skill = this.getSkill();
-                const reputation = this.getReputation(); // Mystery often comes from reputation
+                const reputation = this.getReputation();
                 const current = this.getCurrentState();
                 return `${cleanName} ${skill}. ${reputation}. ${current}.`;
             },
@@ -130,7 +79,7 @@ export class HumanBackstoryGenerator {
                 // Double Formation (Dramatic)
                 const place = this.getPlace();
                 const formation1 = this.getFormation();
-                const formation2 = this.getFormation(); // Shuffle ensures different one
+                const formation2 = this.getFormation();
                 return `A ${place}, ${cleanName} ${formation1}. Poco dopo, ${formation2}.`;
             },
             patternE: () => {
@@ -144,7 +93,7 @@ export class HumanBackstoryGenerator {
                 // Skill + Formation
                 const skill = this.getSkill();
                 const place = this.getPlace();
-                const formation = this.getFormation(); // Often implies origin of skill
+                const formation = this.getFormation();
                 return `${cleanName} ${skill}. A ${place}, ${formation}.`;
             }
         };
