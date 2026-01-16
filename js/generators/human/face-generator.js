@@ -10,9 +10,10 @@ export class FaceGenerator {
      * @param {number} height - Height of the head in pixels.
      * @param {object} colors - Object containing {skin, hair, eyes, mouth}.
      * @param {number} seed - Random seed.
+     * @param {object} faceOverrides - Optional overrides for hairStyle, mouthState
      * @returns {Array<Array<object|null>>} - 2D array of colors (or null).
      */
-    generate(width, height, colors, seed) {
+    generate(width, height, colors, seed, faceOverrides = {}) {
         // Initialize grid
         const grid = Array(height).fill().map(() => Array(width).fill(null));
         const centerX = width / 2;
@@ -119,12 +120,14 @@ export class FaceGenerator {
         const mouthStartX = Math.floor(centerX - mouthW / 2);
         const lipColor = colors.mouth || shade(baseSkin, 0.4);
 
-        // Mouth State
-        const mouthStateVal = hash(seed, 10, seed);
-        let mouthState = 'neutral'; // 0-0.3
-        if (mouthStateVal > 0.3 && mouthStateVal < 0.6) mouthState = 'smile';
-        else if (mouthStateVal >= 0.6 && mouthStateVal < 0.8) mouthState = 'open';
-        else if (mouthStateVal >= 0.8) mouthState = 'frown';
+        // Mouth State - use override if provided
+        const mouthStateVal = faceOverrides?.mouthState ?? hash(200, 10, seed);
+        let mouthState = 'neutral';
+
+        // Revised probabilities without 'open'
+        if (mouthStateVal < 0.4) mouthState = 'neutral';       // 40%
+        else if (mouthStateVal < 0.75) mouthState = 'smile';   // 35%
+        else mouthState = 'frown';                             // 25%
 
         for (let i = 0; i < mouthW; i++) {
             let mx = mouthStartX + i;
@@ -135,12 +138,6 @@ export class FaceGenerator {
             } else if (mouthState === 'smile') {
                 if (i === 0 || i === mouthW - 1) my -= 1;
                 setPixel(mx, my, lipColor);
-            } else if (mouthState === 'open') {
-                if (i === 0 || i === mouthW - 1) my -= 1;
-                setPixel(mx, my, lipColor); // Upper
-                setPixel(mx, my + 1, { r: 50, g: 20, b: 20 }); // Inside
-                if (i > 0 && i < mouthW - 1 && chance(0.5, mx)) setPixel(mx, my + 1, { r: 255, g: 255, b: 240 }); // Teeth
-                setPixel(mx, my + 2, lipColor); // Lower
             } else { // Frown
                 if (i === 0 || i === mouthW - 1) my += 1;
                 setPixel(mx, my, lipColor);
@@ -151,7 +148,8 @@ export class FaceGenerator {
         const hairColor = colors.hair;
         const hairHighlight = tint(hairColor, 0.3);
         const hairShadow = shade(hairColor, 0.3);
-        const hairStyle = hash(seed, 20, seed); // 0-1
+        // Hair style - use override if provided
+        const hairStyle = faceOverrides?.hairStyle ?? hash(100, 20, seed); // 0-1
 
         // Hair Styles:
         // 0.0-0.2: Short/Bald

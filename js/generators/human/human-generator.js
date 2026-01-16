@@ -343,7 +343,7 @@ export class HumanGenerator extends CharacterGenerator {
         const headW = maxX - minX;
         const headH = maxY - minY;
 
-        const faceGrid = this.faceGenerator.generate(headW, headH, colors, params.seed);
+        const faceGrid = this.faceGenerator.generate(headW, headH, colors, params.seed, params.faceOverrides);
 
         // 2. Fill Body (Solid)
         // Helper to find region

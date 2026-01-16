@@ -3,6 +3,7 @@
  * Handles all UI setup: sliders, checkboxes, buttons, presets, and generator type selection.
  */
 import { PARAM_CONFIG } from '../config.js';
+import { hash, SeededRandom, randomFloat } from '../utils/random.js';
 
 export class UIManager {
     constructor(app) {
@@ -268,6 +269,81 @@ export class UIManager {
             e.stopPropagation();
             this.app.exportManager.exportZip();
         });
+
+        // Single Mode Section Randomizers
+        const wireRandomizer = (id, callback) => {
+            const btn = document.getElementById(id);
+            if (btn) {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (this.app.singleModeController.isActive) {
+                        callback(this.app.singleModeController);
+                    }
+                });
+            }
+        };
+
+        wireRandomizer('randBody', (controller) => {
+            const keyParams = [
+                'torsoTopWidth', 'torsoHeight',
+                'headWidth', 'neckWidth',
+                'upperArmLength', 'armAngle',
+                'thighLength', 'legAngle'
+            ];
+
+            keyParams.forEach(key => {
+                const conf = PARAM_CONFIG[key];
+                if (conf) {
+                    controller.workingParams[key] = randomFloat(conf.min, conf.max);
+                }
+            });
+            controller.regeneratePreview();
+            this.populateSingleBodySliders(this.app.singleModeCharacter);
+        });
+
+        wireRandomizer('randColors', (controller) => {
+            const palettes = controller.getColorPalettes();
+            ['skin', 'shirt', 'pants', 'hair', 'eyes'].forEach(cat => {
+                const p = palettes[cat];
+                if (p) controller.updateColor(cat, p[Math.floor(Math.random() * p.length)]);
+            });
+            // Update UI
+            this.populateSingleModeControls(this.app.singleModeCharacter);
+        });
+
+        wireRandomizer('randPatterns', (controller) => {
+            const shirtPats = ['none', 'stripes', 'checkers', 'buttons', 'tunic'];
+            const pantsPats = ['none', 'stripes', 'patches'];
+
+            const sPat = shirtPats[Math.floor(Math.random() * shirtPats.length)];
+            const pPat = pantsPats[Math.floor(Math.random() * pantsPats.length)];
+
+            controller.updatePattern('shirt', sPat);
+            controller.updatePattern('pants', pPat);
+
+            // Update UI selects
+            const sS = document.getElementById('shirtPatternSelect');
+            if (sS) sS.value = sPat;
+            const pS = document.getElementById('pantsPatternSelect');
+            if (pS) pS.value = pPat;
+        });
+
+        wireRandomizer('randFace', (controller) => {
+            const hairStyles = [0.05, 0.3, 0.5, 0.7, 0.9];
+            const mouthStates = [0.15, 0.45, 0.9];
+
+            const hair = hairStyles[Math.floor(Math.random() * hairStyles.length)];
+            const mouth = mouthStates[Math.floor(Math.random() * mouthStates.length)];
+
+            controller.updateFaceProperty('hairStyle', hair);
+            controller.updateFaceProperty('mouthState', mouth);
+
+            // Update UI selects
+            const hS = document.getElementById('hairStyleSelect');
+            if (hS) hS.value = String(hair);
+            const mS = document.getElementById('mouthStateSelect');
+            if (mS) mS.value = String(mouth);
+        });
     }
 
     switchMode(mode) {
@@ -322,6 +398,7 @@ export class UIManager {
             this.populateColorSwatches('shirtSwatches', 'shirt', character);
             this.populateColorSwatches('pantsSwatches', 'pants', character);
             this.populateColorSwatches('hairSwatches', 'hair', character);
+            this.populateColorSwatches('eyesSwatches', 'eyes', character);
 
             // Setup pattern selectors
             this.setupPatternSelectors(character);
@@ -357,13 +434,25 @@ export class UIManager {
         if (regenBtn) {
             regenBtn.onclick = () => {
                 if (this.app.singleModeController.isActive) {
-                    this.app.singleModeController.regenerateBackstory();
+                    const patternSelect = document.getElementById('backstoryPatternSelect');
+                    const pattern = patternSelect ? patternSelect.value : null;
+                    this.app.singleModeController.regenerateBackstory(pattern || null);
                 }
             };
         }
 
         // Initialize backstory preview
         this.updateSingleModeBackstoryDisplay(character.backstory);
+
+        // --- Face Section (Humans only) ---
+        const faceSection = document.getElementById('faceSection');
+        if (faceSection) {
+            faceSection.style.display = isHuman ? 'block' : 'none';
+        }
+
+        if (isHuman) {
+            this.setupFaceSelectors(character);
+        }
 
 
         // --- Action Buttons ---
@@ -380,6 +469,73 @@ export class UIManager {
         if (backBtn) {
             backBtn.onclick = () => {
                 this.app.exitSingleMode();
+            };
+        }
+    }
+
+    /**
+     * Setup face selectors (hair style, expression)
+     */
+    setupFaceSelectors(character) {
+        const hairSelect = document.getElementById('hairStyleSelect');
+        const mouthSelect = document.getElementById('mouthStateSelect');
+        const seed = character.params.seed;
+
+        // Get current face overrides if any
+        const overrides = character.params?.faceOverrides || {};
+
+        // Calculate defaults from seed if not overridden
+        const defaultHair = hash(100, 20, seed);
+        const defaultMouth = hash(200, 10, seed);
+
+        // Helper to find closest option value
+        const setSelectValue = (select, targetVal) => {
+            // Find closest option value to target
+            const options = Array.from(select.options);
+            let closest = options[0];
+            let minDiff = Math.abs(parseFloat(closest.value) - targetVal);
+
+            for (let i = 1; i < options.length; i++) {
+                const diff = Math.abs(parseFloat(options[i].value) - targetVal);
+                if (diff < minDiff) {
+                    minDiff = diff;
+                    closest = options[i];
+                }
+            }
+            select.value = closest.value;
+        };
+
+        if (hairSelect) {
+            if (overrides.hairStyle !== undefined) {
+                hairSelect.value = String(overrides.hairStyle);
+            } else {
+                setSelectValue(hairSelect, defaultHair);
+            }
+            hairSelect.onchange = () => {
+                if (this.app.singleModeController.isActive) {
+                    this.app.singleModeController.updateFaceProperty('hairStyle', hairSelect.value);
+                }
+            };
+        }
+
+        if (mouthSelect) {
+            if (overrides.mouthState !== undefined) {
+                mouthSelect.value = String(overrides.mouthState);
+            } else {
+                // Map defaultMouth to discrete logic
+                // <0.4: Neutral (0.15)
+                // <0.75: Smile (0.45)
+                // >=0.75: Frown (0.9)
+                let val = 0.15;
+                if (defaultMouth < 0.4) val = 0.15;
+                else if (defaultMouth < 0.75) val = 0.45;
+                else val = 0.9;
+                mouthSelect.value = String(val);
+            }
+            mouthSelect.onchange = () => {
+                if (this.app.singleModeController.isActive) {
+                    this.app.singleModeController.updateFaceProperty('mouthState', mouthSelect.value);
+                }
             };
         }
     }
@@ -492,13 +648,25 @@ export class UIManager {
     setupPatternSelectors(character) {
         const shirtSelect = document.getElementById('shirtPatternSelect');
         const pantsSelect = document.getElementById('pantsPatternSelect');
+        const seed = character.params.seed;
 
         // Get current pattern overrides if any
         const overrides = character.params?.clothingOverrides || {};
 
+        // Generate actual patterns from seed to find default
+        let defaultShirt = 'none';
+        let defaultPants = 'none';
+
+        if (this.app.humanGenerator && this.app.humanGenerator.clothingGenerator) {
+            const rng = new SeededRandom(seed);
+            const patterns = this.app.humanGenerator.clothingGenerator.generatePatterns(rng);
+            defaultShirt = patterns.shirt.pattern;
+            defaultPants = patterns.pants.pattern;
+        }
+
         // Set current values
         if (shirtSelect) {
-            shirtSelect.value = overrides.shirt || 'none';
+            shirtSelect.value = overrides.shirt || defaultShirt;
             shirtSelect.onchange = () => {
                 if (this.app.singleModeController.isActive) {
                     this.app.singleModeController.updatePattern('shirt', shirtSelect.value);
@@ -507,7 +675,7 @@ export class UIManager {
         }
 
         if (pantsSelect) {
-            pantsSelect.value = overrides.pants || 'none';
+            pantsSelect.value = overrides.pants || defaultPants;
             pantsSelect.onchange = () => {
                 if (this.app.singleModeController.isActive) {
                     this.app.singleModeController.updatePattern('pants', pantsSelect.value);
@@ -638,12 +806,14 @@ export class UIManager {
     }
 
     randomizeSliders() {
-        // In Single Mode, randomize just the current character's body params
+        // In Single Mode, randomize the full character (body, colors, face)
         if (this.app.currentMode === 'single' && this.app.singleModeController.isActive) {
             const controller = this.app.singleModeController;
-            const randomParams = this.app.currentGenerator.randomParams();
+            const character = this.app.singleModeCharacter;
+            const isHuman = character?.type === 'human';
 
-            // Update single mode sliders with new values
+            // 1. Randomize body params
+            const randomParams = this.app.currentGenerator.randomParams();
             const keyParams = [
                 'torsoTopWidth', 'torsoHeight',
                 'headWidth', 'neckWidth',
@@ -655,14 +825,39 @@ export class UIManager {
                 const value = randomParams[paramKey];
                 if (value !== undefined) {
                     controller.updateParam(paramKey, value);
-
-                    // Also update the single mode slider display
                     const slider = document.getElementById(`single-slider-${paramKey}`);
                     if (slider && slider.noUiSlider) {
                         slider.noUiSlider.set([value]);
                     }
                 }
             });
+
+            // 2. Randomize colors (if human)
+            if (isHuman) {
+                const palettes = controller.getColorPalettes();
+                ['skin', 'shirt', 'pants', 'hair', 'eyes'].forEach(category => {
+                    const palette = palettes[category];
+                    if (palette && palette.length > 0) {
+                        const randomIdx = Math.floor(Math.random() * palette.length);
+                        controller.updateColor(category, palette[randomIdx]);
+                    }
+                });
+
+                // 3. Randomize face (hair style and expression)
+                const hairStyles = [0.05, 0.3, 0.5, 0.7, 0.9];
+                const mouthStates = [0.15, 0.45, 0.7, 0.9];
+                controller.updateFaceProperty('hairStyle', hairStyles[Math.floor(Math.random() * hairStyles.length)]);
+                controller.updateFaceProperty('mouthState', mouthStates[Math.floor(Math.random() * mouthStates.length)]);
+
+                // Update dropdowns
+                const hairSelect = document.getElementById('hairStyleSelect');
+                if (hairSelect) hairSelect.value = String(controller.workingParams.faceOverrides?.hairStyle || 0.3);
+                const mouthSelect = document.getElementById('mouthStateSelect');
+                if (mouthSelect) mouthSelect.value = String(controller.workingParams.faceOverrides?.mouthState || 0.15);
+            }
+
+            // Re-populate swatches to show new selections
+            this.populateSingleModeControls(character);
             return;
         }
 

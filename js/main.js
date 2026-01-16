@@ -228,7 +228,12 @@ class App {
     // --- Rendering ---
 
     redrawCharacters() {
-        this.renderCharacters();
+        // Mode-aware redraw: stay in single mode if active
+        if (this.currentMode === 'single' && this.singleModeCharacter) {
+            this.renderSingleCharacterView(this.singleModeCharacter);
+        } else {
+            this.renderCharacters();
+        }
     }
 
     renderCharacters() {
@@ -302,6 +307,15 @@ class App {
             nameLabel.className = 'single-char-name';
             nameLabel.textContent = character.name;
             wrapper.appendChild(nameLabel);
+        }
+
+        // Add backstory preview below name (main area)
+        if (character.backstory) {
+            const backstoryPreview = document.createElement('p');
+            backstoryPreview.className = 'single-char-backstory';
+            backstoryPreview.id = 'mainBackstoryPreview';
+            backstoryPreview.textContent = character.backstory;
+            wrapper.appendChild(backstoryPreview);
         }
 
         this.canvasGrid.appendChild(wrapper);

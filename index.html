@@ -189,13 +189,19 @@
                 <div id="single-controls" style="display: none;">
                     <!-- Character Info -->
                     <div class="control-section">
-                        <h2>Character</h2>
+                        <div class="control-header">
+                            <h2>Character</h2>
+                            <button id="randBody" class="btn-random-section" title="Randomize Body">Random</button>
+                        </div>
                         <div id="singleCharInfo" class="char-info-box"></div>
                     </div>
 
                     <!-- Colors Section -->
                     <div class="control-section" id="colorsSection">
-                        <h2>Colors</h2>
+                        <div class="control-header">
+                            <h2>Colors</h2>
+                            <button id="randColors" class="btn-random-section" title="Randomize Colors">Random</button>
+                        </div>
                         <div class="swatch-row" id="skinSwatches">
                             <label>Skin</label>
                             <div class="swatches"></div>
@@ -212,6 +218,10 @@
                             <label>Hair</label>
                             <div class="swatches"></div>
                         </div>
+                        <div class="swatch-row" id="eyesSwatches">
+                            <label>Eyes</label>
+                            <div class="swatches"></div>
+                        </div>
                     </div>
 
                     <!-- Monster Palettes (shown for monsters) -->
@@ -222,7 +232,11 @@
 
                     <!-- Patterns Section (Humans only) -->
                     <div class="control-section" id="patternsSection">
-                        <h2>Patterns</h2>
+                        <div class="control-header">
+                            <h2>Patterns</h2>
+                            <button id="randPatterns" class="btn-random-section"
+                                title="Randomize Patterns">Random</button>
+                        </div>
                         <div class="pattern-row">
                             <label>Shirt Style</label>
                             <select id="shirtPatternSelect">
@@ -256,11 +270,51 @@
                             <label>Name</label>
                             <input type="text" id="singleCharName" class="text-input" placeholder="Character name" />
                         </div>
+                    </div>
+
+                    <!-- Face (Humans only) -->
+                    <div class="control-section" id="faceSection">
+                        <div class="control-header">
+                            <h2>Face</h2>
+                            <button id="randFace" class="btn-random-section" title="Randomize Face">Random</button>
+                        </div>
+                        <div class="pattern-row">
+                            <label>Hair Style</label>
+                            <select id="hairStyleSelect">
+                                <option value="0.05">Bald</option>
+                                <option value="0.3">Short Messy</option>
+                                <option value="0.5">Long Straight</option>
+                                <option value="0.7">Long Wavy</option>
+                                <option value="0.9">Mohawk</option>
+                            </select>
+                        </div>
+                        <div class="pattern-row">
+                            <label>Expression</label>
+                            <select id="mouthStateSelect">
+                                <option value="0.15">Neutral</option>
+                                <option value="0.45">Smile</option>
+                                <option value="0.9">Frown</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Backstory -->
+                    <div class="control-section">
+                        <h2>Backstory</h2>
+                        <div class="pattern-row">
+                            <label>Story Type</label>
+                            <select id="backstoryPatternSelect">
+                                <option value="">Random</option>
+                                <option value="patternA">Origin + Formation + Current</option>
+                                <option value="patternB">Origin + Skill + Reputation</option>
+                                <option value="patternC">Skill + Mystery + Current</option>
+                                <option value="patternD">Double Formation</option>
+                                <option value="patternE">Reputation-heavy</option>
+                                <option value="patternF">Skill + Formation</option>
+                            </select>
+                        </div>
                         <button id="regenerateBackstory" class="btn-small" style="width: 100%; margin-top: 8px;">🔄 New
                             Backstory</button>
-                        <div id="singleBackstoryPreview" class="backstory-preview"
-                            style="margin-top: 10px; font-size: 11px; color: #888; line-height: 1.4; max-height: 80px; overflow-y: auto; padding: 8px; background: #0a0a0a; border: 1px solid #222;">
-                        </div>
                     </div>
 
                     <!-- Actions -->

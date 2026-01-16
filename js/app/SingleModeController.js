@@ -4,7 +4,7 @@
  * Manages editing state, parameter updates, and character regeneration.
  */
 
-import { SKIN_TONES, CLOTHING_COLORS, HAIR_COLORS } from '../data/human-palettes.js';
+import { SKIN_TONES, CLOTHING_COLORS, HAIR_COLORS, EYE_COLORS } from '../data/human-palettes.js';
 import { MONSTER_PALETTES } from '../data/monster-palettes.js';
 
 export class SingleModeController {
@@ -94,21 +94,64 @@ export class SingleModeController {
     updateName(newName) {
         if (!this.isActive || !this.app.singleModeCharacter) return;
 
+        const oldName = this.app.singleModeCharacter.name;
         this.app.singleModeCharacter.name = newName;
+
+        // Sync name in backstory (replace old name with new)
+        if (this.app.singleModeCharacter.backstory && oldName && newName) {
+            // Case-insensitive replace of old name
+            const regex = new RegExp(this.escapeRegex(oldName), 'gi');
+            this.app.singleModeCharacter.backstory =
+                this.app.singleModeCharacter.backstory.replace(regex, newName);
+            this.app.uiManager.updateSingleModeBackstoryDisplay(
+                this.app.singleModeCharacter.backstory
+            );
+        }
+
         // Update display without full regeneration
         this.app.uiManager.updateSingleModeNameDisplay(newName);
+        // Also update main view
+        this.app.renderSingleCharacterView(this.app.singleModeCharacter);
+    }
+
+    /**
+     * Escape regex special characters
+     */
+    escapeRegex(string) {
+        return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     }
 
     /**
      * Regenerate backstory for the character
+     * @param {string|null} patternKey - Optional pattern key (patternA-F)
      */
-    regenerateBackstory() {
+    regenerateBackstory(patternKey = null) {
         if (!this.isActive || !this.app.singleModeCharacter) return;
 
         const backstoryGen = this.app.currentBackstoryGenerator;
-        const newBackstory = backstoryGen.generate(this.app.singleModeCharacter.name);
+        const newBackstory = backstoryGen.generate(
+            this.app.singleModeCharacter.name,
+            patternKey || null
+        );
         this.app.singleModeCharacter.backstory = newBackstory;
         this.app.uiManager.updateSingleModeBackstoryDisplay(newBackstory);
+        // Also update main view
+        this.app.renderSingleCharacterView(this.app.singleModeCharacter);
+    }
+
+    /**
+     * Update a face property (hair style, expression)
+     * @param {string} prop - 'hairStyle' or 'mouthState'
+     * @param {number} value - 0-1 value for the property
+     */
+    updateFaceProperty(prop, value) {
+        if (!this.isActive) return;
+
+        if (!this.workingParams.faceOverrides) {
+            this.workingParams.faceOverrides = {};
+        }
+        this.workingParams.faceOverrides[prop] = parseFloat(value);
+        this.regeneratePreview();
     }
 
     /**
@@ -205,7 +248,8 @@ export class SingleModeController {
                 skin: SKIN_TONES,
                 shirt: CLOTHING_COLORS,
                 pants: CLOTHING_COLORS,
-                hair: HAIR_COLORS
+                hair: HAIR_COLORS,
+                eyes: EYE_COLORS
             };
         } else {
             return {
