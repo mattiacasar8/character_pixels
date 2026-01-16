@@ -135,6 +135,18 @@ export class ModalManager {
         }
     }
 
+    /**
+     * Hide the modal programmatically
+     */
+    hide() {
+        const modal = document.getElementById('backstoryModal');
+        if (modal) {
+            modal.style.display = 'none';
+        }
+        this.stopAnimation();
+    }
+
+
     // Getter for current character (used by export functions)
     get currentCharacter() {
         return this.currentModalCharacter;

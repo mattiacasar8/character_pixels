@@ -604,3 +604,232 @@ details[open] summary::after {
     cursor: pointer;
     vertical-align: middle;
 }
+
+/* =====================================
+   SINGLE MODE STYLES
+   ===================================== */
+
+/* Single Mode View */
+.single-mode-view {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    padding: 40px;
+}
+
+.single-char-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+
+.single-char-canvas {
+    image-rendering: pixelated;
+    border: 1px solid var(--border-color);
+    background: #050505;
+}
+
+.single-char-name {
+    font-family: var(--font-serif);
+    font-size: 32px;
+    font-weight: 400;
+    color: #fff;
+    margin: 0;
+    text-align: center;
+}
+
+/* Character Info Box */
+.char-info-box {
+    background: #0a0a0a;
+    border: 1px solid var(--border-color);
+    padding: 12px;
+    margin-bottom: 10px;
+}
+
+.char-info-box .char-type {
+    font-size: 10px;
+    text-transform: uppercase;
+    color: #666;
+    border: 1px solid #333;
+    padding: 2px 6px;
+    display: inline-block;
+    margin-bottom: 8px;
+}
+
+.char-info-box .char-seed {
+    font-size: 10px;
+    color: #555;
+    font-family: var(--font-mono);
+}
+
+/* Color Swatches */
+.swatch-row {
+    margin-bottom: 12px;
+}
+
+.swatch-row > label {
+    display: block;
+    font-size: 10px;
+    text-transform: uppercase;
+    color: #666;
+    margin-bottom: 6px;
+    font-weight: 600;
+}
+
+.swatches {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.swatch {
+    width: 22px;
+    height: 22px;
+    border-radius: 2px;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: transform 0.1s, border-color 0.1s;
+}
+
+.swatch:hover {
+    transform: scale(1.15);
+    z-index: 1;
+}
+
+.swatch.selected {
+    border-color: #fff;
+    box-shadow: 0 0 0 1px #000;
+}
+
+/* Monster Palette Grid */
+.palette-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+}
+
+.palette-option {
+    display: flex;
+    gap: 2px;
+    padding: 4px;
+    border: 2px solid transparent;
+    cursor: pointer;
+    background: #0a0a0a;
+    transition: border-color 0.1s;
+}
+
+.palette-option:hover {
+    border-color: #444;
+}
+
+.palette-option.selected {
+    border-color: #fff;
+}
+
+.palette-color {
+    width: 16px;
+    height: 16px;
+}
+
+/* Pattern Selectors */
+.pattern-row {
+    margin-bottom: 10px;
+}
+
+.pattern-row > label {
+    display: block;
+    font-size: 10px;
+    text-transform: uppercase;
+    color: #666;
+    margin-bottom: 6px;
+    font-weight: 600;
+}
+
+.pattern-row select {
+    width: 100%;
+    padding: 8px;
+    background: #0a0a0a;
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
+    font-size: 11px;
+}
+
+/* Identity Inputs */
+.identity-row {
+    margin-bottom: 10px;
+}
+
+.identity-row > label {
+    display: block;
+    font-size: 10px;
+    text-transform: uppercase;
+    color: #666;
+    margin-bottom: 6px;
+    font-weight: 600;
+}
+
+.text-input {
+    width: 100%;
+    padding: 10px;
+    background: #0a0a0a;
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
+    font-family: var(--font-main);
+    font-size: 12px;
+}
+
+.text-input:focus {
+    outline: none;
+    border-color: #555;
+}
+
+/* Single Mode Body Sliders */
+#singleBodySliders .control-group {
+    margin-bottom: 16px;
+}
+
+#singleBodySliders .single-slider {
+    height: 2px;
+    background: var(--grid-line);
+    margin-top: 8px;
+}
+
+/* Button Variants */
+.btn-primary {
+    background: #fff;
+    color: #000;
+    border-color: #fff;
+}
+
+.btn-primary:hover {
+    background: #ccc;
+    color: #000;
+    border-color: #ccc;
+}
+
+.btn-danger {
+    border-color: #8b0000;
+    color: #ff6b6b;
+}
+
+.btn-danger:hover {
+    background: #8b0000;
+    color: #fff;
+    border-color: #8b0000;
+}
+
+/* Modal Actions */
+.modal-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border-color);
+}
+
+.modal-actions .btn-small {
+    flex: 1;
+}

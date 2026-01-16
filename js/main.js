@@ -15,6 +15,7 @@ import { UIManager } from './app/UIManager.js';
 import { ModalManager } from './app/ModalManager.js';
 import { ExportManager } from './app/ExportManager.js';
 import { CharacterManager } from './app/CharacterManager.js';
+import { SingleModeController } from './app/SingleModeController.js';
 
 class App {
     constructor() {
@@ -42,6 +43,14 @@ class App {
         this.currentParams = null;
         this.displayOptions = null;
 
+        // Mode state
+        this.currentMode = 'batch'; // 'batch' or 'single'
+        this.singleModeCharacter = null;
+        this.batchCharactersBackup = []; // Backup of batch characters when entering single mode
+
+        // Single Mode Controller
+        this.singleModeController = new SingleModeController(this);
+
         // Expose for debugging
         window.characterManager = this.characterManager;
 
@@ -50,6 +59,8 @@ class App {
     }
 
     init() {
+        this.canvasGrid = document.getElementById('canvasGrid');
+
         // Initialize display options FIRST (before UI setup triggers regeneration)
         this.displayOptions = {
             showStickFigure: document.getElementById('showStickFigure').checked,
@@ -124,6 +135,12 @@ class App {
     }
 
     regenerateCurrentCharacters() {
+        // In Single Mode, regenerate only the single character
+        if (this.currentMode === 'single' && this.singleModeCharacter) {
+            this.singleModeController.regeneratePreview();
+            return;
+        }
+
         if (this.characters.length === 0) {
             this.generateCharacters(1);
             return;
@@ -177,6 +194,12 @@ class App {
     }
 
     reprocessCurrentCharacters() {
+        // In Single Mode, reprocess only the single character
+        if (this.currentMode === 'single' && this.singleModeCharacter) {
+            this.singleModeController.regeneratePreview();
+            return;
+        }
+
         if (this.characters.length === 0) return;
 
         this.characters = this.characters.map(char => {
@@ -209,8 +232,8 @@ class App {
     }
 
     renderCharacters() {
-        const grid = document.getElementById('canvasGrid');
-        grid.innerHTML = '';
+        if (!this.canvasGrid) return;
+
         this.canvasGrid.innerHTML = '';
         this.canvasGrid.className = 'grid-container'; // Reset class for grid view
 
@@ -237,6 +260,116 @@ class App {
         });
     }
 
+    /**
+     * Render single character view (large canvas, centered)
+     * @param {Object} character - The character to display
+     */
+    renderSingleCharacterView(character) {
+        if (!this.canvasGrid) return;
+
+        this.canvasGrid.innerHTML = '';
+        this.canvasGrid.className = 'grid-container single-mode-view';
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'single-char-wrapper';
+
+        // Create larger canvas for single character
+        const canvas = document.createElement('canvas');
+        const displaySize = Math.min(400, this.canvasSize * 8);
+        canvas.width = displaySize;
+        canvas.height = displaySize;
+        canvas.className = 'single-char-canvas';
+
+        // Draw character scaled up
+        const ctx = canvas.getContext('2d');
+        ctx.imageSmoothingEnabled = false;
+
+        // Create temp canvas at original size
+        const tempCanvas = this.characterRenderer.createCanvas();
+        this.characterRenderer.drawCharacter(tempCanvas, character, {
+            ...this.displayOptions,
+            showFinal: true
+        });
+
+        // Draw scaled
+        ctx.drawImage(tempCanvas, 0, 0, displaySize, displaySize);
+
+        wrapper.appendChild(canvas);
+
+        // Add character name below
+        if (character.name) {
+            const nameLabel = document.createElement('h2');
+            nameLabel.className = 'single-char-name';
+            nameLabel.textContent = character.name;
+            wrapper.appendChild(nameLabel);
+        }
+
+        this.canvasGrid.appendChild(wrapper);
+    }
+
+    /**
+     * Enter single character editing mode
+     * @param {Object} character - The character to edit
+     */
+    enterSingleMode(character) {
+        // Backup current batch
+        this.batchCharactersBackup = [...this.characters];
+
+        // Set mode
+        this.currentMode = 'single';
+        this.singleModeCharacter = character;
+
+        // Initialize controller
+        this.singleModeController.enter(character);
+
+        // Close modal if open
+        const modal = document.getElementById('backstoryModal');
+        if (modal) modal.style.display = 'none';
+        this.modalManager.stopAnimation();
+
+        // Switch UI
+        this.uiManager.switchMode('single');
+        this.uiManager.populateSingleModeControls(character);
+
+        // Render single character
+        this.renderSingleCharacterView(character);
+    }
+
+    /**
+     * Exit single mode and return to batch view
+     */
+    exitSingleMode() {
+        // Confirm changes
+        this.singleModeController.confirm();
+
+        // Restore batch
+        if (this.batchCharactersBackup.length > 0) {
+            // Update the character in the batch if it was part of it
+            const index = this.batchCharactersBackup.findIndex(
+                c => c.params?.seed === this.singleModeCharacter?.params?.seed
+            );
+            if (index !== -1) {
+                this.batchCharactersBackup[index] = this.singleModeCharacter;
+            }
+            this.characters = this.batchCharactersBackup;
+        }
+
+        // Exit controller
+        this.singleModeController.exit();
+
+        // Reset mode
+        this.currentMode = 'batch';
+        this.singleModeCharacter = null;
+        this.batchCharactersBackup = [];
+
+        // Switch UI
+        this.uiManager.switchMode('batch');
+
+        // Restore grid view
+        this.canvasGrid.className = 'grid-container';
+        this.renderCharacters();
+    }
+
     setupModalEdit() {
         // Setup the "EDIT" button in the modal
         const editBtn = document.getElementById('editCharBtn');
@@ -245,22 +378,11 @@ class App {
                 const character = this.modalManager.currentCharacter;
                 if (!character) return;
 
-                // Close modal
-                this.modalManager.hide();
-
-                // Switch to edit mode
-                this.characterManager.selectCharacter(character);
-                this.uiManager.switchMode('single');
-                this.uiManager.populateSingleModeControls(character);
-
-                // Ensure the view updates to show only this character
-                this.renderSingleCharacterView(character);
+                // Use the new enterSingleMode method
+                this.enterSingleMode(character);
             });
-            card.appendChild(canvas);
-            card.appendChild(nameDiv);
-            card.appendChild(storyDiv);
-            grid.appendChild(card);
-        });
+        }
+
     }
 }
 

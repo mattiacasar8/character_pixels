@@ -187,16 +187,93 @@
 
                 <!-- SINGLE MODE ACTIONS (Dynamically shown) -->
                 <div id="single-controls" style="display: none;">
+                    <!-- Character Info -->
                     <div class="control-section">
-                        <h2>Character Editor</h2>
-                        <!-- Back Button? -->
-                        <!-- <button id="backToBatchBtn">Back to Batch</button> -->
+                        <h2>Character</h2>
+                        <div id="singleCharInfo" class="char-info-box"></div>
                     </div>
 
-                    <div id="singleParamsContainer">
-                        <!-- Populated by JS -->
+                    <!-- Colors Section -->
+                    <div class="control-section" id="colorsSection">
+                        <h2>Colors</h2>
+                        <div class="swatch-row" id="skinSwatches">
+                            <label>Skin</label>
+                            <div class="swatches"></div>
+                        </div>
+                        <div class="swatch-row" id="shirtSwatches">
+                            <label>Shirt</label>
+                            <div class="swatches"></div>
+                        </div>
+                        <div class="swatch-row" id="pantsSwatches">
+                            <label>Pants</label>
+                            <div class="swatches"></div>
+                        </div>
+                        <div class="swatch-row" id="hairSwatches">
+                            <label>Hair</label>
+                            <div class="swatches"></div>
+                        </div>
                     </div>
+
+                    <!-- Monster Palettes (shown for monsters) -->
+                    <div class="control-section" id="monsterPaletteSection" style="display: none;">
+                        <h2>Palette</h2>
+                        <div class="palette-grid" id="monsterPaletteGrid"></div>
+                    </div>
+
+                    <!-- Patterns Section (Humans only) -->
+                    <div class="control-section" id="patternsSection">
+                        <h2>Patterns</h2>
+                        <div class="pattern-row">
+                            <label>Shirt Style</label>
+                            <select id="shirtPatternSelect">
+                                <option value="none">Plain</option>
+                                <option value="stripes">Stripes</option>
+                                <option value="checkers">Checkers</option>
+                                <option value="buttons">Buttons</option>
+                                <option value="tunic">Tunic</option>
+                            </select>
+                        </div>
+                        <div class="pattern-row">
+                            <label>Pants Style</label>
+                            <select id="pantsPatternSelect">
+                                <option value="none">Plain</option>
+                                <option value="stripes">Stripes</option>
+                                <option value="patches">Patches</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Body Proportions -->
+                    <div class="control-section">
+                        <h2>Body</h2>
+                        <div id="singleBodySliders"></div>
+                    </div>
+
+                    <!-- Identity -->
+                    <div class="control-section">
+                        <h2>Identity</h2>
+                        <div class="identity-row">
+                            <label>Name</label>
+                            <input type="text" id="singleCharName" class="text-input" placeholder="Character name" />
+                        </div>
+                        <button id="regenerateBackstory" class="btn-small" style="width: 100%; margin-top: 8px;">🔄 New
+                            Backstory</button>
+                        <div id="singleBackstoryPreview" class="backstory-preview"
+                            style="margin-top: 10px; font-size: 11px; color: #888; line-height: 1.4; max-height: 80px; overflow-y: auto; padding: 8px; background: #0a0a0a; border: 1px solid #222;">
+                        </div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="control-section">
+                        <button id="backToBatch" class="btn-primary" style="width: 100%; margin-bottom: 8px;">✓ Save &
+                            Back</button>
+                        <button id="resetCharacter" class="btn-danger" style="width: 100%;">Discard Changes</button>
+                    </div>
+
+                    <!-- Legacy container for compatibility -->
+                    <div id="singleParamsContainer" style="display: none;"></div>
                 </div>
+
 
             </div>
         </aside>

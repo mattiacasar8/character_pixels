@@ -313,7 +313,17 @@ export class HumanGenerator extends CharacterGenerator {
         }
 
         // Determine Clothing Patterns & Styles
-        const clothingPatterns = this.clothingGenerator.generatePatterns(rng);
+        let clothingPatterns = this.clothingGenerator.generatePatterns(rng);
+
+        // Apply clothing overrides from params (for Single Mode editing)
+        if (params.clothingOverrides) {
+            if (params.clothingOverrides.shirt && params.clothingOverrides.shirt !== 'none') {
+                clothingPatterns.shirt.pattern = params.clothingOverrides.shirt;
+            }
+            if (params.clothingOverrides.pants && params.clothingOverrides.pants !== 'none') {
+                clothingPatterns.pants.pattern = params.clothingOverrides.pants;
+            }
+        }
 
         // Generate Accessories
         const accessories = this.accessoryGenerator.generateAccessories(rng);

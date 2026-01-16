@@ -21,7 +21,7 @@
 
 **Two modes**:
 1. **Batch Mode** (current): Range-based sliders, random generation, bulk creation
-2. **Single Character Mode** (v2): Precise values, element cycling, individual editing
+2. **Single Character Mode** (v2): Precise values, element cycling, individual editing and export.
 
 ---
 
@@ -49,7 +49,7 @@ js/generators/
     └── monster-names.js     ← Monster name generation logic (already good)
 ```
 
-**Action**: Move human name data to `human-names.js`, create unified `NameGenerator` interface.
+**check**: names, backstory and other data should be in the /data folder and not sparse around the other files.
 
 ---
 
