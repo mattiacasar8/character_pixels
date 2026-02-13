@@ -7,7 +7,6 @@
     --border-color: #333333;
     --accent-color: #ffffff;
     --grid-line: #222222;
-    --sidebar-width: 320px;
     --font-main: 'Inter', sans-serif;
     --font-serif: 'Instrument Serif', serif;
     --font-mono: 'Courier New', monospace;
@@ -248,6 +247,7 @@ button:active {
 }
 
 .btn-random-section {
+    width: auto;
     background: transparent;
     border: 1px solid rgba(255, 255, 255, 0.15);
     color: #666;
@@ -275,15 +275,6 @@ button:active {
     grid-template-columns: 1fr 1fr;
     gap: 8px;
     margin-bottom: 8px;
-}
-
-.export-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-    margin-top: 20px;
-    padding-top: 20px;
-    border-top: 1px solid var(--grid-line);
 }
 
 .palette-grid {

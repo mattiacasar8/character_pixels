@@ -15,7 +15,6 @@ export class UIManager {
         this.setupSliders();        // Create sliders first
         this.setupGeneratorType();  // This applies presets to sliders
         this.setupCheckboxes();
-        this.setupBatchOptions();
         this.setupButtons();
     }
 
@@ -191,7 +190,7 @@ export class UIManager {
     }
 
     setupCheckboxes() {
-        const displayCheckboxes = ['showStickFigure', 'showThickness', 'showHeatmap', 'showFinal', 'showGrid', 'showShapes', 'showAnalysis'];
+        const displayCheckboxes = ['showStickFigure', 'showThickness', 'showHeatmap', 'showFinal', 'showGrid'];
 
         displayCheckboxes.forEach(id => {
             const el = document.getElementById(id);
@@ -231,10 +230,6 @@ export class UIManager {
                 this.app.reprocessCurrentCharacters();
             });
         }
-    }
-
-    setupBatchOptions() {
-        // Presets are now handled in setupGeneratorType via buttons
     }
 
     setupButtons() {
@@ -294,7 +289,7 @@ export class UIManager {
             keyParams.forEach(key => {
                 const conf = PARAM_CONFIG[key];
                 if (conf) {
-                    controller.workingParams[key] = randomFloat(conf.min, conf.max);
+                    controller.workingParams[key] = randomFloat(conf.safeMin, conf.safeMax);
                 }
             });
             controller.regeneratePreview();
@@ -770,9 +765,9 @@ export class UIManager {
      * Update backstory display
      */
     updateSingleModeBackstoryDisplay(backstory) {
-        const preview = document.getElementById('singleBackstoryPreview');
+        const preview = document.getElementById('mainBackstoryPreview');
         if (preview) {
-            preview.innerHTML = backstory || '<em>No backstory</em>';
+            preview.textContent = backstory || '';
         }
     }
 

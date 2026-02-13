@@ -3,6 +3,7 @@
  * Adds a colored outline around filled pixels.
  * Creates a defined border that helps characters stand out.
  */
+import { hexToRgb } from '../../utils/color.js';
 
 export class OutlineProcessor {
     static id = 'outline';
@@ -20,7 +21,7 @@ export class OutlineProcessor {
     static apply(pixels, params, canvasSize) {
         const color = params.outlineColor || { r: 0, g: 0, b: 0 };
         const outlineColor = typeof color === 'string'
-            ? OutlineProcessor.hexToRgb(color)
+            ? hexToRgb(color)
             : color;
 
         const toOutline = [];
@@ -58,19 +59,6 @@ export class OutlineProcessor {
         });
 
         return pixels;
-    }
-
-    /**
-     * Convert hex color to RGB object
-     */
-    static hexToRgb(hex) {
-        if (!hex) return { r: 0, g: 0, b: 0 };
-        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-        return result ? {
-            r: parseInt(result[1], 16),
-            g: parseInt(result[2], 16),
-            b: parseInt(result[3], 16)
-        } : { r: 0, g: 0, b: 0 };
     }
 
     /**

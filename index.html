@@ -43,18 +43,10 @@
                     </div>
                 </div>
 
-                <!-- Density (Global/Batch param) - Moving purely global logic here if applicable, 
-                     but density is often per-character. However user asked for it on Left. 
-                     We'll create a placeholder or move the slider here.
-                     Actually, standard sliders are generated in 'slidersContainer'. 
-                     I will need to specially handle 'fillDensity' in UIManager to render it here 
-                     OR just hardcode it here and bind it manually. 
-                     For now I'll create the container for it. -->
+                <!-- Density -->
                 <div class="control-section">
                     <h2>Density</h2>
-                    <div id="densityControlContainer">
-                        <!-- Density Slider will be moved here by JS or created here -->
-                    </div>
+                    <div id="densityControlContainer"></div>
                 </div>
 
                 <!-- Generation Settings / Effects -->
@@ -109,15 +101,6 @@
                             <input type="checkbox" id="showThickness">
                             <label for="showThickness">Shapes</label>
                         </div>
-                        <!-- Hidden debug options -->
-                        <div class="checkbox-row" style="display:none">
-                            <input type="checkbox" id="showShapes">
-                            <label for="showShapes">Raw Shapes</label>
-                        </div>
-                        <div class="checkbox-row" style="display:none">
-                            <input type="checkbox" id="showAnalysis">
-                            <label for="showAnalysis">Analysis</label>
-                        </div>
                     </div>
 
                     <div class="control-row" style="margin-top: 15px;">
@@ -126,9 +109,6 @@
                         <span id="canvasSizeValue" class="value-display">50</span>
                     </div>
                 </section>
-
-                <!-- Hidden inputs -->
-                <input type="hidden" id="gridSize" value="64">
 
             </div>
         </aside>
@@ -324,8 +304,6 @@
                         <button id="resetCharacter" class="btn-danger" style="width: 100%;">Discard Changes</button>
                     </div>
 
-                    <!-- Legacy container for compatibility -->
-                    <div id="singleParamsContainer" style="display: none;"></div>
                 </div>
 
 

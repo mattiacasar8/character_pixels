@@ -15,18 +15,26 @@ export class MonsterBackstoryGenerator extends BackstoryGenerator {
 
     // --- PATTERNS ---
 
-    generate(name) {
-        const patterns = [
-            this.patternA.bind(this),
-            this.patternB.bind(this),
-            this.patternC.bind(this),
-            this.patternD.bind(this),
-            this.patternE.bind(this),
-            this.patternF.bind(this)
-        ];
+    generate(name, patternKey = null) {
+        const patterns = {
+            patternA: this.patternA.bind(this),
+            patternB: this.patternB.bind(this),
+            patternC: this.patternC.bind(this),
+            patternD: this.patternD.bind(this),
+            patternE: this.patternE.bind(this),
+            patternF: this.patternF.bind(this)
+        };
 
-        const pattern = patterns[Math.floor(Math.random() * patterns.length)];
-        return pattern(name);
+        let selectedPattern;
+        if (patternKey && patterns[patternKey]) {
+            selectedPattern = patterns[patternKey];
+        } else {
+            const keys = Object.keys(patterns);
+            const randomKey = keys[Math.floor(Math.random() * keys.length)];
+            selectedPattern = patterns[randomKey];
+        }
+
+        return selectedPattern(name);
     }
 
     // Origin + Formation + Current

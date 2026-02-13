@@ -88,20 +88,3 @@ export function distance(a, b) {
     return Math.sqrt(dx * dx + dy * dy);
 }
 
-export function pointToSegmentDistance(p, a, b) {
-    const dx = b.x - a.x;
-    const dy = b.y - a.y;
-    const lengthSq = dx * dx + dy * dy;
-
-    if (lengthSq === 0) return distance(p, a);
-
-    let t = ((p.x - a.x) * dx + (p.y - a.y) * dy) / lengthSq;
-    t = Math.max(0, Math.min(1, t));
-
-    const closest = {
-        x: a.x + t * dx,
-        y: a.y + t * dy
-    };
-
-    return distance(p, closest);
-}

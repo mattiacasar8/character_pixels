@@ -1,7 +1,6 @@
 // Character Generator
 import { createTrapezoid, createJoint, getTrapezoidBottom, isPointInPolygon, distance } from '../utils/math.js';
-import { randomFloat, randomInt, generateRandomPalette, SeededRandom } from '../utils/random.js';
-import { PARAM_CONFIG } from '../config.js';
+import { generateRandomPalette, SeededRandom } from '../utils/random.js';
 import { processorManager } from './processors/ProcessorManager.js';
 
 export class CharacterGenerator {
@@ -584,17 +583,6 @@ export class CharacterGenerator {
 
         this.removeIsolatedPixels(pixels);
 
-        // Apply smoothing if enabled
-        if (params.enableSmoothing !== false) {
-            this.applySmoothing(pixels, params.palette);
-        }
-
-        // Apply outline if enabled
-        if (params.showOutline !== false) {
-            const color = this.hexToRgb(params.outlineColor) || { r: 0, g: 0, b: 0 };
-            this.applyOutline(pixels, color);
-        }
-
         return pixels;
     }
 
@@ -625,113 +613,4 @@ export class CharacterGenerator {
         });
     }
 
-    applySmoothing(pixels, palette) {
-        // Cellular automata: fill empty cells surrounded by many filled neighbors
-        const toFill = [];
-        const size = pixels.length;
-
-        for (let y = 1; y < size - 1; y++) {
-            for (let x = 1; x < size - 1; x++) {
-                if (pixels[y][x] === null) {
-                    // Count filled neighbors (Moore neighborhood - 8 cells)
-                    let filledCount = 0;
-                    const neighborColors = [];
-
-                    for (let dy = -1; dy <= 1; dy++) {
-                        for (let dx = -1; dx <= 1; dx++) {
-                            if (dx === 0 && dy === 0) continue;
-                            if (pixels[y + dy] && pixels[y + dy][x + dx]) {
-                                filledCount++;
-                                neighborColors.push(pixels[y + dy][x + dx]);
-                            }
-                        }
-                    }
-
-                    // Fill if more than 4 neighbors are filled
-                    if (filledCount > 4) {
-                        // Use the most common neighbor color
-                        const color = this.getMostCommonColor(neighborColors) || palette[0];
-                        toFill.push({ x, y, color });
-                    }
-                }
-            }
-        }
-
-        // Apply fills
-        toFill.forEach(({ x, y, color }) => {
-            pixels[y][x] = color;
-        });
-    }
-
-    applyOutline(pixels, color) {
-        // Add dark outline around sprites
-        const outlineColor = color;
-        const toOutline = [];
-        const size = pixels.length;
-
-        for (let y = 1; y < size - 1; y++) {
-            for (let x = 1; x < size - 1; x++) {
-                if (pixels[y][x] !== null) {
-                    // Check orthogonal neighbors (up, down, left, right)
-                    const neighbors = [
-                        { dy: -1, dx: 0 }, // up
-                        { dy: 1, dx: 0 },  // down
-                        { dy: 0, dx: -1 }, // left
-                        { dy: 0, dx: 1 }   // right
-                    ];
-
-                    neighbors.forEach(({ dy, dx }) => {
-                        const ny = y + dy;
-                        const nx = x + dx;
-                        if (ny >= 0 && ny < size && nx >= 0 && nx < size) {
-                            if (pixels[ny][nx] === null) {
-                                toOutline.push({ x: nx, y: ny });
-                            }
-                        }
-                    });
-                }
-            }
-        }
-
-        // Apply outline (don't overwrite existing pixels)
-        toOutline.forEach(({ x, y }) => {
-            if (pixels[y][x] === null) {
-                pixels[y][x] = outlineColor;
-            }
-        });
-    }
-
-
-    getMostCommonColor(colors) {
-        if (colors.length === 0) return null;
-
-        // Simple frequency count
-        const colorMap = new Map();
-        colors.forEach(color => {
-            const key = `${color.r},${color.g},${color.b}`;
-            colorMap.set(key, (colorMap.get(key) || 0) + 1);
-        });
-
-        let maxCount = 0;
-        let mostCommon = colors[0];
-        colorMap.forEach((count, key) => {
-            if (count > maxCount) {
-                maxCount = count;
-                const [r, g, b] = key.split(',').map(Number);
-                mostCommon = { r, g, b };
-            }
-        });
-
-        return mostCommon;
-    }
-
-    hexToRgb(hex) {
-        if (!hex) return null;
-        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-        return result ? {
-            r: parseInt(result[1], 16),
-            g: parseInt(result[2], 16),
-            b: parseInt(result[3], 16)
-        } : null;
-    }
 }

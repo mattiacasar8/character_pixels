@@ -12,9 +12,10 @@ export class AccessoryGenerator {
                 pendant: ['circle', 'diamond', 'square', 'cross', 'gem'][rng.int(0, 4)]
             };
             if (necklace.pendant === 'gem') {
-                necklace.pendantColor = { r: 231, g: 76, b: 60 }; // Ruby default
-                if (rng.next() < 0.33) necklace.pendantColor = { r: 46, g: 204, b: 113 }; // Emerald
-                else if (rng.next() < 0.66) necklace.pendantColor = { r: 52, g: 152, b: 219 }; // Sapphire
+                const gemRoll = rng.next();
+                if (gemRoll < 0.33) necklace.pendantColor = { r: 46, g: 204, b: 113 }; // Emerald
+                else if (gemRoll < 0.66) necklace.pendantColor = { r: 52, g: 152, b: 219 }; // Sapphire
+                else necklace.pendantColor = { r: 231, g: 76, b: 60 }; // Ruby
             }
         }
         return { necklace };
@@ -24,7 +25,6 @@ export class AccessoryGenerator {
         if (accessories.necklace) {
             this.drawNecklace(pixels, accessories.necklace, centerX, minY, canvasSize);
         }
-        this.drawBelt(pixels, centerX, canvasSize);
     }
 
     drawNecklace(pixels, necklace, centerX, minY, canvasSize) {
@@ -76,25 +76,21 @@ export class AccessoryGenerator {
         }
     }
 
+    /**
+     * Helper: compare two {r,g,b} colors by value
+     */
+    _colorsMatch(a, b) {
+        return a && b && a.r === b.r && a.g === b.g && a.b === b.b;
+    }
+
     drawBelt(pixels, centerX, canvasSize, colors) {
+        if (!colors) return;
         for (let y = 1; y < canvasSize - 1; y++) {
             for (let x = 0; x < canvasSize; x++) {
                 if (pixels[y][x] && pixels[y + 1][x]) {
-                    // Detect shirt-to-pants transition
                     const c1 = pixels[y][x];
                     const c2 = pixels[y + 1][x];
-                    // We must check if colors roughly match original shirt/pants 
-                    // OR if we want to be strict like original code:
-                    // Original: if (c1 === colors.shirt && c2 === colors.pants)
-                    // This was very strict.
-
-                    // We'll trust the user wants to keep behavior, but I suspect this was flaky.
-                    // Let's use value comparison to be safe against object identity issues if meaningful,
-                    // but the original code relied on object identity (likely).
-                    // However, since we are moving code, we might lose identity if we cross boundaries (e.g. copying objects).
-                    // Let's assume we pass the EXACT same color objects.
-
-                    if (colors && c1 === colors.shirt && c2 === colors.pants) {
+                    if (this._colorsMatch(c1, colors.shirt) && this._colorsMatch(c2, colors.pants)) {
                         pixels[y][x] = { r: 50, g: 30, b: 20 }; // Belt color
                     }
                 }

@@ -14,7 +14,6 @@ import { CharacterRenderer } from './core/renderer.js';
 import { UIManager } from './app/UIManager.js';
 import { ModalManager } from './app/ModalManager.js';
 import { ExportManager } from './app/ExportManager.js';
-import { CharacterManager } from './app/CharacterManager.js';
 import { SingleModeController } from './app/SingleModeController.js';
 
 class App {
@@ -34,7 +33,6 @@ class App {
         this.characterRenderer = new CharacterRenderer(3, this.canvasSize);
 
         // Initialize managers
-        this.characterManager = new CharacterManager();
         this.uiManager = new UIManager(this);
         this.modalManager = new ModalManager(this);
         this.exportManager = new ExportManager(this);
@@ -50,9 +48,6 @@ class App {
 
         // Single Mode Controller
         this.singleModeController = new SingleModeController(this);
-
-        // Expose for debugging
-        window.characterManager = this.characterManager;
 
         this.init();
         this.setupModalEdit();

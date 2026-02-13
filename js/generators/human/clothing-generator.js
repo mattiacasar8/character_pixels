@@ -50,7 +50,7 @@ export class ClothingGenerator {
     applyPattern(x, y, color, region, clothingData, centerX, minY, maxY) {
         // Helpers
         const shade = (c, percent) => ({ r: Math.max(0, c.r * (1 - percent)), g: Math.max(0, c.g * (1 - percent)), b: Math.max(0, c.b * (1 - percent)) });
-        const tint = (c, percent) => ({ r: Math.min(255, c.r + (255 - c.r) * percent), g: Math.min(255, c.g + (255 - c.r) * percent), b: Math.min(255, c.b + (255 - c.b) * percent) });
+        const tint = (c, percent) => ({ r: Math.min(255, c.r + (255 - c.r) * percent), g: Math.min(255, c.g + (255 - c.g) * percent), b: Math.min(255, c.b + (255 - c.b) * percent) });
 
         let finalColor = color;
         const { shirt, pants, hasPockets, hasCuts } = clothingData;

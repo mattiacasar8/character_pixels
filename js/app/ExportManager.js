@@ -76,7 +76,7 @@ export class ExportManager {
 
         // Text content
         const nameText = char.name;
-        const descText = char.backstory || "Di Narril si sa poco. Qualcuno sostiene che non invecchi mai davvero.";
+        const descText = char.backstory || "";
 
         // Calculate dimensions
         const tempCanvas = document.createElement('canvas');
@@ -139,13 +139,13 @@ export class ExportManager {
     }
 
     /**
-     * Export current modal character as a 2-frame animation strip
+     * Export current modal character as a 3-frame animation strip (exhale, neutral, inhale)
      */
     exportStrip() {
         const char = this.app.modalManager.currentCharacter;
         if (!char) return;
 
-        const numFrames = 2;
+        const numFrames = 3;
         const spriteSize = this.app.characterRenderer.displaySize;
 
         const canvas = document.createElement('canvas');
@@ -185,7 +185,7 @@ export class ExportManager {
         }
 
         const zip = new JSZip();
-        const numFrames = 2;
+        const numFrames = 3;
 
         const promises = [];
         for (let i = 0; i < numFrames; i++) {

@@ -1,6 +1,6 @@
 import { CharacterGenerator } from '../../core/generator.js';
 import { SKIN_TONES, CLOTHING_COLORS, HAIR_COLORS, EYE_COLORS, MOUTH_COLORS } from '../../data/human-palettes.js';
-import { randomFloat, randomInt, SeededRandom } from '../../utils/random.js';
+import { SeededRandom } from '../../utils/random.js';
 import { createTrapezoid, createJoint, getTrapezoidBottom, isPointInPolygon } from '../../utils/math.js';
 import { FaceGenerator } from './face-generator.js';
 import { nameGenerator } from '../name-generator.js';
@@ -73,13 +73,7 @@ export class HumanGenerator extends CharacterGenerator {
         return params;
     }
 
-    getRandomColor(array) {
-        // Fallback for non-seeded calls if any
-        return array[Math.floor(Math.random() * array.length)];
-    }
-
     // Override to enforce human proportions
-    // Canvas is 50px (0-49). Proportions recalculated based on feedback.
     getParamRanges(preset) {
         const baseRanges = { ...BODY_PROPORTIONS.human.base };
 

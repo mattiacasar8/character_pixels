@@ -46,6 +46,18 @@ export class LightingProcessor {
                 litEdges = [{ dy: -1, dx: 0 }, { dy: 0, dx: -1 }]; // Top, Left
                 shadedEdges = [{ dy: 1, dx: 0 }, { dy: 0, dx: 1 }]; // Bottom, Right
                 break;
+            case 'top':
+                litEdges = [{ dy: -1, dx: 0 }]; // Top
+                shadedEdges = [{ dy: 1, dx: 0 }]; // Bottom
+                break;
+            case 'left':
+                litEdges = [{ dy: 0, dx: -1 }]; // Left
+                shadedEdges = [{ dy: 0, dx: 1 }]; // Right
+                break;
+            case 'right':
+                litEdges = [{ dy: 0, dx: 1 }]; // Right
+                shadedEdges = [{ dy: 0, dx: -1 }]; // Left
+                break;
             case 'bottom-right':
                 litEdges = [{ dy: 1, dx: 0 }, { dy: 0, dx: 1 }]; // Bottom, Right
                 shadedEdges = [{ dy: -1, dx: 0 }, { dy: 0, dx: -1 }]; // Top, Left

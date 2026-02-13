@@ -34,9 +34,9 @@ export class ModalManager {
         };
 
         if (closeBtn) closeBtn.onclick = closeModal;
-        window.onclick = (event) => {
-            if (event.target == modal) closeModal();
-        };
+        window.addEventListener('click', (event) => {
+            if (event.target === modal) closeModal();
+        });
     }
 
     show(character) {
