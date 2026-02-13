@@ -49,9 +49,9 @@ export class HumanGenerator extends CharacterGenerator {
         const shirtColor = getRandomColor(CLOTHING_COLORS);
         let pantsColor = getRandomColor(CLOTHING_COLORS);
 
-        // Ensure pants are different from shirt
+        // Ensure pants are different from shirt (compare by value, not reference)
         let attempts = 0;
-        while (pantsColor === shirtColor && CLOTHING_COLORS.length > 1 && attempts < 10) {
+        while (pantsColor.r === shirtColor.r && pantsColor.g === shirtColor.g && pantsColor.b === shirtColor.b && CLOTHING_COLORS.length > 1 && attempts < 10) {
             pantsColor = getRandomColor(CLOTHING_COLORS);
             attempts++;
         }
@@ -483,42 +483,13 @@ export class HumanGenerator extends CharacterGenerator {
 
             // Extract and preserve face from first frame
             if (index === 0) {
-                const head = bodyParts.head;
-                if (head && head.points) {
-                    const xs = head.points.map(p => p.x);
-                    const ys = head.points.map(p => p.y);
-                    headBounds = {
-                        minX: Math.floor(Math.min(...xs)),
-                        maxX: Math.ceil(Math.max(...xs)),
-                        minY: Math.floor(Math.min(...ys)),
-                        maxY: Math.ceil(Math.max(...ys))
-                    };
-
-                    facePixels = [];
-                    for (let y = headBounds.minY; y <= headBounds.maxY; y++) {
-                        facePixels[y] = [];
-                        for (let x = headBounds.minX; x <= headBounds.maxX; x++) {
-                            if (y >= 0 && y < this.canvasSize && x >= 0 && x < this.canvasSize) {
-                                facePixels[y][x] = pixels[y][x] ? { ...pixels[y][x] } : null;
-                            }
-                        }
-                    }
+                const extracted = this.extractFacePixels(pixels, bodyParts);
+                if (extracted) {
+                    facePixels = extracted.facePixels;
+                    headBounds = extracted.headBounds;
                 }
             } else if (facePixels && headBounds) {
-                // Apply consistent face with head bobbing
-                const yOffset = variation.headBob;
-
-                // Apply face with offset
-                for (let y = headBounds.minY; y <= headBounds.maxY; y++) {
-                    for (let x = headBounds.minX; x <= headBounds.maxX; x++) {
-                        const targetY = y + yOffset;
-                        if (targetY >= 0 && targetY < this.canvasSize && x >= 0 && x < this.canvasSize) {
-                            if (facePixels[y] && facePixels[y][x] !== undefined) {
-                                pixels[targetY][x] = facePixels[y][x] ? { ...facePixels[y][x] } : null;
-                            }
-                        }
-                    }
-                }
+                this.applyFacePixels(pixels, facePixels, headBounds, variation.headBob);
             }
 
             // Apply Processors (Smoothing, Lighting, Outline)

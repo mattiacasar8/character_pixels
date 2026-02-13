@@ -2,6 +2,7 @@
 import { createTrapezoid, createJoint, getTrapezoidBottom, isPointInPolygon, distance } from '../utils/math.js';
 import { generateRandomPalette, SeededRandom } from '../utils/random.js';
 import { processorManager } from './processors/ProcessorManager.js';
+import { BODY_PROPORTIONS } from '../config.js';
 
 export class CharacterGenerator {
     constructor(canvasSize = 50) {
@@ -52,38 +53,76 @@ export class CharacterGenerator {
     }
 
     generateAnimationFrames(params) {
-        // Frame 0: -5% Torso Height
-        // Frame 1: Original
-        // Frame 2: +5% Torso Height
-        // Actually user said: frame 1 (-5%), frame 2 (0%), frame 3 (+5%)
-        // So indices 0, 1, 2.
-
         const frames = [];
         const variations = [-0.05, 0, 0.05];
 
         variations.forEach(variation => {
             const frameParams = { ...params };
-            // Note: All size params here are in percentage of canvas (0-100)
-            // They get scaled to pixels later in generateBodyParts() via scaleParams()
-            // So we modify the percentage values directly
 
             if (frameParams.torsoHeight) {
                 frameParams.torsoHeight = frameParams.torsoHeight * (1 + variation);
             }
-
-            // Add subtle arm angle variation synchronized with breathing
-            // Negative variation (exhale): arms move slightly outward
-            // Positive variation (inhale): arms move slightly inward
             if (frameParams.armAngle) {
                 frameParams.armAngle = frameParams.armAngle * (1 + variation * 2);
             }
 
-            // Generate full character data but extract only pixels for animation frames
             const char = this.generate(frameParams);
             frames.push(char.pixels);
         });
 
         return frames;
+    }
+
+    /**
+     * Extract face pixels from a frame's head region for cross-frame consistency.
+     * @param {Array} pixels - The 2D pixel array
+     * @param {Object} bodyParts - The body parts containing head with points
+     * @returns {{ facePixels: Array, headBounds: Object }|null}
+     */
+    extractFacePixels(pixels, bodyParts) {
+        const head = bodyParts.head;
+        if (!head || !head.points) return null;
+
+        const xs = head.points.map(p => p.x);
+        const ys = head.points.map(p => p.y);
+        const headBounds = {
+            minX: Math.floor(Math.min(...xs)),
+            maxX: Math.ceil(Math.max(...xs)),
+            minY: Math.floor(Math.min(...ys)),
+            maxY: Math.ceil(Math.max(...ys))
+        };
+
+        const facePixels = [];
+        for (let y = headBounds.minY; y <= headBounds.maxY; y++) {
+            facePixels[y] = [];
+            for (let x = headBounds.minX; x <= headBounds.maxX; x++) {
+                if (y >= 0 && y < this.canvasSize && x >= 0 && x < this.canvasSize) {
+                    facePixels[y][x] = pixels[y][x] ? { ...pixels[y][x] } : null;
+                }
+            }
+        }
+
+        return { facePixels, headBounds };
+    }
+
+    /**
+     * Apply stored face pixels onto a frame with vertical offset (head bobbing).
+     * @param {Array} pixels - The target 2D pixel array (mutated in place)
+     * @param {Array} facePixels - Previously extracted face pixels
+     * @param {Object} headBounds - Bounding box of the head region
+     * @param {number} yOffset - Vertical offset for head bobbing
+     */
+    applyFacePixels(pixels, facePixels, headBounds, yOffset) {
+        for (let y = headBounds.minY; y <= headBounds.maxY; y++) {
+            for (let x = headBounds.minX; x <= headBounds.maxX; x++) {
+                const targetY = y + yOffset;
+                if (targetY >= 0 && targetY < this.canvasSize && x >= 0 && x < this.canvasSize) {
+                    if (facePixels[y] && facePixels[y][x] !== undefined) {
+                        pixels[targetY][x] = facePixels[y][x] ? { ...facePixels[y][x] } : null;
+                    }
+                }
+            }
+        }
     }
 
     reprocess(character, newParams) {
@@ -135,7 +174,7 @@ export class CharacterGenerator {
             resolved.headHeight = resolved.headWidth;
             resolved.thighBottomWidth = resolved.thighTopWidth * 0.8;
             resolved.shinBottomWidth = resolved.shinTopWidth * 0.8;
-            resolved.shinLength = 24; // Fixed at 24%
+            if (!resolved.shinLength) resolved.shinLength = 24;
         }
 
         // Ensure seed is preserved
@@ -197,82 +236,18 @@ export class CharacterGenerator {
     }
 
     getParamRanges(preset) {
-        // All size parameters are now in % of canvas size
-        const baseRanges = {
-            torsoTopWidth: { min: 16, max: 32 },
-            torsoBottomWidth: { min: 12, max: 28 },
-            torsoHeight: { min: 24, max: 36 },
-            torsoY: { min: 16, max: 24 },
-            neckWidth: { min: 4, max: 10 },
-            neckHeight: { min: 4, max: 8 },
-            headWidth: { min: 12, max: 24 },
-            headHeight: { min: 12, max: 24 },
-            upperArmTopWidth: { min: 4, max: 12 },
-            upperArmBottomWidth: { min: 3, max: 10 },
-            upperArmLength: { min: 16, max: 28 },
-            forearmTopWidth: { min: 3, max: 10 },
-            forearmBottomWidth: { min: 2, max: 8 },
-            forearmLength: { min: 16, max: 28 },
-            armAngle: { min: -80, max: -10 },
-            elbowAngle: { min: -70, max: 70 },
-            thighTopWidth: { min: 6, max: 16 },
-            thighBottomWidth: { min: 4, max: 12 },
-            thighLength: { min: 16, max: 28 },
-            shinTopWidth: { min: 4, max: 12 },
-            shinBottomWidth: { min: 3, max: 10 },
-            shinLength: { min: 20, max: 32 },
-            legAngle: { min: -25, max: 0 },
-            fillDensity: { min: 0.7, max: 1.0 }
-        };
+        // Delegates to centralized BODY_PROPORTIONS config.
+        // Subclasses (HumanGenerator, MonsterGenerator) override with their own ranges.
+        const baseRanges = { ...BODY_PROPORTIONS.monster.base };
 
-        switch (preset) {
-            case 'short':
-                return {
-                    ...baseRanges,
-                    torsoHeight: { min: 24, max: 30 },
-                    torsoY: { min: 24, max: 32 },
-                    thighLength: { min: 12, max: 20 },
-                    shinLength: { min: 16, max: 24 }
-                };
-
-            case 'tall':
-                return {
-                    ...baseRanges,
-                    torsoHeight: { min: 32, max: 44 },
-                    torsoY: { min: 12, max: 20 },
-                    thighLength: { min: 24, max: 36 },
-                    shinLength: { min: 28, max: 40 },
-                    upperArmLength: { min: 24, max: 36 },
-                    forearmLength: { min: 24, max: 36 }
-                };
-
-            case 'thin':
-                return {
-                    ...baseRanges,
-                    torsoTopWidth: { min: 12, max: 20 },
-                    torsoBottomWidth: { min: 10, max: 18 },
-                    upperArmTopWidth: { min: 3, max: 6 },
-                    forearmTopWidth: { min: 2, max: 5 },
-                    thighTopWidth: { min: 4, max: 8 },
-                    shinTopWidth: { min: 3, max: 6 }
-                };
-
-            case 'bulky':
-                return {
-                    ...baseRanges,
-                    torsoTopWidth: { min: 24, max: 36 },
-                    torsoBottomWidth: { min: 20, max: 32 },
-                    upperArmTopWidth: { min: 8, max: 16 },
-                    forearmTopWidth: { min: 6, max: 12 },
-                    thighTopWidth: { min: 10, max: 20 },
-                    shinTopWidth: { min: 8, max: 16 },
-                    headWidth: { min: 16, max: 28 }
-                };
-
-            case 'standard':
-            default:
-                return baseRanges;
+        if (preset && BODY_PROPORTIONS.monster.presets[preset]) {
+            return {
+                ...baseRanges,
+                ...BODY_PROPORTIONS.monster.presets[preset]
+            };
         }
+
+        return baseRanges;
     }
 
     scaleParams(params, scale) {

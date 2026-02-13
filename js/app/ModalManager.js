@@ -44,6 +44,11 @@ export class ModalManager {
         this.currentModalCharacter = character;
         this.currentModalIndex = this.app.characters.indexOf(character);
 
+        // Generate animation frames on-demand if not already cached
+        if (!character.animationFrames) {
+            character.animationFrames = this.app.currentGenerator.generateAnimationFrames(character.params);
+        }
+
         // Reset animation state
         this.isAnimating = true;
         this.animationFrame = 0;
@@ -97,6 +102,12 @@ export class ModalManager {
         if (this.currentModalIndex < 0) this.currentModalIndex = this.app.characters.length - 1;
 
         this.currentModalCharacter = this.app.characters[this.currentModalIndex];
+
+        // Generate animation frames on-demand if not cached
+        if (!this.currentModalCharacter.animationFrames) {
+            this.currentModalCharacter.animationFrames = this.app.currentGenerator.generateAnimationFrames(this.currentModalCharacter.params);
+        }
+
         this.updateContent();
     }
 

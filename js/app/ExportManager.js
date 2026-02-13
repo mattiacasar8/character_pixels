@@ -10,9 +10,27 @@ export class ExportManager {
     }
 
     /**
+     * Ensure animation frames are generated for a character (lazy generation).
+     */
+    _ensureAnimationFrames(char) {
+        if (!char.animationFrames) {
+            char.animationFrames = this.app.currentGenerator.generateAnimationFrames(char.params);
+        }
+    }
+
+    /**
      * Export all characters as a single spritesheet PNG
      */
     exportSpritesheet() {
+        try {
+            this._doExportSpritesheet();
+        } catch (err) {
+            console.error('Export spritesheet failed:', err);
+            alert('Export failed. Check the console for details.');
+        }
+    }
+
+    _doExportSpritesheet() {
         if (this.app.characters.length === 0) {
             alert('No characters to export! Generate some first.');
             return;
@@ -55,8 +73,8 @@ export class ExportManager {
     /**
      * Export current modal character as a card with name and backstory
      */
-    exportCard() {
-        const char = this.app.modalManager.currentCharacter;
+    exportCard(character = null) {
+        const char = character || this.app.modalManager.currentCharacter;
         if (!char) return;
 
         // Design specs
@@ -141,10 +159,11 @@ export class ExportManager {
     /**
      * Export current modal character as a 3-frame animation strip (exhale, neutral, inhale)
      */
-    exportStrip() {
-        const char = this.app.modalManager.currentCharacter;
+    exportStrip(character = null) {
+        const char = character || this.app.modalManager.currentCharacter;
         if (!char) return;
 
+        this._ensureAnimationFrames(char);
         const numFrames = 3;
         const spriteSize = this.app.characterRenderer.displaySize;
 
@@ -175,9 +194,11 @@ export class ExportManager {
     /**
      * Export current modal character as a ZIP of individual frame PNGs
      */
-    async exportSeq() {
-        const char = this.app.modalManager.currentCharacter;
+    async exportSeq(character = null) {
+        const char = character || this.app.modalManager.currentCharacter;
         if (!char) return;
+
+        this._ensureAnimationFrames(char);
 
         if (typeof JSZip === 'undefined') {
             alert('JSZip library not loaded.');

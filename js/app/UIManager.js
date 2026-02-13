@@ -50,23 +50,15 @@ export class UIManager {
                 const btn = document.createElement('button');
                 btn.textContent = opt.text;
                 btn.dataset.value = opt.value;
-                // Add active class if selected
                 if (this.app.batchOptions.preset === opt.value) {
-                    btn.classList.add('active'); // You might need CSS for .active on buttons
-                    // Or style it differently
-                    btn.style.background = '#e0e0e0';
-                    btn.style.color = '#000';
+                    btn.classList.add('preset-active');
                 }
 
                 btn.addEventListener('click', () => {
-                    // Reset styles
                     Array.from(presetContainer.children).forEach(b => {
-                        b.style.background = '';
-                        b.style.color = '';
+                        b.classList.remove('preset-active');
                     });
-                    // Set active
-                    btn.style.background = '#e0e0e0';
-                    btn.style.color = '#000';
+                    btn.classList.add('preset-active');
 
                     this.app.batchOptions.preset = opt.value;
                     this.applyPresetToSliders(opt.value);
@@ -234,8 +226,26 @@ export class UIManager {
 
     setupButtons() {
         // Mode Toggles
-        document.getElementById('mode-batch').addEventListener('click', () => this.switchMode('batch'));
-        document.getElementById('mode-single').addEventListener('click', () => this.switchMode('single'));
+        document.getElementById('mode-batch').addEventListener('click', () => {
+            if (this.app.currentMode === 'single') {
+                // Exit single mode: save changes and restore batch grid
+                this.app.exitSingleMode();
+            }
+            // If already in batch, do nothing
+        });
+        document.getElementById('mode-single').addEventListener('click', () => {
+            if (this.app.currentMode === 'single') {
+                // Already in single mode, do nothing
+                return;
+            }
+            // Enter single mode: auto-select first character if none selected
+            if (this.app.characters.length === 0) {
+                this.app.generateCharacters(1);
+            }
+            if (this.app.characters.length > 0) {
+                this.app.enterSingleMode(this.app.characters[0]);
+            }
+        });
 
         document.getElementById('generateOne').addEventListener('click', () => {
             this.app.generateCharacters(1);
@@ -348,20 +358,21 @@ export class UIManager {
         const batchBtn = document.getElementById('mode-batch');
         const singleBtn = document.getElementById('mode-single');
 
+        const randomizeBtn = document.getElementById('randomize');
+
         if (mode === 'batch') {
             if (batchActions) batchActions.style.display = 'block';
             if (singleControls) singleControls.style.display = 'none';
             batchBtn.classList.add('active');
             singleBtn.classList.remove('active');
+            if (randomizeBtn) randomizeBtn.textContent = 'RANDOMIZE RANGES';
         } else {
             if (batchActions) batchActions.style.display = 'none';
             if (singleControls) singleControls.style.display = 'block';
             batchBtn.classList.remove('active');
             singleBtn.classList.add('active');
+            if (randomizeBtn) randomizeBtn.textContent = 'RANDOMIZE';
         }
-
-        // Notify App
-        // this.app.setMode(mode);
     }
 
     populateSingleModeControls(character) {
@@ -464,6 +475,26 @@ export class UIManager {
         if (backBtn) {
             backBtn.onclick = () => {
                 this.app.exitSingleMode();
+            };
+        }
+
+        // --- Export Buttons (Single Mode) ---
+        const singleExportCard = document.getElementById('singleExportCard');
+        if (singleExportCard) {
+            singleExportCard.onclick = () => {
+                this.app.exportManager.exportCard(this.app.singleModeCharacter);
+            };
+        }
+        const singleExportStrip = document.getElementById('singleExportStrip');
+        if (singleExportStrip) {
+            singleExportStrip.onclick = () => {
+                this.app.exportManager.exportStrip(this.app.singleModeCharacter);
+            };
+        }
+        const singleExportSeq = document.getElementById('singleExportSeq');
+        if (singleExportSeq) {
+            singleExportSeq.onclick = () => {
+                this.app.exportManager.exportSeq(this.app.singleModeCharacter);
             };
         }
     }
@@ -773,8 +804,6 @@ export class UIManager {
 
 
     applyPresetToSliders(preset) {
-        let ranges;
-
         if (preset === 'max') {
             Object.keys(PARAM_CONFIG).forEach(paramKey => {
                 const slider = document.getElementById(`slider-${paramKey}`);
@@ -783,18 +812,17 @@ export class UIManager {
                 const cfg = PARAM_CONFIG[paramKey];
                 slider.noUiSlider.set([cfg.safeMin, cfg.safeMax]);
             });
-            return;
         } else {
-            ranges = this.app.currentGenerator.getParamRanges(preset);
+            const ranges = this.app.currentGenerator.getParamRanges(preset);
+
+            Object.keys(ranges).forEach(paramKey => {
+                const slider = document.getElementById(`slider-${paramKey}`);
+                if (!slider || !slider.noUiSlider) return;
+
+                const range = ranges[paramKey];
+                slider.noUiSlider.set([range.min, range.max]);
+            });
         }
-
-        Object.keys(ranges).forEach(paramKey => {
-            const slider = document.getElementById(`slider-${paramKey}`);
-            if (!slider || !slider.noUiSlider) return;
-
-            const range = ranges[paramKey];
-            slider.noUiSlider.set([range.min, range.max]);
-        });
 
         this.app.currentParams = this.getParamsFromUI();
         this.app.regenerateCurrentCharacters();
@@ -897,7 +925,7 @@ export class UIManager {
             torsoTopWidth: getRange('torsoTopWidth'),
             torsoBottomWidth: getRange('torsoBottomWidth'),
             torsoHeight: getRange('torsoHeight'),
-            torsoY: 20,
+            torsoY: { min: 16, max: 24 },
 
             neckWidth: getRange('neckWidth'),
             neckHeight: getRange('neckHeight'),

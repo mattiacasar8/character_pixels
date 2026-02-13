@@ -85,6 +85,7 @@ body {
    MAIN CONTENT
    ============================================ */
 .main-content {
+    position: relative;
     background: #0a0a0a;
     padding: 40px;
     overflow-y: auto;
@@ -194,7 +195,6 @@ body {
    BUTTONS (unified base + variants)
    ============================================ */
 button {
-    width: 100%;
     padding: 12px;
     border: 1px solid var(--border-color);
     background: transparent;
@@ -208,6 +208,12 @@ button {
     border-radius: 0;
 }
 
+/* Full-width buttons inside grids and control sections */
+.button-grid button,
+.control-section > button {
+    width: 100%;
+}
+
 button:hover {
     background: var(--text-color);
     color: var(--bg-color);
@@ -215,6 +221,11 @@ button:hover {
 
 button:active {
     transform: translateY(1px);
+}
+
+button.preset-active {
+    background: #e0e0e0;
+    color: #000;
 }
 
 /* Button variants */
@@ -771,4 +782,29 @@ details[open] summary::after {
 
 .advanced-content {
     padding-top: 16px;
+}
+
+/* ============================================
+   LOADING OVERLAY
+   ============================================ */
+.loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(5, 5, 5, 0.85);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+}
+
+.loading-text {
+    color: var(--text-color);
+    font-family: var(--font-mono);
+    font-size: 14px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    opacity: 0.7;
 }

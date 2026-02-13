@@ -85,13 +85,20 @@ export class AccessoryGenerator {
 
     drawBelt(pixels, centerX, canvasSize, colors) {
         if (!colors) return;
-        for (let y = 1; y < canvasSize - 1; y++) {
-            for (let x = 0; x < canvasSize; x++) {
-                if (pixels[y][x] && pixels[y + 1][x]) {
+
+        // Scan only the vertical band where shirt/pants transition occurs (center ± 30%)
+        const scanStart = Math.max(1, Math.floor(canvasSize * 0.3));
+        const scanEnd = Math.min(canvasSize - 1, Math.ceil(canvasSize * 0.7));
+        const xStart = Math.max(0, Math.floor(centerX - canvasSize * 0.25));
+        const xEnd = Math.min(canvasSize, Math.ceil(centerX + canvasSize * 0.25));
+
+        for (let y = scanStart; y < scanEnd; y++) {
+            for (let x = xStart; x < xEnd; x++) {
+                if (pixels[y][x] && pixels[y + 1] && pixels[y + 1][x]) {
                     const c1 = pixels[y][x];
                     const c2 = pixels[y + 1][x];
                     if (this._colorsMatch(c1, colors.shirt) && this._colorsMatch(c2, colors.pants)) {
-                        pixels[y][x] = { r: 50, g: 30, b: 20 }; // Belt color
+                        pixels[y][x] = { r: 50, g: 30, b: 20 };
                     }
                 }
             }

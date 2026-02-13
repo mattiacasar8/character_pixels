@@ -11,14 +11,17 @@ export class HumanNameGenerator {
         this.titles = humanNameData.titles;
     }
 
-    generate() {
-        const prefix = this.prefixes[Math.floor(Math.random() * this.prefixes.length)];
-        const suffix = this.suffixes[Math.floor(Math.random() * this.suffixes.length)];
+    generate(rng = null) {
+        const rand = rng ? () => rng.next() : Math.random;
+        const randInt = (len) => Math.floor(rand() * len);
+
+        const prefix = this.prefixes[randInt(this.prefixes.length)];
+        const suffix = this.suffixes[randInt(this.suffixes.length)];
         const name = prefix + suffix;
 
         // 30% chance to add a title
-        if (Math.random() < 0.3) {
-            const title = this.titles[Math.floor(Math.random() * this.titles.length)];
+        if (rand() < 0.3) {
+            const title = this.titles[randInt(this.titles.length)];
             return `${name} ${title}`;
         }
 

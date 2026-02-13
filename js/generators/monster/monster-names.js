@@ -1,4 +1,3 @@
-import { randomInt } from '../../utils/random.js';
 import { monsterNameData } from '../../data/monster-names-data.js';
 
 export class MonsterNameGenerator {
@@ -8,15 +7,18 @@ export class MonsterNameGenerator {
         this.titles = monsterNameData.titles;
     }
 
-    generate() {
-        const prefix = this.prefixes[randomInt(0, this.prefixes.length - 1)];
-        const suffix = this.suffixes[randomInt(0, this.suffixes.length - 1)];
+    generate(rng = null) {
+        const rand = rng ? () => rng.next() : Math.random;
+        const randInt = (len) => Math.floor(rand() * len);
+
+        const prefix = this.prefixes[randInt(this.prefixes.length)];
+        const suffix = this.suffixes[randInt(this.suffixes.length)];
 
         let name = prefix + suffix;
 
         // Chance for a title
-        if (Math.random() < 0.3) {
-            const title = this.titles[randomInt(0, this.titles.length - 1)];
+        if (rand() < 0.3) {
+            const title = this.titles[randInt(this.titles.length)];
             name += ` ${title}`;
         }
 

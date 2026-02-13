@@ -1,13 +1,19 @@
 // Configuration and Constants
-
-// PARAM_CONFIG: UI Slider Definitions & Constraints
-// This block defines the "Physical Sliders" available in the UI.
-// - hardMin/hardMax: Absolute limits for the slider.
-// - safeMin/safeMax: "Safe" ranges for random generation (overridden by presets).
-// - step/label/suffix: UI formatting options.
 //
-// NOTE: Random generation logic (safeMin/safeMax) here is mostly fallback.
-// Actual body proportions for generation are now in BODY_PROPORTIONS below.
+// === Two config systems ===
+//
+// PARAM_CONFIG: UI slider definitions. Controls the batch-mode range sliders.
+//   - hardMin/hardMax: Absolute slider bounds (prevents impossible values)
+//   - safeMin/safeMax: Used by the "Chaos" preset and as fallback when a slider is missing
+//   - step/label/suffix: UI formatting
+//
+// BODY_PROPORTIONS: Generation-time ranges per character type (human/monster).
+//   - base: Default min/max for each body parameter
+//   - presets: Named overrides (athletic, slim, etc.) that modify specific ranges
+//   - Used by HumanGenerator.getParamRanges() and MonsterGenerator.getParamRanges()
+//
+// In practice: BODY_PROPORTIONS is the source of truth for character generation.
+// PARAM_CONFIG drives the UI sliders and the "Chaos" preset.
 
 export const PARAM_CONFIG = {
     torsoTopWidth: {
