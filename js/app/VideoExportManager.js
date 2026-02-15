@@ -6,6 +6,7 @@
 import { generateMusic } from '../audio/music-generator.js';
 import { generateFrameSequence } from '../audio/frame-sequence.js';
 import { renderOffline } from '../audio/browser/tone-adapter.js';
+import { wrapText, buildTimeline, getTextState, getVisibleLines } from '../audio/text-animation.js';
 import { VIDEO_PRESETS } from '../config.js';
 
 export class VideoExportManager {
@@ -43,7 +44,7 @@ export class VideoExportManager {
 
             // Step 4: Record video as WebM
             this._updateProgress(overlay, 'Recording video...');
-            const webmBlob = await this._recordVideo(character, frameTimings, audioBuffer);
+            const webmBlob = await this._recordVideo(character, frameTimings, audioBuffer, totalDuration);
 
             // Step 5: Download
             this._downloadBlob(webmBlob, `${character.name.replace(/\s+/g, '_')}_video.webm`);
@@ -66,15 +67,28 @@ export class VideoExportManager {
     /**
      * Record animated canvas + audio as WebM blob.
      */
-    async _recordVideo(character, frameTimings, audioBuffer) {
+    async _recordVideo(character, frameTimings, audioBuffer, totalDuration) {
         const preset = VIDEO_PRESETS.portrait;
         const canvas = document.createElement('canvas');
         canvas.width = preset.width;
         canvas.height = preset.height;
         const ctx = canvas.getContext('2d');
 
-        // Draw static elements (background, name, backstory)
-        this._drawStaticLayout(ctx, character, preset);
+        // Pre-compute text layout
+        const textMaxWidth = preset.width - preset.textMarginLeft * 2;
+
+        ctx.font = `${preset.nameFontSize}px "${preset.nameFont}", serif`;
+        const fullNameWidth = ctx.measureText(character.name).width;
+
+        ctx.font = `${preset.descFontSize}px "${preset.descFont}", sans-serif`;
+        const descLines = wrapText(
+            character.backstory || '',
+            (t) => ctx.measureText(t).width,
+            textMaxWidth
+        );
+
+        // Build animation timeline
+        const timeline = buildTimeline(preset.textAnim, totalDuration);
 
         // Set up audio for recording (not playback)
         const audioCtx = new AudioContext();
@@ -117,7 +131,7 @@ export class VideoExportManager {
             recorder.start();
             source.start();
 
-            this._animateFrames(ctx, character, frameTimings, preset).then(() => {
+            this._animateFrames(ctx, character, frameTimings, preset, timeline, descLines, fullNameWidth).then(() => {
                 setTimeout(() => {
                     recorder.stop();
                     source.stop();
@@ -126,67 +140,74 @@ export class VideoExportManager {
         });
     }
 
-    _drawStaticLayout(ctx, character, preset) {
+    /**
+     * Draw a complete frame: background + sprite + animated text.
+     */
+    _drawFrame(ctx, character, frameIndex, preset, textState, descLines, fullNameWidth) {
+        const textX = preset.textMarginLeft;
+        const textMaxWidth = preset.width - preset.textMarginLeft * 2;
+
+        // Background
         ctx.fillStyle = preset.backgroundColor;
         ctx.fillRect(0, 0, preset.width, preset.height);
 
-        const nameY = preset.spritePaddingTop + preset.spriteSize + preset.gapSpriteToName;
-        ctx.fillStyle = preset.textColor;
-        ctx.font = `${preset.nameFontSize}px "${preset.nameFont}", serif`;
-        ctx.textBaseline = 'top';
-        ctx.textAlign = 'center';
-        ctx.fillText(character.name, preset.width / 2, nameY);
-
-        const descY = nameY + preset.nameFontSize + preset.gapNameToDesc;
-        ctx.font = `${preset.descFontSize}px "${preset.descFont}", sans-serif`;
-        ctx.fillStyle = preset.descTextColor;
-        ctx.textAlign = 'center';
-        this._drawWrappedTextCentered(ctx, character.backstory || '', preset.width / 2, descY, preset.descMaxWidth, preset.descLineHeight);
-    }
-
-    _drawCharacterFrame(ctx, character, frameIndex, preset) {
+        // Character sprite (centered)
         const spriteX = (preset.width - preset.spriteSize) / 2;
         const spriteY = preset.spritePaddingTop;
-
-        ctx.fillStyle = preset.backgroundColor;
-        ctx.fillRect(spriteX, spriteY, preset.spriteSize, preset.spriteSize);
-
         const charCanvas = this.app.characterRenderer.createCanvas();
         this.app.characterRenderer.drawCharacter(charCanvas, character, {
             showFinal: true,
             frameIndex,
         });
-
         ctx.imageSmoothingEnabled = false;
         ctx.drawImage(charCanvas, spriteX, spriteY, preset.spriteSize, preset.spriteSize);
+
+        // Name (animated: letter by letter)
+        const nameY = preset.spritePaddingTop + preset.spriteSize + preset.gapSpriteToName;
+        if (textState.visibleName.length > 0) {
+            ctx.fillStyle = preset.textColor;
+            ctx.font = `${preset.nameFontSize}px "${preset.nameFont}", serif`;
+            ctx.textBaseline = 'top';
+            ctx.textAlign = 'left';
+            ctx.fillText(textState.visibleName, textX, nameY);
+        }
+
+        // Separator line (proportional to full name width, animated)
+        const lineY = nameY + preset.nameFontSize + preset.separatorGapAbove;
+        if (textState.separatorProgress > 0) {
+            const separatorFullWidth = fullNameWidth;
+            const separatorWidth = separatorFullWidth * textState.separatorProgress;
+            ctx.fillStyle = preset.separatorColor;
+            ctx.fillRect(textX, lineY, separatorWidth, preset.separatorHeight);
+        }
+
+        // Description (animated: word by word)
+        const descY = lineY + preset.separatorHeight + preset.separatorGapBelow;
+        if (textState.visibleDescWords > 0) {
+            const visibleLines = getVisibleLines(descLines, textState.visibleDescWords);
+            ctx.font = `${preset.descFontSize}px "${preset.descFont}", sans-serif`;
+            ctx.fillStyle = preset.descTextColor;
+            ctx.textAlign = 'left';
+            let curY = descY;
+            for (const line of visibleLines) {
+                ctx.fillText(line, textX, curY);
+                curY += preset.descLineHeight;
+            }
+        }
     }
 
-    async _animateFrames(ctx, character, frameTimings, preset) {
+    async _animateFrames(ctx, character, frameTimings, preset, timeline, descLines, fullNameWidth) {
+        let elapsedMs = 0;
         for (const frame of frameTimings) {
-            this._drawCharacterFrame(ctx, character, frame.frameIndex, preset);
+            const timeSec = elapsedMs / 1000;
+            const textState = getTextState(timeSec, timeline, character.name, descLines);
+            this._drawFrame(ctx, character, frame.frameIndex, preset, textState, descLines, fullNameWidth);
             await this._sleep(frame.durationMs);
+            elapsedMs += frame.durationMs;
         }
     }
 
     // --- Helpers ---
-
-    _drawWrappedTextCentered(ctx, text, centerX, y, maxWidth, lineHeight) {
-        const words = text.split(' ');
-        let line = '';
-        let curY = y;
-        for (let n = 0; n < words.length; n++) {
-            const testLine = line + words[n] + ' ';
-            const metrics = ctx.measureText(testLine);
-            if (metrics.width > maxWidth && n > 0) {
-                ctx.fillText(line.trim(), centerX, curY);
-                line = words[n] + ' ';
-                curY += lineHeight;
-            } else {
-                line = testLine;
-            }
-        }
-        ctx.fillText(line.trim(), centerX, curY);
-    }
 
     _downloadBlob(blob, filename) {
         const url = URL.createObjectURL(blob);

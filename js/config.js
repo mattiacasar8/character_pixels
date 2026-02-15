@@ -330,6 +330,18 @@ export const VIDEO_PRESETS = {
         gapSpriteToName: 40,
         gapNameToDesc: 24,
         descMaxWidth: 800,
+        textMarginLeft: 140,       // Left margin for text alignment
+        separatorColor: '#FFFFFF',  // Line between name and description
+        separatorHeight: 1,         // Line thickness in px
+        separatorGapAbove: 32,      // Gap above the line
+        separatorGapBelow: 32,      // Gap below the line
+        // Text reveal/hide animation timings (seconds)
+        textAnim: {
+            nameRevealDuration: 0.5,    // Name appears letter by letter
+            lineRevealDuration: 0.2,    // Separator line grows left to right
+            descRevealDuration: 2.0,    // Description appears word by word
+            hideReverseDuration: 1.0,   // Everything disappears in reverse at end
+        },
         fps: 30,
     },
 };

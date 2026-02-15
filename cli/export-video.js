@@ -39,6 +39,7 @@ import { generateMusic } from '../js/audio/music-generator.js';
 import { generateFrameSequence } from '../js/audio/frame-sequence.js';
 import { renderWav } from '../js/audio/node/wav-renderer.js';
 import { VIDEO_PRESETS } from '../js/config.js';
+import { wrapText, buildTimeline, getTextState, getVisibleLines } from '../js/audio/text-animation.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
@@ -157,9 +158,18 @@ function renderPixelsToCanvas(pixels, canvasSize, targetSize) {
     return canvas;
 }
 
-// --- Draw video frame ---
+// --- Draw video frame with animated text ---
 
-function drawVideoFrame(character, framePixels, canvasSize, preset) {
+/**
+ * Draw a single video frame with sprite + animated text.
+ * @param {object} spriteCanvas - pre-rendered sprite canvas for this animation frame
+ * @param {object} textState - from getTextState()
+ * @param {string[]} descLines - pre-wrapped description lines
+ * @param {number} fullNameWidth - measured pixel width of full name (for separator sizing)
+ * @param {object} preset - VIDEO_PRESETS.portrait
+ * @returns {Canvas}
+ */
+function drawVideoFrame(spriteCanvas, textState, descLines, fullNameWidth, preset) {
     const canvas = createCanvas(preset.width, preset.height);
     const ctx = canvas.getContext('2d');
 
@@ -167,45 +177,48 @@ function drawVideoFrame(character, framePixels, canvasSize, preset) {
     ctx.fillStyle = preset.backgroundColor;
     ctx.fillRect(0, 0, preset.width, preset.height);
 
-    // Character sprite
-    const spriteCanvas = renderPixelsToCanvas(framePixels, canvasSize, preset.spriteSize);
+    // Character sprite (centered)
     const spriteX = (preset.width - preset.spriteSize) / 2;
     ctx.drawImage(spriteCanvas, spriteX, preset.spritePaddingTop);
 
-    // Name
+    // Text layout
+    const textX = preset.textMarginLeft;
+    const textMaxWidth = preset.width - preset.textMarginLeft * 2;
     const nameY = preset.spritePaddingTop + preset.spriteSize + preset.gapSpriteToName;
-    ctx.fillStyle = preset.textColor;
-    ctx.font = `${preset.nameFontSize}px "${preset.nameFont}", serif`;
-    ctx.textBaseline = 'top';
-    ctx.textAlign = 'center';
-    ctx.fillText(character.name, preset.width / 2, nameY);
 
-    // Backstory
-    const descY = nameY + preset.nameFontSize + preset.gapNameToDesc;
-    ctx.font = `${preset.descFontSize}px "${preset.descFont}", sans-serif`;
-    ctx.fillStyle = preset.descTextColor;
-    ctx.textAlign = 'center';
-    drawWrappedText(ctx, character.backstory || '', preset.width / 2, descY, preset.descMaxWidth, preset.descLineHeight);
+    // Name (animated: letter by letter)
+    if (textState.visibleName.length > 0) {
+        ctx.fillStyle = preset.textColor;
+        ctx.font = `${preset.nameFontSize}px "${preset.nameFont}", serif`;
+        ctx.textBaseline = 'top';
+        ctx.textAlign = 'left';
+        ctx.fillText(textState.visibleName, textX, nameY);
+    }
 
-    return canvas;
-}
+    // Separator line (proportional to full name width, animated: grows left to right)
+    const lineY = nameY + preset.nameFontSize + preset.separatorGapAbove;
+    if (textState.separatorProgress > 0) {
+        const separatorFullWidth = fullNameWidth;
+        const separatorWidth = separatorFullWidth * textState.separatorProgress;
+        ctx.fillStyle = preset.separatorColor;
+        ctx.fillRect(textX, lineY, separatorWidth, preset.separatorHeight);
+    }
 
-function drawWrappedText(ctx, text, centerX, y, maxWidth, lineHeight) {
-    const words = text.split(' ');
-    let line = '';
-    let curY = y;
-    for (let n = 0; n < words.length; n++) {
-        const testLine = line + words[n] + ' ';
-        const metrics = ctx.measureText(testLine);
-        if (metrics.width > maxWidth && n > 0) {
-            ctx.fillText(line.trim(), centerX, curY);
-            line = words[n] + ' ';
-            curY += lineHeight;
-        } else {
-            line = testLine;
+    // Description (animated: word by word)
+    const descY = lineY + preset.separatorHeight + preset.separatorGapBelow;
+    if (textState.visibleDescWords > 0) {
+        const visibleLines = getVisibleLines(descLines, textState.visibleDescWords);
+        ctx.font = `${preset.descFontSize}px "${preset.descFont}", sans-serif`;
+        ctx.fillStyle = preset.descTextColor;
+        ctx.textAlign = 'left';
+        let curY = descY;
+        for (const line of visibleLines) {
+            ctx.fillText(line, textX, curY);
+            curY += preset.descLineHeight;
         }
     }
-    ctx.fillText(line.trim(), centerX, curY);
+
+    return canvas;
 }
 
 // --- FFmpeg pipeline ---
@@ -222,19 +235,18 @@ async function exportVideoForCharacter(character, animationFrames, canvasSize, o
     const wavPath = outputPath.replace('.mp4', '.wav');
     fs.writeFileSync(wavPath, wavBuffer);
 
-    // Step 2: Generate frame sequence
+    // Step 2: Generate frame sequence (sprite animation timing)
     const totalDurationMs = totalDuration * 1000;
     const frameTimings = generateFrameSequence(musicParams.bpm, totalDurationMs);
 
     // Step 3: Expand frame timings to per-video-frame list at target FPS
     const fps = preset.fps;
     const totalFrames = Math.ceil(totalDuration * fps);
-    const frameList = []; // frameIndex for each video frame
+    const frameList = []; // sprite frameIndex for each video frame
 
     let timingIdx = 0;
     for (let f = 0; f < totalFrames; f++) {
         const timeMs = (f / fps) * 1000;
-        // Advance timing index
         while (timingIdx < frameTimings.length - 1 &&
                timeMs >= frameTimings[timingIdx].startMs + frameTimings[timingIdx].durationMs) {
             timingIdx++;
@@ -242,7 +254,32 @@ async function exportVideoForCharacter(character, animationFrames, canvasSize, o
         frameList.push(frameTimings[timingIdx].frameIndex);
     }
 
-    // Step 4: Spawn ffmpeg and pipe raw frames
+    // Step 4: Pre-render sprite canvases (only 3 unique animation frames)
+    const spriteCanvases = {};
+    for (let i = 0; i < animationFrames.length; i++) {
+        spriteCanvases[i] = renderPixelsToCanvas(animationFrames[i], canvasSize, preset.spriteSize);
+    }
+
+    // Step 5: Pre-compute text layout + animation timeline
+    const textMaxWidth = preset.width - preset.textMarginLeft * 2;
+    const measureCtx = createCanvas(1, 1).getContext('2d');
+
+    // Measure full name width for separator sizing
+    measureCtx.font = `${preset.nameFontSize}px "${preset.nameFont}", serif`;
+    const fullNameWidth = measureCtx.measureText(character.name).width;
+
+    // Wrap description text
+    measureCtx.font = `${preset.descFontSize}px "${preset.descFont}", sans-serif`;
+    const descLines = wrapText(
+        character.backstory || '',
+        (t) => measureCtx.measureText(t).width,
+        textMaxWidth
+    );
+
+    // Build animation timeline
+    const timeline = buildTimeline(preset.textAnim, totalDuration);
+
+    // Step 6: Spawn ffmpeg and pipe dynamically rendered frames
     return new Promise((resolve, reject) => {
         const ffmpeg = spawn('ffmpeg', [
             '-y',
@@ -267,9 +304,7 @@ async function exportVideoForCharacter(character, animationFrames, canvasSize, o
         ffmpeg.stderr.on('data', (d) => { stderrData += d.toString(); });
 
         ffmpeg.on('close', (code) => {
-            // Clean up temp WAV
             try { fs.unlinkSync(wavPath); } catch {}
-
             if (code === 0) {
                 resolve();
             } else {
@@ -282,20 +317,19 @@ async function exportVideoForCharacter(character, animationFrames, canvasSize, o
             reject(err);
         });
 
-        // Pre-render unique frames (only 3 animation frames)
-        const renderedFrames = {};
-        for (let i = 0; i < animationFrames.length; i++) {
-            const canvas = drawVideoFrame(character, animationFrames[i], canvasSize, preset);
-            const ctx = canvas.getContext('2d');
-            renderedFrames[i] = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-        }
-
-        // Pipe frames
+        // Render and pipe each frame
         let frameIdx = 0;
         function writeNext() {
             while (frameIdx < frameList.length) {
-                const animFrame = frameList[frameIdx];
-                const pixelData = renderedFrames[animFrame];
+                const timeSec = frameIdx / fps;
+                const spriteIdx = frameList[frameIdx];
+                const textState = getTextState(timeSec, timeline, character.name, descLines);
+
+                const frameCanvas = drawVideoFrame(
+                    spriteCanvases[spriteIdx], textState, descLines, fullNameWidth, preset
+                );
+                const ctx = frameCanvas.getContext('2d');
+                const pixelData = ctx.getImageData(0, 0, frameCanvas.width, frameCanvas.height).data;
                 frameIdx++;
 
                 const canWrite = ffmpeg.stdin.write(Buffer.from(pixelData));
