@@ -1,7 +1,10 @@
 /**
  * ModalManager
- * Handles the backstory modal display, animation, and navigation.
+ * Handles the backstory modal display, animation, navigation, music preview, and video export.
  */
+import { generateMusic } from '../audio/music-generator.js';
+import { createSynths, schedulePlayback } from '../audio/browser/tone-adapter.js';
+
 export class ModalManager {
     constructor(app) {
         this.app = app;
@@ -11,6 +14,11 @@ export class ModalManager {
         this.animationFrame = 0;
         this.animationDirection = 1;
         this.animationInterval = null;
+
+        // Music state
+        this.musicPlayback = null;
+        this.musicSynths = null;
+        this.isMusicPlaying = false;
     }
 
     setup() {
@@ -22,15 +30,24 @@ export class ModalManager {
         document.getElementById('nextChar').addEventListener('click', () => this.navigate(1));
         document.getElementById('toggleAnimation').addEventListener('click', () => this.toggleAnimation());
 
+        // Music control
+        document.getElementById('toggleMusic').addEventListener('click', () => this.toggleMusic());
+
         // Export buttons in modal
         document.getElementById('exportModalCard').addEventListener('click', () => this.app.exportManager.exportCard());
         document.getElementById('exportModalStrip').addEventListener('click', () => this.app.exportManager.exportStrip());
         document.getElementById('exportModalSeq').addEventListener('click', () => this.app.exportManager.exportSeq());
+        document.getElementById('exportModalVideo').addEventListener('click', () => {
+            if (this.app.videoExportManager && this.currentModalCharacter) {
+                this.app.videoExportManager.exportVideo(this.currentModalCharacter);
+            }
+        });
 
         // Close logic
         const closeModal = () => {
             modal.style.display = "none";
             this.stopAnimation();
+            this.stopMusic();
         };
 
         if (closeBtn) closeBtn.onclick = closeModal;
@@ -54,6 +71,9 @@ export class ModalManager {
         this.animationFrame = 0;
         this.animationDirection = 1;
 
+        // Stop any playing music from previous character
+        this.stopMusic();
+
         this.updateContent();
         modal.style.display = "flex";
         this.startAnimation();
@@ -69,6 +89,13 @@ export class ModalManager {
         // Update Play/Pause button
         const btn = document.getElementById('toggleAnimation');
         btn.textContent = this.isAnimating ? "⏸" : "▶";
+
+        // Update music button
+        const musicBtn = document.getElementById('toggleMusic');
+        if (musicBtn) {
+            musicBtn.textContent = this.isMusicPlaying ? "⏹" : "\u266B";
+            musicBtn.title = this.isMusicPlaying ? "Stop Music" : "Play Music";
+        }
 
         this.renderCanvas();
     }
@@ -108,6 +135,9 @@ export class ModalManager {
             this.currentModalCharacter.animationFrames = this.app.currentGenerator.generateAnimationFrames(this.currentModalCharacter.params);
         }
 
+        // Stop music when navigating to a different character
+        this.stopMusic();
+
         this.updateContent();
     }
 
@@ -146,6 +176,55 @@ export class ModalManager {
         }
     }
 
+    // --- Music Preview ---
+
+    async toggleMusic() {
+        if (this.isMusicPlaying) {
+            this.stopMusic();
+        } else {
+            await this.startMusic();
+        }
+        this.updateContent();
+    }
+
+    async startMusic() {
+        const character = this.currentModalCharacter;
+        if (!character) return;
+
+        // Check Tone.js availability
+        if (typeof Tone === 'undefined') {
+            console.error('Tone.js not loaded.');
+            return;
+        }
+
+        try {
+            // Generate music data from character seed
+            const { params, sequences, totalDuration } = generateMusic(character.params.seed);
+
+            // Create synths and schedule playback
+            this.musicSynths = createSynths(params);
+            this.musicPlayback = schedulePlayback(sequences, this.musicSynths, params.bpm, totalDuration);
+
+            await this.musicPlayback.start();
+            this.isMusicPlaying = true;
+        } catch (err) {
+            console.error('Failed to start music preview:', err);
+            this.stopMusic();
+        }
+    }
+
+    stopMusic() {
+        if (this.musicPlayback) {
+            this.musicPlayback.dispose();
+            this.musicPlayback = null;
+        }
+        if (this.musicSynths) {
+            this.musicSynths.dispose();
+            this.musicSynths = null;
+        }
+        this.isMusicPlaying = false;
+    }
+
     /**
      * Hide the modal programmatically
      */
@@ -155,6 +234,7 @@ export class ModalManager {
             modal.style.display = 'none';
         }
         this.stopAnimation();
+        this.stopMusic();
     }
 
 

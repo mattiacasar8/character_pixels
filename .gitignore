@@ -1,3 +1,8 @@
 /output
 .DS_Store
 /zz_old
+/assets/fonts
+/node_modules
+/tests
+package.json
+package-lock.json

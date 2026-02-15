@@ -311,3 +311,32 @@ export const EXPORT_PRESETS = {
         backgroundColor: '#000000',
     },
 };
+
+// Video export presets
+export const VIDEO_PRESETS = {
+    portrait: {
+        width: 1080,
+        height: 1920,
+        backgroundColor: '#000000',
+        spriteSize: 840,
+        spritePaddingTop: 400,
+        nameFontSize: 80,
+        nameFont: 'Instrument Serif',
+        descFontSize: 32,
+        descFont: 'Inter',
+        descLineHeight: 44,
+        textColor: '#FFFFFF',
+        descTextColor: 'rgba(255, 255, 255, 0.8)',
+        gapSpriteToName: 40,
+        gapNameToDesc: 24,
+        descMaxWidth: 800,
+        fps: 30,
+    },
+};
+
+// Music configuration
+export const MUSIC = {
+    defaultBars: 6,
+    seedSalt: 99999,
+    previewFadeOutMs: 500,
+};

@@ -14,6 +14,7 @@ import { CharacterRenderer } from './core/renderer.js';
 import { UIManager } from './app/UIManager.js';
 import { ModalManager } from './app/ModalManager.js';
 import { ExportManager } from './app/ExportManager.js';
+import { VideoExportManager } from './app/VideoExportManager.js';
 import { SingleModeController } from './app/SingleModeController.js';
 
 class App {
@@ -36,6 +37,7 @@ class App {
         this.uiManager = new UIManager(this);
         this.modalManager = new ModalManager(this);
         this.exportManager = new ExportManager(this);
+        this.videoExportManager = new VideoExportManager(this);
 
         // State
         this.currentParams = null;
