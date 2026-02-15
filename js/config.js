@@ -274,3 +274,26 @@ export const BODY_PROPORTIONS = {
         }
     }
 };
+
+// Export presets for different output formats
+export const EXPORT_PRESETS = {
+    card: {
+        paddingX: 165,
+        paddingY: 300,
+        contentWidth: 750,
+        gapImageName: 24,
+        gapNameDesc: 24,
+        imageSize: 750,
+        nameFontSize: 96,
+        nameFont: 'Instrument Serif',
+        descFontSize: 36,
+        descFont: 'Inter',
+        descLineHeightMultiplier: 1.4,
+        backgroundColor: '#000000',
+        textColor: '#FFFFFF',
+        descTextColor: 'rgba(255, 255, 255, 0.8)',
+    },
+    spritesheet: {
+        backgroundColor: '#000000',
+    },
+};

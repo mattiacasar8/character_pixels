@@ -3,6 +3,7 @@
  * Handles all export functionality: spritesheet, card, strip, sequence, and ZIP exports.
  */
 import { nameGenerator } from '../generators/name-generator.js';
+import { EXPORT_PRESETS } from '../config.js';
 
 export class ExportManager {
     constructor(app) {
@@ -51,7 +52,7 @@ export class ExportManager {
         const ctx = spritesheetCanvas.getContext('2d');
 
         // Fill background
-        ctx.fillStyle = '#000000';
+        ctx.fillStyle = EXPORT_PRESETS.spritesheet.backgroundColor;
         ctx.fillRect(0, 0, totalWidth, totalHeight);
 
         // Draw each character
@@ -77,20 +78,16 @@ export class ExportManager {
         const char = character || this.app.modalManager.currentCharacter;
         if (!char) return;
 
-        // Design specs
-        const paddingX = 165;
-        const paddingY = 300;
-        const contentWidth = 750;
-        const gapImageName = 24;
-        const gapNameDesc = 24;
-        const imageSize = 750;
+        // Design specs from config
+        const preset = EXPORT_PRESETS.card;
+        const { paddingX, paddingY, contentWidth, gapImageName, gapNameDesc, imageSize } = preset;
 
         // Fonts
-        const nameFontSize = 96;
-        const nameFont = `${nameFontSize}px "Instrument Serif", serif`;
-        const descFontSize = 36;
-        const descFont = `${descFontSize}px "Inter", sans-serif`;
-        const descLineHeight = descFontSize * 1.4;
+        const nameFontSize = preset.nameFontSize;
+        const nameFont = `${nameFontSize}px "${preset.nameFont}", serif`;
+        const descFontSize = preset.descFontSize;
+        const descFont = `${descFontSize}px "${preset.descFont}", sans-serif`;
+        const descLineHeight = descFontSize * preset.descLineHeightMultiplier;
 
         // Text content
         const nameText = char.name;
@@ -117,7 +114,7 @@ export class ExportManager {
         const ctx = canvas.getContext('2d');
 
         // Background
-        ctx.fillStyle = '#000000';
+        ctx.fillStyle = preset.backgroundColor;
         ctx.fillRect(0, 0, totalWidth, totalHeight);
 
         // Draw content
@@ -132,7 +129,7 @@ export class ExportManager {
         currentY += imageSize + gapImageName;
 
         // Name
-        ctx.fillStyle = '#FFFFFF';
+        ctx.fillStyle = preset.textColor;
         ctx.font = nameFont;
         ctx.textBaseline = 'top';
         ctx.textAlign = 'left';
@@ -141,7 +138,7 @@ export class ExportManager {
 
         // Description
         ctx.font = descFont;
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+        ctx.fillStyle = preset.descTextColor;
         ctx.textBaseline = 'top';
         this._drawWrappedText(ctx, descText, startX, currentY, contentWidth, descLineHeight);
 
