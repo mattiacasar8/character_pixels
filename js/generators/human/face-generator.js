@@ -1,4 +1,5 @@
 import { hash } from '../../utils/random.js';
+import { shade, tint } from '../../utils/color.js';
 
 export class FaceGenerator {
     constructor() {
@@ -31,11 +32,6 @@ export class FaceGenerator {
         // Helper for chance
         const chance = (prob, salt) => hash(salt, 0, seed) < prob;
         const randomInt = (min, max, salt) => Math.floor(hash(salt, 1, seed) * (max - min + 1)) + min;
-
-        // Color helpers (simple approximations since we deal with objects/strings sometimes)
-        // We assume colors are objects {r,g,b}
-        const shade = (c, percent) => ({ r: Math.max(0, c.r * (1 - percent)), g: Math.max(0, c.g * (1 - percent)), b: Math.max(0, c.b * (1 - percent)) });
-        const tint = (c, percent) => ({ r: Math.min(255, c.r + (255 - c.r) * percent), g: Math.min(255, c.g + (255 - c.g) * percent), b: Math.min(255, c.b + (255 - c.b) * percent) });
 
         // --- Layer 1: The Cranium ---
         const baseSkin = colors.skin;

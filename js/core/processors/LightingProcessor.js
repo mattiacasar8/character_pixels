@@ -4,19 +4,13 @@
  * Light source is positioned at top-right by default.
  * Previously only available for humans, now works for all character types.
  */
+import { shade, tint } from '../../utils/color.js';
 
 export class LightingProcessor {
     static id = 'lighting';
     static name = 'Lighting';
     static defaultEnabled = true;
 
-    /**
-     * Apply lighting to the pixel grid
-     * @param {Array<Array>} pixels - 2D pixel array
-     * @param {Object} params - Effect parameters
-     * @param {number} canvasSize - Size of the canvas
-     * @returns {Array<Array>} Modified pixel array
-     */
     static defaultDirection = 'top-right';
 
     /**
@@ -86,12 +80,12 @@ export class LightingProcessor {
                     const nx = x + dx;
                     if (ny >= 0 && ny < size && nx >= 0 && nx < size) {
                         if (!pixels[ny][nx]) { // Check neighbor in ORIGINAL
-                            newColor = LightingProcessor.tint(newColor, 0.2);
+                            newColor = tint(newColor, 0.2);
                         }
                     } else {
                         // Edge of canvas is considered "empty" so it gets lit? 
                         // Usually yes, or ignore. Let's light it for pop.
-                        newColor = LightingProcessor.tint(newColor, 0.2);
+                        newColor = tint(newColor, 0.2);
                     }
                 });
 
@@ -101,11 +95,11 @@ export class LightingProcessor {
                     const nx = x + dx;
                     if (ny >= 0 && ny < size && nx >= 0 && nx < size) {
                         if (!pixels[ny][nx]) { // Check neighbor in ORIGINAL
-                            newColor = LightingProcessor.shade(newColor, 0.2);
+                            newColor = shade(newColor, 0.2);
                         }
                     } else {
                         // Edge of canvas shadow? 
-                        newColor = LightingProcessor.shade(newColor, 0.2);
+                        newColor = shade(newColor, 0.2);
                     }
                 });
 
@@ -114,28 +108,6 @@ export class LightingProcessor {
         }
 
         return result;
-    }
-
-    /**
-     * Make a color darker (shadow)
-     */
-    static shade(color, percent) {
-        return {
-            r: Math.max(0, Math.round(color.r * (1 - percent))),
-            g: Math.max(0, Math.round(color.g * (1 - percent))),
-            b: Math.max(0, Math.round(color.b * (1 - percent)))
-        };
-    }
-
-    /**
-     * Make a color lighter (highlight)
-     */
-    static tint(color, percent) {
-        return {
-            r: Math.min(255, Math.round(color.r + (255 - color.r) * percent)),
-            g: Math.min(255, Math.round(color.g + (255 - color.g) * percent)),
-            b: Math.min(255, Math.round(color.b + (255 - color.b) * percent))
-        };
     }
 
     /**
