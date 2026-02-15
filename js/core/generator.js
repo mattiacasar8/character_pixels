@@ -8,7 +8,8 @@ export class CharacterGenerator {
     constructor(canvasSize = 50) {
         this.canvasSize = canvasSize;
         this.centerX = this.canvasSize / 2;
-        // Ground positioned at bottom pixel for feet to touch
+        // Canvas floor: bottom pixel. Used by monsters to fill the whole canvas.
+        // Note: HumanGenerator overrides this with canvasSize * 0.9 for natural standing pose.
         this.groundY = this.canvasSize - 1;
     }
 
@@ -147,15 +148,15 @@ export class CharacterGenerator {
             }
         });
 
-        // Add derived values that depend on resolved values
-        if (resolved.torsoTopWidth) {
-            resolved.upperArmBottomWidth = resolved.upperArmTopWidth * 0.8;
-            resolved.forearmBottomWidth = resolved.forearmTopWidth * 0.7;
+        // Derive proportional values: taper limbs toward extremities for natural anatomy
+        if (resolved.torsoTopWidth !== undefined) {
+            resolved.upperArmBottomWidth = resolved.upperArmTopWidth * 0.8;  // 80% taper
+            resolved.forearmBottomWidth = resolved.forearmTopWidth * 0.7;    // 70% taper (more visible on forearms)
             resolved.forearmLength = resolved.upperArmLength;
-            resolved.headHeight = resolved.headWidth;
-            resolved.thighBottomWidth = resolved.thighTopWidth * 0.8;
-            resolved.shinBottomWidth = resolved.shinTopWidth * 0.8;
-            if (!resolved.shinLength) resolved.shinLength = 24;
+            resolved.headHeight = resolved.headWidth;                        // Square head
+            resolved.thighBottomWidth = resolved.thighTopWidth * 0.8;       // 80% taper
+            resolved.shinBottomWidth = resolved.shinTopWidth * 0.8;         // 80% taper
+            if (!resolved.shinLength) resolved.shinLength = 24;             // ~48% of canvas height
         }
 
         // Ensure seed is preserved

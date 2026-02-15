@@ -83,8 +83,7 @@ export class LightingProcessor {
                             newColor = tint(newColor, 0.2);
                         }
                     } else {
-                        // Edge of canvas is considered "empty" so it gets lit? 
-                        // Usually yes, or ignore. Let's light it for pop.
+                        // Canvas edge treated as empty space - pixel gets highlighted
                         newColor = tint(newColor, 0.2);
                     }
                 });
@@ -98,7 +97,7 @@ export class LightingProcessor {
                             newColor = shade(newColor, 0.2);
                         }
                     } else {
-                        // Edge of canvas shadow? 
+                        // Canvas edge treated as empty space - pixel gets shadowed
                         newColor = shade(newColor, 0.2);
                     }
                 });

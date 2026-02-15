@@ -95,7 +95,8 @@ export class HumanGenerator extends CharacterGenerator {
 
         // Generate torso, neck, head, arms exactly as base class
 
-        // We want the feet to be at a consistent "ground" level (90% of canvas).
+        // Standing ground at 90% of canvas (not bottom pixel) to leave room for feet
+        // and give a natural standing pose. Differs from base class groundY intentionally.
         const groundY = this.canvasSize * 0.9;
         const legVertical = scaledParams.thighLength + scaledParams.shinLength;
         const calculatedTorsoY = groundY - scaledParams.torsoHeight - legVertical;
