@@ -7,7 +7,7 @@ import { nameGenerator } from '../name-generator.js';
 import { processorManager } from '../../core/processors/ProcessorManager.js';
 import { ClothingGenerator } from './clothing-generator.js';
 import { AccessoryGenerator } from './accessory-generator.js';
-import { BODY_PROPORTIONS } from '../../config.js';
+import { BODY_PROPORTIONS, ANIMATION } from '../../config.js';
 
 export class HumanGenerator extends CharacterGenerator {
     constructor(canvasSize = 50) {
@@ -452,11 +452,7 @@ export class HumanGenerator extends CharacterGenerator {
         }
 
         // Frame variations: exhale, neutral, inhale
-        const variations = [
-            { torsoMult: 0.96, armMult: 1.05, y: 0.5, headBob: 1 },    // Exhale: down, head up
-            { torsoMult: 1.0, armMult: 1.0, y: 0, headBob: 0 },         // Neutral
-            { torsoMult: 1.04, armMult: 0.95, y: -0.5, headBob: -1 }   // Inhale: up, head down
-        ];
+        const variations = ANIMATION.humanVariations;
 
         variations.forEach((variation, index) => {
             const frameParams = { ...params };

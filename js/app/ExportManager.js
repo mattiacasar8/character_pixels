@@ -3,7 +3,7 @@
  * Handles all export functionality: spritesheet, card, strip, sequence, and ZIP exports.
  */
 import { nameGenerator } from '../generators/name-generator.js';
-import { EXPORT_PRESETS } from '../config.js';
+import { EXPORT_PRESETS, ANIMATION } from '../config.js';
 
 export class ExportManager {
     constructor(app) {
@@ -161,7 +161,7 @@ export class ExportManager {
         if (!char) return;
 
         this._ensureAnimationFrames(char);
-        const numFrames = 3;
+        const numFrames = ANIMATION.frameCount;
         const spriteSize = this.app.characterRenderer.displaySize;
 
         const canvas = document.createElement('canvas');
@@ -203,7 +203,7 @@ export class ExportManager {
         }
 
         const zip = new JSZip();
-        const numFrames = 3;
+        const numFrames = ANIMATION.frameCount;
 
         const promises = [];
         for (let i = 0; i < numFrames; i++) {

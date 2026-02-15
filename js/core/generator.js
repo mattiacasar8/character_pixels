@@ -2,7 +2,7 @@
 import { createTrapezoid, createJoint, getTrapezoidBottom, isPointInPolygon, distance } from '../utils/math.js';
 import { generateRandomPalette, SeededRandom } from '../utils/random.js';
 import { processorManager } from './processors/ProcessorManager.js';
-import { BODY_PROPORTIONS } from '../config.js';
+import { BODY_PROPORTIONS, ANIMATION } from '../config.js';
 
 export class CharacterGenerator {
     constructor(canvasSize = 50) {
@@ -41,7 +41,7 @@ export class CharacterGenerator {
 
     generateAnimationFrames(params) {
         const frames = [];
-        const variations = [-0.05, 0, 0.05];
+        const variations = ANIMATION.baseVariations;
 
         variations.forEach(variation => {
             const frameParams = { ...params };
