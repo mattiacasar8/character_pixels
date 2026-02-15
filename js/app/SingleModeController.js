@@ -166,10 +166,12 @@ export class SingleModeController {
         // Merge working params with current effect settings
         const mergedParams = {
             ...this.workingParams,
-            enableSmoothing: this.app.currentParams?.enableSmoothing !== false,
-            enableLighting: this.app.currentParams?.enableLighting !== false,
+            effects: {
+                smoothing: this.app.currentParams?.effects?.smoothing !== false,
+                lighting: this.app.currentParams?.effects?.lighting !== false,
+                outline: this.app.currentParams?.effects?.outline || false,
+            },
             lightDirection: this.app.currentParams?.lightDirection || 'top-right',
-            showOutline: this.app.currentParams?.showOutline || false,
             outlineColor: this.app.currentParams?.outlineColor || '#2a2a2a'
         };
 

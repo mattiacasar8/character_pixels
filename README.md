@@ -73,7 +73,6 @@ Generazione procedurale di backstory narrative (vedi `BACKSTORY_SYSTEM.md`):
 │   ├── app/               # Moduli applicazione
 │   │   ├── UIManager.js           # Gestione interfaccia
 │   │   ├── SingleModeController.js # Logica single mode
-│   │   ├── CharacterManager.js     # Gestione pool caratteri
 │   │   ├── ExportManager.js        # Export spritesheet/ZIP
 │   │   └── ModalManager.js         # Modale backstory
 │   ├── core/              # Logica generazione

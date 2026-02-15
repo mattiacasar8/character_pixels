@@ -1,7 +1,7 @@
 import { CharacterGenerator } from '../../core/generator.js';
 import { MONSTER_PALETTES } from '../../data/monster-palettes.js';
 import { nameGenerator } from '../name-generator.js';
-import { BODY_PROPORTIONS } from '../../config.js';
+import { BODY_PROPORTIONS, ANIMATION } from '../../config.js';
 import { SeededRandom } from '../../utils/random.js';
 
 export class MonsterGenerator extends CharacterGenerator {
@@ -48,8 +48,8 @@ export class MonsterGenerator extends CharacterGenerator {
     // Override animation to keep face consistent across frames with head bobbing
     generateAnimationFrames(params) {
         const frames = [];
-        const variations = [-0.05, 0, 0.05];
-        const headBobbing = [1, 0, -1];
+        const variations = ANIMATION.baseVariations;
+        const headBobbing = ANIMATION.headBobbing;
 
         let facePixels = null;
         let headBounds = null;

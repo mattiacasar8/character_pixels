@@ -46,14 +46,8 @@ export class ProcessorManager {
         let result = pixels;
 
         this.processors.forEach(processor => {
-            // Check if processor is enabled in params
             const config = processor.getUIConfig();
-            const isEnabled = params.effects
-                ? params.effects[config.id] !== false
-                : params[config.id] !== false; // Fallback for old params
-
-            // Special case for lighting which might be missing in default effects
-            // (handled by defaults in individual processors usually, but check here)
+            const isEnabled = params.effects && params.effects[config.id] !== false;
 
             if (isEnabled) {
                 result = processor.apply(result, params, canvasSize);

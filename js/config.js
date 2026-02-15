@@ -274,3 +274,40 @@ export const BODY_PROPORTIONS = {
         }
     }
 };
+
+// Animation configuration
+export const ANIMATION = {
+    // Base/Monster: simple scalar variations per frame (exhale, neutral, inhale)
+    baseVariations: [-0.05, 0, 0.05],
+    headBobbing: [1, 0, -1],
+    // Human: richer per-frame variations
+    humanVariations: [
+        { torsoMult: 0.96, armMult: 1.05, y: 0.5, headBob: 1 },    // Exhale
+        { torsoMult: 1.0, armMult: 1.0, y: 0, headBob: 0 },         // Neutral
+        { torsoMult: 1.04, armMult: 0.95, y: -0.5, headBob: -1 }   // Inhale
+    ],
+    get frameCount() { return this.baseVariations.length; }
+};
+
+// Export presets for different output formats
+export const EXPORT_PRESETS = {
+    card: {
+        paddingX: 165,
+        paddingY: 300,
+        contentWidth: 750,
+        gapImageName: 24,
+        gapNameDesc: 24,
+        imageSize: 750,
+        nameFontSize: 96,
+        nameFont: 'Instrument Serif',
+        descFontSize: 36,
+        descFont: 'Inter',
+        descLineHeightMultiplier: 1.4,
+        backgroundColor: '#000000',
+        textColor: '#FFFFFF',
+        descTextColor: 'rgba(255, 255, 255, 0.8)',
+    },
+    spritesheet: {
+        backgroundColor: '#000000',
+    },
+};

@@ -2,13 +2,14 @@
 import { createTrapezoid, createJoint, getTrapezoidBottom, isPointInPolygon, distance } from '../utils/math.js';
 import { generateRandomPalette, SeededRandom } from '../utils/random.js';
 import { processorManager } from './processors/ProcessorManager.js';
-import { BODY_PROPORTIONS } from '../config.js';
+import { BODY_PROPORTIONS, ANIMATION } from '../config.js';
 
 export class CharacterGenerator {
     constructor(canvasSize = 50) {
         this.canvasSize = canvasSize;
         this.centerX = this.canvasSize / 2;
-        // Ground positioned at bottom pixel for feet to touch
+        // Canvas floor: bottom pixel. Used by monsters to fill the whole canvas.
+        // Note: HumanGenerator overrides this with canvasSize * 0.9 for natural standing pose.
         this.groundY = this.canvasSize - 1;
     }
 
@@ -16,28 +17,15 @@ export class CharacterGenerator {
         const bodyParts = this.generateBodyParts(params);
         const heatmap = this.generateHeatmap(bodyParts, params);
 
-        // 7. Generate Pixels
-        // Use params but disable effects to get raw pixels
-        // This prevents double application of effects and ensures rawPixels are clean
-        const rawParams = { ...params, enableSmoothing: false, enableLighting: false, showOutline: false };
+        // Generate raw pixels with effects disabled to get clean base
+        const rawParams = { ...params, effects: { smoothing: false, lighting: false, outline: false } };
         let pixels = this.generatePixels(heatmap, rawParams);
 
-        // Store raw pixels for reprocessing (before smoothing/outline)
-        // We need to clone it because applySmoothing/Outline mutates the array
+        // Clone raw pixels before effects (smoothing/outline mutates the array)
         const rawPixels = pixels.map(row => [...row]);
 
-        // removeIsolatedPixels is called inside generatePixels, but we can call it again or skip
-        // Since we disabled effects in generatePixels, it only did generation + removeIsolatedPixels
-
         // Apply all enabled effects via ProcessorManager
-        // Convert legacy params to new effects format for backward compatibility
-        const effects = params.effects || {
-            smoothing: params.enableSmoothing !== false,
-            lighting: params.enableLighting !== false,
-            outline: params.showOutline !== false
-        };
-        const effectParams = { ...params, effects, outlineColor: params.outlineColor };
-        pixels = processorManager.applyAll(pixels, effectParams, this.canvasSize);
+        pixels = processorManager.applyAll(pixels, params, this.canvasSize);
 
         // Name generation is handled by the app or subclass
         const name = params.name || "Unknown";
@@ -54,7 +42,7 @@ export class CharacterGenerator {
 
     generateAnimationFrames(params) {
         const frames = [];
-        const variations = [-0.05, 0, 0.05];
+        const variations = ANIMATION.baseVariations;
 
         variations.forEach(variation => {
             const frameParams = { ...params };
@@ -135,13 +123,7 @@ export class CharacterGenerator {
         this.removeIsolatedPixels(pixels);
 
         // Apply all enabled effects via ProcessorManager
-        const effects = newParams.effects || {
-            smoothing: newParams.enableSmoothing !== false,
-            lighting: newParams.enableLighting !== false,
-            outline: newParams.showOutline !== false
-        };
-        const effectParams = { ...newParams, effects, outlineColor: newParams.outlineColor };
-        pixels = processorManager.applyAll(pixels, effectParams, this.canvasSize);
+        pixels = processorManager.applyAll(pixels, newParams, this.canvasSize);
 
         // Update character
         character.pixels = pixels;
@@ -166,15 +148,15 @@ export class CharacterGenerator {
             }
         });
 
-        // Add derived values that depend on resolved values
-        if (resolved.torsoTopWidth) {
-            resolved.upperArmBottomWidth = resolved.upperArmTopWidth * 0.8;
-            resolved.forearmBottomWidth = resolved.forearmTopWidth * 0.7;
+        // Derive proportional values: taper limbs toward extremities for natural anatomy
+        if (resolved.torsoTopWidth !== undefined) {
+            resolved.upperArmBottomWidth = resolved.upperArmTopWidth * 0.8;  // 80% taper
+            resolved.forearmBottomWidth = resolved.forearmTopWidth * 0.7;    // 70% taper (more visible on forearms)
             resolved.forearmLength = resolved.upperArmLength;
-            resolved.headHeight = resolved.headWidth;
-            resolved.thighBottomWidth = resolved.thighTopWidth * 0.8;
-            resolved.shinBottomWidth = resolved.shinTopWidth * 0.8;
-            if (!resolved.shinLength) resolved.shinLength = 24;
+            resolved.headHeight = resolved.headWidth;                        // Square head
+            resolved.thighBottomWidth = resolved.thighTopWidth * 0.8;       // 80% taper
+            resolved.shinBottomWidth = resolved.shinTopWidth * 0.8;         // 80% taper
+            if (!resolved.shinLength) resolved.shinLength = 24;             // ~48% of canvas height
         }
 
         // Ensure seed is preserved

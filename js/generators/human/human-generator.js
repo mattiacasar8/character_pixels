@@ -7,7 +7,7 @@ import { nameGenerator } from '../name-generator.js';
 import { processorManager } from '../../core/processors/ProcessorManager.js';
 import { ClothingGenerator } from './clothing-generator.js';
 import { AccessoryGenerator } from './accessory-generator.js';
-import { BODY_PROPORTIONS } from '../../config.js';
+import { BODY_PROPORTIONS, ANIMATION } from '../../config.js';
 
 export class HumanGenerator extends CharacterGenerator {
     constructor(canvasSize = 50) {
@@ -95,7 +95,8 @@ export class HumanGenerator extends CharacterGenerator {
 
         // Generate torso, neck, head, arms exactly as base class
 
-        // We want the feet to be at a consistent "ground" level (90% of canvas).
+        // Standing ground at 90% of canvas (not bottom pixel) to leave room for feet
+        // and give a natural standing pose. Differs from base class groundY intentionally.
         const groundY = this.canvasSize * 0.9;
         const legVertical = scaledParams.thighLength + scaledParams.shinLength;
         const calculatedTorsoY = groundY - scaledParams.torsoHeight - legVertical;
@@ -452,11 +453,7 @@ export class HumanGenerator extends CharacterGenerator {
         }
 
         // Frame variations: exhale, neutral, inhale
-        const variations = [
-            { torsoMult: 0.96, armMult: 1.05, y: 0.5, headBob: 1 },    // Exhale: down, head up
-            { torsoMult: 1.0, armMult: 1.0, y: 0, headBob: 0 },         // Neutral
-            { torsoMult: 1.04, armMult: 0.95, y: -0.5, headBob: -1 }   // Inhale: up, head down
-        ];
+        const variations = ANIMATION.humanVariations;
 
         variations.forEach((variation, index) => {
             const frameParams = { ...params };
@@ -493,21 +490,7 @@ export class HumanGenerator extends CharacterGenerator {
             }
 
             // Apply Processors (Smoothing, Lighting, Outline)
-            // Prepare effect params
-            const effects = frameParams.effects || {
-                smoothing: frameParams.enableSmoothing !== false,
-                lighting: frameParams.enableLighting !== false,
-                outline: frameParams.showOutline !== false
-            };
-
-            const effectParams = {
-                ...frameParams,
-                effects,
-                outlineColor: frameParams.outlineColor,
-                lightDirection: frameParams.lightDirection
-            };
-
-            pixels = processorManager.applyAll(pixels, effectParams, this.canvasSize);
+            pixels = processorManager.applyAll(pixels, frameParams, this.canvasSize);
 
             frames.push(pixels);
         });
