@@ -945,10 +945,12 @@ export class UIManager {
             fillDensity: getRange('fillDensity'),
 
             // Effects
-            enableSmoothing: document.getElementById('enableSmoothing').checked,
-            enableLighting: document.getElementById('enableLighting').checked,
+            effects: {
+                smoothing: document.getElementById('enableSmoothing').checked,
+                lighting: document.getElementById('enableLighting').checked,
+                outline: document.getElementById('showOutline').checked,
+            },
             lightDirection: document.getElementById('lightDirection').value,
-            showOutline: document.getElementById('showOutline').checked,
             outlineColor: document.getElementById('outlineColor').value
         };
     }

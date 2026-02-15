@@ -493,21 +493,7 @@ export class HumanGenerator extends CharacterGenerator {
             }
 
             // Apply Processors (Smoothing, Lighting, Outline)
-            // Prepare effect params
-            const effects = frameParams.effects || {
-                smoothing: frameParams.enableSmoothing !== false,
-                lighting: frameParams.enableLighting !== false,
-                outline: frameParams.showOutline !== false
-            };
-
-            const effectParams = {
-                ...frameParams,
-                effects,
-                outlineColor: frameParams.outlineColor,
-                lightDirection: frameParams.lightDirection
-            };
-
-            pixels = processorManager.applyAll(pixels, effectParams, this.canvasSize);
+            pixels = processorManager.applyAll(pixels, frameParams, this.canvasSize);
 
             frames.push(pixels);
         });

@@ -145,10 +145,8 @@ class App {
 
                 const mergedParams = {
                     ...params,
-                    enableSmoothing: this.currentParams.enableSmoothing,
-                    enableLighting: this.currentParams.enableLighting,
+                    effects: this.currentParams.effects,
                     lightDirection: this.currentParams.lightDirection,
-                    showOutline: this.currentParams.showOutline,
                     outlineColor: this.currentParams.outlineColor
                 };
 
@@ -207,10 +205,8 @@ class App {
 
                 const mergedParams = {
                     ...params,
-                    enableSmoothing: this.currentParams.enableSmoothing,
-                    enableLighting: this.currentParams.enableLighting,
+                    effects: this.currentParams.effects,
                     lightDirection: this.currentParams.lightDirection,
-                    showOutline: this.currentParams.showOutline,
                     outlineColor: this.currentParams.outlineColor
                 };
 
@@ -242,10 +238,8 @@ class App {
         this.characters = this.characters.map(char => {
             const newParams = {
                 ...char.params,
-                enableSmoothing: this.currentParams.enableSmoothing,
-                enableLighting: this.currentParams.enableLighting,
+                effects: this.currentParams.effects,
                 lightDirection: this.currentParams.lightDirection,
-                showOutline: this.currentParams.showOutline,
                 outlineColor: this.currentParams.outlineColor
             };
 

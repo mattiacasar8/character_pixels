@@ -16,28 +16,15 @@ export class CharacterGenerator {
         const bodyParts = this.generateBodyParts(params);
         const heatmap = this.generateHeatmap(bodyParts, params);
 
-        // 7. Generate Pixels
-        // Use params but disable effects to get raw pixels
-        // This prevents double application of effects and ensures rawPixels are clean
-        const rawParams = { ...params, enableSmoothing: false, enableLighting: false, showOutline: false };
+        // Generate raw pixels with effects disabled to get clean base
+        const rawParams = { ...params, effects: { smoothing: false, lighting: false, outline: false } };
         let pixels = this.generatePixels(heatmap, rawParams);
 
-        // Store raw pixels for reprocessing (before smoothing/outline)
-        // We need to clone it because applySmoothing/Outline mutates the array
+        // Clone raw pixels before effects (smoothing/outline mutates the array)
         const rawPixels = pixels.map(row => [...row]);
 
-        // removeIsolatedPixels is called inside generatePixels, but we can call it again or skip
-        // Since we disabled effects in generatePixels, it only did generation + removeIsolatedPixels
-
         // Apply all enabled effects via ProcessorManager
-        // Convert legacy params to new effects format for backward compatibility
-        const effects = params.effects || {
-            smoothing: params.enableSmoothing !== false,
-            lighting: params.enableLighting !== false,
-            outline: params.showOutline !== false
-        };
-        const effectParams = { ...params, effects, outlineColor: params.outlineColor };
-        pixels = processorManager.applyAll(pixels, effectParams, this.canvasSize);
+        pixels = processorManager.applyAll(pixels, params, this.canvasSize);
 
         // Name generation is handled by the app or subclass
         const name = params.name || "Unknown";
@@ -135,13 +122,7 @@ export class CharacterGenerator {
         this.removeIsolatedPixels(pixels);
 
         // Apply all enabled effects via ProcessorManager
-        const effects = newParams.effects || {
-            smoothing: newParams.enableSmoothing !== false,
-            lighting: newParams.enableLighting !== false,
-            outline: newParams.showOutline !== false
-        };
-        const effectParams = { ...newParams, effects, outlineColor: newParams.outlineColor };
-        pixels = processorManager.applyAll(pixels, effectParams, this.canvasSize);
+        pixels = processorManager.applyAll(pixels, newParams, this.canvasSize);
 
         // Update character
         character.pixels = pixels;
