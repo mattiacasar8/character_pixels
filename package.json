@@ -5,7 +5,11 @@
   "scripts": {
     "test": "node --test tests/*.test.js",
     "video": "node cli/export-video.js",
-    "video:batch": "node cli/export-video.js --count"
+    "video:batch": "node cli/export-video.js --count",
+    "batch": "node cli/generate-batch.js",
+    "batch:small": "node cli/generate-batch.js --total 10 --monsters 2",
+    "worker:deploy": "cd workers && wrangler deploy",
+    "worker:dev": "cd workers && wrangler dev publish.js"
   },
   "dependencies": {
     "@napi-rs/canvas": "^0.1.61"

@@ -1,0 +1,38 @@
+name = "character-pixels-publisher"
+main = "publish.js"
+compatibility_date = "2025-01-01"
+
+# ─── Cron triggers ───────────────────────────────────────────────────────────
+#
+# Pubblica alle 8:55 e 20:55 ora italiana.
+# Cloudflare usa UTC — adatta in base al periodo:
+#
+#   Ora solare (CET = UTC+1):   8:55 CET  = 7:55 UTC  | 20:55 CET  = 19:55 UTC
+#   Ora legale (CEST = UTC+2):  8:55 CEST = 6:55 UTC  | 20:55 CEST = 18:55 UTC
+#
+# Configurazione attuale: ora solare (ottobre → marzo)
+# Per ora legale (marzo → ottobre) cambia con: "55 6 * * *" e "55 18 * * *"
+#
+[triggers]
+crons = ["55 7 * * *", "55 19 * * *"]
+
+# ─── R2 Binding ──────────────────────────────────────────────────────────────
+# Il Worker accede al bucket R2 direttamente, senza credenziali esplicite.
+# Sostituisci "character-pixels" con il nome del tuo bucket.
+[[r2_buckets]]
+binding = "R2_BUCKET"
+bucket_name = "character-pixels"
+
+# ─── Variabili pubbliche ─────────────────────────────────────────────────────
+# NON inserire secrets qui — usa `wrangler secret put` per quelli sensibili.
+[vars]
+# URL pubblico del bucket R2 (Dashboard R2 → bucket → Settings → Public access)
+R2_PUBLIC_URL = "https://pub-1acdfd7164074cf183d04b5d9a918e38.r2.dev"
+
+# ─── Secrets (NON inserire i valori qui) ─────────────────────────────────────
+# Imposta questi con i comandi:
+#   wrangler secret put META_ACCESS_TOKEN
+#   wrangler secret put INSTAGRAM_USER_ID
+#
+# META_ACCESS_TOKEN    = Long-Lived User Access Token (Graph API)
+# INSTAGRAM_USER_ID    = Instagram Business Account ID
