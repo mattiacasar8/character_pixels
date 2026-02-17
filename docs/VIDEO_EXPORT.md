@@ -1,3 +1,5 @@
+[← README](../README.md)
+
 # Video Export
 
 Guida per la generazione di video MP4 (1080x1920 portrait) con personaggio animato e musica 8-bit procedurale.

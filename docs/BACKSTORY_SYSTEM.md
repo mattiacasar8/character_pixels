@@ -1,3 +1,5 @@
+[← README](../README.md)
+
 # Sistema di Generazione Backstory Procedurali
 
 ## Overview

@@ -1,4 +1,6 @@
-# Automazione Instagram — Character Pixels
+[← README](../README.md)
+
+# Automazione Instagram
 
 Guida completa per generare video in batch, caricarli su Cloudflare R2 e pubblicarli automaticamente su Instagram.
 
