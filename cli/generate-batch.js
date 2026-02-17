@@ -14,8 +14,6 @@
  *   --humans <n>      Numero di umani (default: calcolato da total - monsters)
  *   --output <dir>    Cartella di output (default: ./output)
  *   --size <n>        Canvas size in px (default: 50)
- *   --hashtags        Aggiungi hashtag alla caption (default: true)
- *
  * Esempi:
  *   node cli/generate-batch.js                          # 120 video, 24 mostri, 96 umani
  *   node cli/generate-batch.js --total 60               # 60 video, 12 mostri, 48 umani (ratio 1:4)
@@ -43,12 +41,10 @@ import { wrapText, buildTimeline, getTextState, getVisibleLines } from '../js/au
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
 
-// ─── Configurazione hashtag ───────────────────────────────────────────────────
-// Modifica questa lista per cambiare gli hashtag aggiunti a ogni post
-const HASHTAGS = [
-    '#pixelart', '#fantasy', '#rpg', '#indiegame', '#gamedev',
-    '#characterdesign', '#pixelartist', '#8bit', '#retrogaming', '#digitalart',
-];
+// ─── Template caption ─────────────────────────────────────────────────────────
+// Formato del testo pubblicato come caption su Instagram.
+// Variabili disponibili: {name}, {backstory}
+const CAPTION_TEMPLATE = `\n—\n{name}\n—\n{backstory}\n—`;
 
 // ─── Parse CLI args ───────────────────────────────────────────────────────────
 
@@ -61,7 +57,6 @@ function parseArgs() {
         monsters: null,   // null = calcolato automaticamente
         output: path.join(ROOT, 'output'),
         size: 50,
-        hashtags: true,
     };
 
     for (let i = 0; i < args.length; i++) {
@@ -82,9 +77,6 @@ function parseArgs() {
             case '--size':
                 opts.size = parseInt(args[++i], 10);
                 break;
-            case '--no-hashtags':
-                opts.hashtags = false;
-                break;
             case '--help':
                 console.log(`
 Uso: node cli/generate-batch.js [opzioni]
@@ -95,7 +87,6 @@ Opzioni:
   --humans <n>      Numero di umani (alternativa a --monsters)
   --output <dir>    Cartella output (default: ./output)
   --size <n>        Canvas pixel size (default: 50)
-  --no-hashtags     Non aggiungere hashtag alla caption
 
 Esempi:
   node cli/generate-batch.js
@@ -196,12 +187,10 @@ function generateCharacter(generator, backstoryGenerator, seed) {
 
 // ─── Caption builder ─────────────────────────────────────────────────────────
 
-function buildCaption(character, addHashtags) {
-    let caption = character.backstory || character.name;
-    if (addHashtags) {
-        caption += '\n\n' + HASHTAGS.join(' ');
-    }
-    return caption;
+function buildCaption(character) {
+    return CAPTION_TEMPLATE
+        .replace('{name}', character.name)
+        .replace('{backstory}', character.backstory || character.name);
 }
 
 // ─── Canvas rendering (copiata da export-video.js) ───────────────────────────
@@ -336,12 +325,12 @@ async function exportVideo(character, animationFrames, canvasSize, outputPath) {
         let stderrData = '';
         ffmpeg.stderr.on('data', (d) => { stderrData += d.toString(); });
         ffmpeg.on('close', (code) => {
-            try { fs.unlinkSync(wavPath); } catch {}
+            try { fs.unlinkSync(wavPath); } catch { }
             if (code === 0) resolve();
             else reject(new Error(`ffmpeg exited with code ${code}\n${stderrData}`));
         });
         ffmpeg.on('error', (err) => {
-            try { fs.unlinkSync(wavPath); } catch {}
+            try { fs.unlinkSync(wavPath); } catch { }
             reject(err);
         });
 
@@ -437,7 +426,7 @@ async function main() {
                 name: character.name,
                 type,
                 seed,
-                caption: buildCaption(character, opts.hashtags),
+                caption: buildCaption(character),
                 status: 'ready',
                 published_at: null,
             };

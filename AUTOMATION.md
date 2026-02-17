@@ -43,7 +43,7 @@ Guida completa per generare video in batch, caricarli su Cloudflare R2 e pubblic
     "name": "Aldric",
     "type": "human",
     "seed": 1234567,
-    "caption": "Aldric è un guerriero errante...\n\n#pixelart #fantasy #rpg",
+    "caption": "Aldric è un guerriero errante...",
     "status": "ready",
     "published_at": null
   },
@@ -52,7 +52,7 @@ Guida completa per generare video in batch, caricarli su Cloudflare R2 e pubblic
     "name": "Grak",
     "type": "monster",
     "seed": 9876543,
-    "caption": "Grak si aggira nelle terre oscure...\n\n#pixelart #fantasy #rpg",
+    "caption": "Grak si aggira nelle terre oscure...",
     "status": "published",
     "published_at": "2025-06-01T08:55:00.000Z"
   }
@@ -64,6 +64,26 @@ Guida completa per generare video in batch, caricarli su Cloudflare R2 e pubblic
 - `published` — già pubblicato su Instagram (impostato automaticamente dal Worker)
 
 Non è necessario aggiornare lo status manualmente — il Worker pubblica qualsiasi video che non sia `published`.
+
+### Formato della caption
+
+La caption pubblicata su Instagram segue questo template, definito in `cli/generate-batch.js`:
+
+```
+—
+{Nome del personaggio}
+
+{Backstory del personaggio}
+—
+```
+
+Per modificare il template, apri `cli/generate-batch.js` e cerca la riga:
+
+```js
+const CAPTION_TEMPLATE = `—\n{name}\n\n{backstory}\n—`;
+```
+
+Le variabili disponibili sono `{name}` e `{backstory}`. Dopo la modifica rigenera il batch per applicare il nuovo formato.
 
 ---
 
@@ -288,9 +308,13 @@ cd /Users/mattia.casarotto/Documents/GitHub/character_pixels
 # Batch standard: 120 video (96 umani + 24 mostri, ratio 1:4)
 npm run batch
 
-# Oppure con numero custom:
+# Batch ridotto per test rapido (10 video)
+npm run batch:small
+
+# Numero custom
 node cli/generate-batch.js --total 60
 node cli/generate-batch.js --total 120 --monsters 20
+node cli/generate-batch.js --total 100 --humans 90
 ```
 
 I video vengono salvati in `output/` insieme a `manifest.json`. Ci vogliono circa 10–20 minuti per 120 video.
@@ -302,6 +326,36 @@ I video vengono salvati in `output/` insieme a `manifest.json`. Ci vogliono circ
 3. Carica anche `manifest.json` (sovrascrive quello precedente)
 
 > Il Worker da questo momento pubblica automaticamente 2 video al giorno alle 8:55 e 20:55. Non serve fare nient'altro.
+
+### Pubblica un video manualmente (quando vuoi)
+
+```bash
+# Trigghera il Worker subito — pubblica il prossimo video in coda
+curl -X POST https://character-pixels-publisher.mttcsr.workers.dev
+```
+
+### Controlla i log del Worker
+
+```bash
+# Segui i log in tempo reale dal terminale
+cd workers && wrangler tail
+
+# Oppure dalla dashboard:
+# dash.cloudflare.com → Workers & Pages → character-pixels-publisher → Logs
+```
+
+### Controlla cosa c'è nel manifest su R2
+
+```bash
+# Scarica il manifest attuale da R2 e stampalo
+cd workers && wrangler r2 object get character-pixels/manifest.json --file /tmp/manifest.json && cat /tmp/manifest.json
+```
+
+### Rideploya il Worker (dopo modifiche a publish.js o wrangler.toml)
+
+```bash
+cd workers && wrangler deploy
+```
 
 ### Nota sull'ora legale
 
