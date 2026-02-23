@@ -2,7 +2,7 @@
  * Cloudflare Worker — Instagram Auto Publisher
  * Character Pixels
  *
- * Gira automaticamente 2 volte al giorno (configurato in wrangler.toml).
+ * Gira automaticamente 3 volte al giorno (configurato in wrangler.toml): 8:55, 13:55 e 18:55 ora italiana.
  * Ad ogni esecuzione:
  *   1. Legge manifest.json da R2
  *   2. Trova il primo video che non è ancora "published"
@@ -48,7 +48,7 @@ export default {
 
     /**
      * Handler per i cron trigger
-     * Configurato in wrangler.toml: crons = ["55 7 * * *", "55 19 * * *"]
+     * Configurato in wrangler.toml: crons = ["55 7 * * *", "55 12 * * *", "55 17 * * *"]
      */
     async scheduled(event, env, ctx) {
         ctx.waitUntil(runPublisher(env));

@@ -4,17 +4,17 @@ compatibility_date = "2025-01-01"
 
 # ─── Cron triggers ───────────────────────────────────────────────────────────
 #
-# Pubblica alle 8:55 e 20:55 ora italiana.
+# Pubblica alle 8:55, 13:55 e 18:55 ora italiana.
 # Cloudflare usa UTC — adatta in base al periodo:
 #
-#   Ora solare (CET = UTC+1):   8:55 CET  = 7:55 UTC  | 20:55 CET  = 19:55 UTC
-#   Ora legale (CEST = UTC+2):  8:55 CEST = 6:55 UTC  | 20:55 CEST = 18:55 UTC
+#   Ora solare (CET  = UTC+1):  8:55→7:55 | 13:55→12:55 | 18:55→17:55
+#   Ora legale (CEST = UTC+2):  8:55→6:55 | 13:55→11:55 | 18:55→16:55
 #
 # Configurazione attuale: ora solare (ottobre → marzo)
-# Per ora legale (marzo → ottobre) cambia con: "55 6 * * *" e "55 18 * * *"
+# Per ora legale (marzo → ottobre) cambia con: "55 6 * * *", "55 11 * * *", "55 16 * * *"
 #
 [triggers]
-crons = ["55 7 * * *", "55 19 * * *"]
+crons = ["55 7 * * *", "55 12 * * *", "55 17 * * *"]
 
 # ─── R2 Binding ──────────────────────────────────────────────────────────────
 # Il Worker accede al bucket R2 direttamente, senza credenziali esplicite.
