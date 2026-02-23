@@ -68,48 +68,69 @@ async function runPublisher(env) {
         return new Response(msg, { status: 500 });
     }
 
-    // 2. Trova il primo video non ancora pubblicato
-    const entryIndex = manifest.findIndex(e => e.status !== 'published');
-    if (entryIndex === -1) {
-        const msg = 'Tutti i video del manifest sono già stati pubblicati';
+    // 2. Raccogli tutti i video non ancora pubblicati e non in errore
+    const candidates = manifest
+        .map((e, i) => ({ ...e, _index: i }))
+        .filter(e => e.status !== 'published' && e.status !== 'error');
+
+    if (candidates.length === 0) {
+        const msg = 'Nessun video disponibile (tutti published o error)';
         console.log(`[publisher] ${msg}`);
         return new Response(msg, { status: 200 });
     }
 
-    const entry = manifest[entryIndex];
-    console.log(`[publisher] Pubblico: ${entry.filename} (${entry.name})`);
+    // 3. Prova i video in ordine — salta quelli che falliscono
+    for (const entry of candidates) {
+        const videoUrl = `${env.R2_PUBLIC_URL}/${entry.filename}`;
+        console.log(`[publisher] Provo: ${entry.filename} (${entry.name})`);
 
-    // 3. Costruisci URL pubblico del video
-    const videoUrl = `${env.R2_PUBLIC_URL}/${entry.filename}`;
-    console.log(`[publisher] Video URL: ${videoUrl}`);
+        // Pre-check: verifica che il file esista su R2
+        const headRes = await fetch(videoUrl, { method: 'HEAD' });
+        if (!headRes.ok) {
+            const reason = `File non trovato su R2 (HTTP ${headRes.status})`;
+            console.error(`[publisher] ${reason}: ${videoUrl}`);
+            manifest[entry._index].status = 'error';
+            manifest[entry._index].error = reason;
+            await writeManifest(env, manifest);
+            continue; // prossimo video
+        }
 
-    try {
-        // 4. Crea media container su Instagram
-        const containerId = await createMediaContainer(env, videoUrl, entry.caption);
-        console.log(`[publisher] Container creato: ${containerId}`);
+        try {
+            // Crea media container su Instagram
+            const containerId = await createMediaContainer(env, videoUrl, entry.caption);
+            console.log(`[publisher] Container creato: ${containerId}`);
 
-        // 5. Aspetta che il video sia processato
-        await waitForContainer(env, containerId);
-        console.log(`[publisher] Container pronto`);
+            // Aspetta che il video sia processato
+            await waitForContainer(env, containerId);
+            console.log(`[publisher] Container pronto`);
 
-        // 6. Pubblica il post
-        const mediaId = await publishContainer(env, containerId);
-        console.log(`[publisher] Pubblicato! Media ID: ${mediaId}`);
+            // Pubblica il post
+            const mediaId = await publishContainer(env, containerId);
+            console.log(`[publisher] Pubblicato! Media ID: ${mediaId}`);
 
-        // 7. Aggiorna il manifest
-        manifest[entryIndex].status = 'published';
-        manifest[entryIndex].published_at = new Date().toISOString();
-        manifest[entryIndex].instagram_media_id = mediaId;
-        await writeManifest(env, manifest);
+            // Aggiorna il manifest
+            manifest[entry._index].status = 'published';
+            manifest[entry._index].published_at = new Date().toISOString();
+            manifest[entry._index].instagram_media_id = mediaId;
+            delete manifest[entry._index].error; // rimuovi eventuali errori precedenti
+            await writeManifest(env, manifest);
 
-        const msg = `Pubblicato con successo: ${entry.name} (${entry.filename})`;
-        console.log(`[publisher] ${msg}`);
-        return new Response(msg, { status: 200 });
+            const msg = `Pubblicato con successo: ${entry.name} (${entry.filename})`;
+            console.log(`[publisher] ${msg}`);
+            return new Response(msg, { status: 200 });
 
-    } catch (err) {
-        console.error(`[publisher] ERRORE durante la pubblicazione: ${err.message}`);
-        return new Response(`Errore: ${err.message}`, { status: 500 });
+        } catch (err) {
+            console.error(`[publisher] Errore con ${entry.filename}: ${err.message}`);
+            manifest[entry._index].status = 'error';
+            manifest[entry._index].error = err.message;
+            await writeManifest(env, manifest);
+            // continua con il prossimo video
+        }
     }
+
+    const msg = 'Nessun video pubblicabile — tutti i candidati hanno fallito';
+    console.error(`[publisher] ${msg}`);
+    return new Response(msg, { status: 500 });
 }
 
 // ─── Instagram API ────────────────────────────────────────────────────────────
@@ -157,6 +178,7 @@ async function waitForContainer(env, containerId) {
         }
 
         if (status === 'ERROR' || status === 'EXPIRED') {
+            console.error(`[publisher] Container in stato ${status} per il container ${containerId}`);
             throw new Error(`Container in stato ${status} — il video non può essere pubblicato`);
         }
 

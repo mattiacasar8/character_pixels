@@ -1,3 +1,15 @@
+mattiacasar8@192 character_pixels % curl -X POST https://character-pixels-publisher.mttcsr.workers.dev
+Errore: Container in stato ERROR — il video non può essere pubblicato%                                          
+mattiacasar8@192 character_pixels % 
+
+
+
+
+
+
+
+
+
 [← README](../README.md)
 
 # Automazione Instagram
@@ -64,8 +76,9 @@ Guida completa per generare video in batch, caricarli su Cloudflare R2 e pubblic
 **Stati possibili:**
 - `ready` — generato, pronto per essere pubblicato (impostato automaticamente da `generate-batch.js`)
 - `published` — già pubblicato su Instagram (impostato automaticamente dal Worker)
+- `error` — fallito (file non trovato su R2 o rifiutato da Instagram); viene saltato automaticamente. Il campo `error` nell'entry contiene il motivo
 
-Non è necessario aggiornare lo status manualmente — il Worker pubblica qualsiasi video che non sia `published`.
+Il Worker salta automaticamente i video in stato `error` e pubblica il prossimo `ready`.
 
 ### Formato della caption
 
