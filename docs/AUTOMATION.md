@@ -1,15 +1,3 @@
-mattiacasar8@192 character_pixels % curl -X POST https://character-pixels-publisher.mttcsr.workers.dev
-Errore: Container in stato ERROR — il video non può essere pubblicato%                                          
-mattiacasar8@192 character_pixels % 
-
-
-
-
-
-
-
-
-
 [← README](../README.md)
 
 # Automazione Instagram
@@ -24,18 +12,19 @@ Guida completa per generare video in batch, caricarli su Cloudflare R2 e pubblic
 [Locale — tu]                          [Cloudflare — automatico]
 
   cli/generate-batch.js                   Workers (cron trigger)
-  → genera N video MP4                    → gira 2x al giorno (8:55 e 20:55)
+  → genera N video MP4                    → gira 3x al giorno (8:55, 13:55, 18:55 CET)
   → crea/aggiorna manifest.json           → legge manifest.json da R2
           │                               → pubblica il primo video non "published"
           ▼                               → aggiorna manifest.json su R2
-  Upload manuale su R2
-  (Cloudflare Dashboard)
+  Batch Manager (web UI)
+  → upload MP4 + manifest su R2
+  (oppure manuale via dashboard CF)
 ```
 
 **Flusso di lavoro:**
 1. Generi ~120 video in locale con `generate-batch.js`
-2. Carichi la cartella `output/` su R2 via dashboard (manuale, una volta ogni ~60 giorni)
-3. Il Worker gira automaticamente 2 volte al giorno e pubblica un video per volta
+2. Carichi su R2 tramite il **Batch Manager** (web UI integrata nel Worker)
+3. Il Worker gira automaticamente 3 volte al giorno e pubblica un video per volta
 
 ---
 
@@ -45,7 +34,7 @@ Guida completa per generare video in batch, caricarli su Cloudflare R2 e pubblic
 |------|-----------|-------|
 | `generate-batch.js` | `cli/` | Genera N video con ratio mostri/umani configurabile + crea `manifest.json` |
 | `publish.js` | `workers/` | Cloudflare Worker con cron trigger — legge manifest, pubblica su Instagram |
-| `.env.example` | root | Template delle variabili d'ambiente necessarie |
+| `wrangler.toml` | `workers/` | Configurazione Worker, cron trigger, binding R2 |
 | `manifest.json` | `output/` | Generato automaticamente — tiene traccia di tutti i video e il loro stato |
 
 ### Formato `manifest.json`
@@ -74,9 +63,10 @@ Guida completa per generare video in batch, caricarli su Cloudflare R2 e pubblic
 ```
 
 **Stati possibili:**
-- `ready` — generato, pronto per essere pubblicato (impostato automaticamente da `generate-batch.js`)
-- `published` — già pubblicato su Instagram (impostato automaticamente dal Worker)
-- `error` — fallito (file non trovato su R2 o rifiutato da Instagram); viene saltato automaticamente. Il campo `error` nell'entry contiene il motivo
+- `ready` — generato, pronto per essere pubblicato (impostato da `generate-batch.js`)
+- `container_created` — container Instagram creato, in attesa di processing (gestito dal Worker)
+- `published` — pubblicato su Instagram (impostato dal Worker)
+- `error` — fallito (file non trovato su R2, rifiutato da Instagram, ecc.); il Worker lo salta automaticamente. Il campo `error` nell'entry contiene il motivo
 
 Il Worker salta automaticamente i video in stato `error` e pubblica il prossimo `ready`.
 
@@ -87,7 +77,7 @@ La caption pubblicata su Instagram segue questo template, definito in `cli/gener
 ```
 —
 {Nome del personaggio}
-
+—
 {Backstory del personaggio}
 —
 ```
@@ -95,7 +85,7 @@ La caption pubblicata su Instagram segue questo template, definito in `cli/gener
 Per modificare il template, apri `cli/generate-batch.js` e cerca la riga:
 
 ```js
-const CAPTION_TEMPLATE = `—\n{name}\n\n{backstory}\n—`;
+const CAPTION_TEMPLATE = `\n—\n{name}\n—\n{backstory}\n—`;
 ```
 
 Le variabili disponibili sono `{name}` e `{backstory}`. Dopo la modifica rigenera il batch per applicare il nuovo formato.
@@ -159,7 +149,7 @@ Hai bisogno di un **Long-Lived User Access Token** con i permessi corretti.
    - `pages_show_list`
 5. Clicca **Generate Access Token** → autorizza → copia il token
 
-**Step 2 — Converti in Long-Lived Token (dura 60 giorni):**
+**Step 2 — Converti in Long-Lived Token (dura 60–90 giorni):**
 
 Apri il browser e visita questo URL (sostituisci i valori):
 
@@ -169,7 +159,7 @@ https://graph.facebook.com/oauth/access_token?grant_type=fb_exchange_token&clien
 
 La risposta JSON contiene `access_token` — **salvalo**, è il tuo token principale.
 
-> **Nota:** I Long-Lived Token durano 60 giorni. Puoi rinnovarli chiamando lo stesso endpoint con il token esistente prima che scada. Il Worker può farlo automaticamente — vedi sezione 5.
+> **Nota:** La durata effettiva del token dipende dalle impostazioni dell'app Meta (tipicamente 60 giorni, ma può arrivare a 90). Puoi rinnovarlo chiamando lo stesso endpoint con il token esistente prima che scada.
 
 **Step 3 — Trova il tuo Instagram Business Account ID:**
 
@@ -213,21 +203,30 @@ Il Worker ha accesso diretto a R2 tramite binding (senza URL pubblico). Ma per p
 3. Vedrai un URL tipo: `https://pub-xxxxxxxxxxxx.r2.dev`
    **Annotalo** — è il tuo `R2_PUBLIC_URL`
 
-### 3.3 Upload manuale dei video (procedura)
+### 3.3 Upload dei video su R2
 
-**Non serve uno script** — puoi caricare direttamente dalla dashboard:
+**Metodo consigliato — Batch Manager (web UI):**
+
+Il Worker include una pagina `/batch` con upload integrato:
+
+1. Vai su `https://character-pixels-publisher.{account}.workers.dev/batch`
+2. Sezione **2 — Carica su Cloudflare R2**
+3. Clicca **Seleziona cartella output/** e scegli tutta la cartella `output/`
+4. Scegli la modalità manifest:
+   - **Merge** — aggiunge i nuovi video, mantiene gli status dei già pubblicati (consigliato per aggiornamenti)
+   - **Replace** — sostituisce completamente il manifest (usa solo per un reset totale)
+5. Clicca **↑ Upload su R2** — i file vengono caricati uno per uno con progress bar
+
+**Metodo alternativo — Dashboard Cloudflare:**
 
 1. Vai sul tuo bucket → tab **Objects**
 2. Clicca **Upload** → **Upload files** (o trascina i file)
 3. Carica tutti i file MP4 dalla cartella `output/`
 4. Carica anche `manifest.json`
 
-> **Attenzione:** Quando ricarichi `manifest.json` dopo una sessione di pubblicazione, scarica prima la versione aggiornata dal bucket (quella con gli status corretti), poi sostituisci solo i nuovi video nel JSON e ricarica.
+> **Attenzione con Replace:** Quando ricarichi `manifest.json` dopo una sessione di pubblicazione, scarica prima la versione aggiornata dal bucket (quella con gli status corretti), poi sostituisci solo i nuovi video nel JSON e ricarica.
 
-**Alternativa CLI (opzionale):**
-Se preferisci la riga di comando, puoi usare `rclone` o `wrangler r2 object put`. Non è necessario per questo workflow.
-
-### 3.4 Crea API Token per il Worker
+### 3.4 Binding R2
 
 Il Worker accede a R2 tramite **bindings** (non API token) — è più sicuro e non richiede credenziali esplicite. Configuri il binding nella sezione Worker (vedi Parte 4).
 
@@ -246,26 +245,24 @@ wrangler login  # apre il browser per autenticarsi
 
 ```
 workers/
-├── publish.js        # Logica principale del Worker
+├── publish.js        # Logica principale del Worker (Dashboard + Batch Manager + Publisher)
 └── wrangler.toml     # Configurazione Cloudflare
 ```
 
 ### 4.3 Configura `wrangler.toml`
 
-Crea il file `workers/wrangler.toml`:
+Il file `workers/wrangler.toml` è già configurato. Per riferimento:
 
 ```toml
 name = "character-pixels-publisher"
 main = "publish.js"
 compatibility_date = "2025-01-01"
 
-# Cron triggers: pubblica alle 8:55 e 20:55 ora italiana
-# Inverno (CET = UTC+1):  "55 7 * * *" e "55 19 * * *"
-# Estate  (CEST = UTC+2): "55 6 * * *" e "55 18 * * *"
+# Cron: 3x al giorno alle 8:55, 13:55, 18:55 CET (ora solare)
 [triggers]
-crons = ["55 7 * * *", "55 19 * * *"]
+crons = ["55 7 * * *", "55 12 * * *", "55 17 * * *"]
 
-# Binding R2 — il Worker accede al bucket senza credenziali
+# Binding R2 — accesso diretto senza credenziali
 [[r2_buckets]]
 binding = "R2_BUCKET"
 bucket_name = "character-pixels"
@@ -281,12 +278,19 @@ I secrets NON vanno nel file `wrangler.toml` — vengono impostati separatamente
 
 ```bash
 cd workers/
+
 wrangler secret put META_ACCESS_TOKEN
 # → incolla il Long-Lived Token e premi invio
 
 wrangler secret put INSTAGRAM_USER_ID
 # → incolla il tuo Instagram Business Account ID
+
+# Opzionale — protegge il dashboard con ?key=VALUE
+wrangler secret put DASHBOARD_KEY
+# → scegli una password qualsiasi (es. una stringa random)
 ```
+
+> Se imposti `DASHBOARD_KEY`, aggiungi `?key=YOUR_KEY` a tutte le URL del Worker (dashboard, batch manager, trigger manuale).
 
 ### 4.5 Deploy del Worker
 
@@ -299,15 +303,24 @@ Cloudflare mostrerà l'URL del Worker e confermerà i cron trigger attivi.
 
 ### 4.6 Test manuale
 
-Puoi triggerare il Worker manualmente dalla dashboard:
+**Via Batch Manager (consigliato):**
 
+Vai su `https://character-pixels-publisher.{account}.workers.dev/batch` per:
+- Generare il comando CLI corretto con tutti i parametri
+- Caricare i file su R2 direttamente dal browser
+
+**Via curl:**
+```bash
+# Pubblica subito il prossimo video in coda
+curl -X POST https://character-pixels-publisher.{account}.workers.dev/trigger
+
+# Con DASHBOARD_KEY impostato:
+curl -X POST "https://character-pixels-publisher.{account}.workers.dev/trigger?key=YOUR_KEY"
+```
+
+**Via dashboard Cloudflare:**
 1. [dash.cloudflare.com](https://dash.cloudflare.com) → **Workers & Pages** → `character-pixels-publisher`
 2. Tab **Triggers** → **Cron Triggers** → **Run**
-
-Oppure da CLI:
-```bash
-wrangler dev workers/publish.js  # esecuzione locale per debug
-```
 
 ---
 
@@ -318,7 +331,7 @@ Questo è tutto quello che devi fare periodicamente. Il sistema poi gira da solo
 ### Step 1 — Genera i video in locale
 
 ```bash
-cd /Users/mattia.casarotto/Documents/GitHub/character_pixels
+# Dalla root del progetto
 
 # Batch standard: 120 video (96 umani + 24 mostri, ratio 1:4)
 npm run batch
@@ -330,23 +343,31 @@ npm run batch:small
 node cli/generate-batch.js --total 60
 node cli/generate-batch.js --total 120 --monsters 20
 node cli/generate-batch.js --total 100 --humans 90
+
+# Batch deterministico (stesso seed = stessi personaggi)
+node cli/generate-batch.js --total 120 --seed 42718301
 ```
 
 I video vengono salvati in `output/` insieme a `manifest.json`. Ci vogliono circa 10–20 minuti per 120 video.
 
 ### Step 2 — Carica su Cloudflare R2
 
-1. Vai su [dash.cloudflare.com](https://dash.cloudflare.com) → **R2** → bucket **character-pixels**
-2. Tab **Objects** → **Upload** → seleziona tutti i file `.mp4` da `output/`
-3. Carica anche `manifest.json` (sovrascrive quello precedente)
+**Tramite Batch Manager (consigliato):**
 
-> Il Worker da questo momento pubblica automaticamente 2 video al giorno alle 8:55 e 20:55. Non serve fare nient'altro.
+1. Vai su `https://character-pixels-publisher.{account}.workers.dev/batch`
+2. Clicca **🗂 Seleziona cartella output/** e scegli la cartella `output/` generata
+3. Scegli modalità **Merge** (mantiene i già pubblicati) o **Replace** (reset totale)
+4. Clicca **↑ Upload su R2** e attendi il completamento
+
+> Il Worker da questo momento pubblica automaticamente 3 video al giorno alle 8:55, 13:55 e 18:55 CET. Non serve fare nient'altro.
 
 ### Pubblica un video manualmente (quando vuoi)
 
+Dal dashboard del Worker: `https://character-pixels-publisher.{account}.workers.dev/` → **▶ Pubblica ora**
+
+Oppure via curl:
 ```bash
-# Trigghera il Worker subito — pubblica il prossimo video in coda
-curl -X POST https://character-pixels-publisher.mttcsr.workers.dev
+curl -X POST "https://character-pixels-publisher.{account}.workers.dev/trigger"
 ```
 
 ### Controlla i log del Worker
@@ -376,27 +397,26 @@ cd workers && wrangler deploy
 
 Il Worker usa orari UTC. Aggiorna `wrangler.toml` e rideploya se cambia l'ora:
 
-| Periodo | Ora italiana | UTC nel toml |
-|---------|-------------|--------------|
-| Inverno (ott–mar) | 8:55 e 20:55 CET | `"55 7 * * *"` e `"55 19 * * *"` |
-| Estate (mar–ott) | 8:55 e 20:55 CEST | `"55 6 * * *"` e `"55 18 * * *"` |
+| Periodo | Ora italiana | Cron UTC |
+|---------|-------------|----------|
+| Inverno (ott–mar) | 8:55, 13:55, 18:55 CET | `"55 7 * * *"`, `"55 12 * * *"`, `"55 17 * * *"` |
+| Estate (mar–ott) | 8:55, 13:55, 18:55 CEST | `"55 6 * * *"`, `"55 11 * * *"`, `"55 16 * * *"` |
 
 ```bash
 # Dopo aver modificato wrangler.toml:
-cd /Users/mattia.casarotto/Documents/GitHub/character_pixels/workers
-wrangler deploy
+cd workers && wrangler deploy
 ```
 
 ---
 
-## Parte 6 — Rinnovo token Meta (ogni 60 giorni)
+## Parte 6 — Rinnovo token Meta (ogni 60–90 giorni)
 
-I Long-Lived Token scadono dopo 60 giorni. La scadenza si calcola da quando hai generato il token — metti un promemoria sul calendario.
+I Long-Lived Token scadono. Metti un promemoria sul calendario in anticipo rispetto alla data di scadenza.
 
 **Step 1 — Genera un nuovo short-lived token:**
 
 1. Vai su [developers.facebook.com/tools/explorer](https://developers.facebook.com/tools/explorer)
-2. Seleziona l'app **character publisher v2**
+2. Seleziona la tua app
 3. Clicca **Ricevi token utente** → spunta `instagram_basic`, `instagram_content_publish`, `pages_read_engagement`, `pages_show_list`
 4. Clicca **Generate Access Token** → copia il token
 
@@ -411,7 +431,7 @@ Dalla risposta JSON copia il nuovo `access_token`.
 **Step 3 — Aggiorna il secret nel Worker:**
 
 ```bash
-cd /Users/mattia.casarotto/Documents/GitHub/character_pixels/workers
+cd workers/
 wrangler secret put META_ACCESS_TOKEN
 # → incolla il nuovo token, premi invio
 ```
@@ -427,16 +447,21 @@ Nessun redeploy necessario — il secret viene aggiornato immediatamente.
 - Verifica che il manifest su R2 abbia video con status `ready` (non tutti `published`)
 - Controlla che `META_ACCESS_TOKEN` non sia scaduto
 
+**Errore API Instagram (es. subcode 2207089):**
+- Può indicare un outage temporaneo dell'API Meta — controlla [status.nonli.com](https://status.nonli.com/) o il Meta Status Dashboard
+- Il Worker gestisce automaticamente i retry al prossimo cron trigger
+- Usa **↺ Pulisci manifest** nella dashboard per resettare gli errori recuperabili
+
 **Errore 400 dall'API Instagram (container not ready):**
-- Normale — il Worker già gestisce i retry automatici con wait progressivo
+- Normale — il Worker gestisce i retry automatici con polling ogni 10s (max 90s)
 
 **Il video non appare nei Reels:**
-- Verifica che sia 9:16 (1080x1920) ✓ già corretto
+- Verifica che sia 9:16 (1080×1920) ✓ già corretto
 - Verifica che duri tra 5 e 90 secondi
-- Verifica che il file sia sotto 100MB
+- Verifica che il file sia sotto 100 MB
 
 **Superato il limite di 25 post/giorno:**
-- Con 2 post/giorno sei a 1/12 del limite — non è un problema
+- Con 3 post/giorno sei a 1/8 del limite — non è un problema
 
 ---
 
@@ -448,3 +473,4 @@ Nessun redeploy necessario — il secret viene aggiornato immediatamente.
 | `INSTAGRAM_USER_ID` | Chiamata API `/me/accounts` + `/{page_id}?fields=instagram_business_account` |
 | `R2_PUBLIC_URL` | Dashboard R2 → bucket → Settings → Public access URL |
 | `R2_BUCKET` (binding) | Nome del bucket R2 (configurato in `wrangler.toml`) |
+| `DASHBOARD_KEY` | (opzionale) Qualsiasi stringa random — protegge la UI del Worker |

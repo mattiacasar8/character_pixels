@@ -9,9 +9,14 @@
     "batch": "node cli/generate-batch.js",
     "batch:small": "node cli/generate-batch.js --total 10 --monsters 2",
     "worker:deploy": "cd workers && wrangler deploy",
-    "worker:dev": "cd workers && wrangler dev publish.js"
+    "worker:dev": "cd workers && wrangler dev publish.js",
+    "deploy": "wrangler deploy",
+    "preview": "wrangler dev"
   },
   "dependencies": {
     "@napi-rs/canvas": "^0.1.61"
+  },
+  "devDependencies": {
+    "wrangler": "^4.68.1"
   }
 }

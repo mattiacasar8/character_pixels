@@ -62,7 +62,7 @@ Video MP4 1080x1920 con sprite animato (3 frame walk cycle), testo rivelato prog
 
 ### Pubblicazione automatica Instagram
 
-Cloudflare Worker con cron trigger pubblica 2 video al giorno (8:55 e 20:55) leggendo da un manifest su R2. → [`docs/AUTOMATION.md`](docs/AUTOMATION.md)
+Cloudflare Worker con cron trigger pubblica 3 video al giorno (8:55, 13:55 e 18:55 CET) leggendo da un manifest su R2. Batch Manager integrato per caricare i video su R2 dal browser. → [`docs/AUTOMATION.md`](docs/AUTOMATION.md)
 
 ---
 
@@ -85,6 +85,9 @@ node cli/export-video.js --seed 12345
 
 # Batch misto umani + mostri (ratio 1:4) con manifest
 npm run batch
+
+# Batch deterministico (stesso seed = stessi personaggi)
+node cli/generate-batch.js --total 120 --seed 42718301
 ```
 
 Prerequisiti CLI: **Node.js v18+** e **ffmpeg** (`brew install ffmpeg`).
@@ -104,4 +107,5 @@ Vedi [`docs/AUTOMATION.md`](docs/AUTOMATION.md) per la guida completa di setup e
 | `npm run video -- --seed 12345` | Genera un singolo video con seed specifico |
 | `npm run video:batch -- --count 10` | Genera N video random |
 | `npm run worker:deploy` | Deploya il Worker su Cloudflare |
+| `npm run worker:dev` | Avvia il Worker in locale (porta 8787) |
 | `npm test` | Esegue la test suite |

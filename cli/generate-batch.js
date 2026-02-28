@@ -14,12 +14,14 @@
  *   --humans <n>      Numero di umani (default: calcolato da total - monsters)
  *   --output <dir>    Cartella di output (default: ./output)
  *   --size <n>        Canvas size in px (default: 50)
+ *   --seed <n>        Seed globale per generazione deterministica (opzionale)
  * Esempi:
  *   node cli/generate-batch.js                          # 120 video, 24 mostri, 96 umani
  *   node cli/generate-batch.js --total 60               # 60 video, 12 mostri, 48 umani (ratio 1:4)
  *   node cli/generate-batch.js --total 50 --monsters 10 # 50 video, 10 mostri, 40 umani
  *   node cli/generate-batch.js --total 10 --monsters 5  # 10 video, 5 mostri, 5 umani (ratio 1:1)
  *   node cli/generate-batch.js --output ./my-batch      # cartella output custom
+ *   node cli/generate-batch.js --total 120 --seed 42718301  # batch deterministico
  */
 
 import { spawn } from 'child_process';
@@ -57,6 +59,7 @@ function parseArgs() {
         monsters: null,   // null = calcolato automaticamente
         output: path.join(ROOT, 'output'),
         size: 50,
+        seed: null,       // null = casuale per ogni personaggio
     };
 
     for (let i = 0; i < args.length; i++) {
@@ -77,6 +80,9 @@ function parseArgs() {
             case '--size':
                 opts.size = parseInt(args[++i], 10);
                 break;
+            case '--seed':
+                opts.seed = parseInt(args[++i], 10);
+                break;
             case '--help':
                 console.log(`
 Uso: node cli/generate-batch.js [opzioni]
@@ -87,12 +93,14 @@ Opzioni:
   --humans <n>      Numero di umani (alternativa a --monsters)
   --output <dir>    Cartella output (default: ./output)
   --size <n>        Canvas pixel size (default: 50)
+  --seed <n>        Seed globale per generazione deterministica
 
 Esempi:
   node cli/generate-batch.js
   node cli/generate-batch.js --total 60
   node cli/generate-batch.js --total 50 --monsters 10
   node cli/generate-batch.js --output ./batch-gennaio
+  node cli/generate-batch.js --total 120 --seed 42718301
 `);
                 process.exit(0);
         }
@@ -108,6 +116,23 @@ Esempi:
     opts.humans = opts.total - opts.monsters;
 
     return opts;
+}
+
+// ─── Seeded PRNG (Mulberry32) ─────────────────────────────────────────────────
+
+/**
+ * Crea un generatore di numeri pseudo-casuali deterministici.
+ * Stesso algoritmo usato in js/utils/random.js (Mulberry32).
+ * Restituisce valori in [0, 1).
+ */
+function mulberry32(seed) {
+    let s = seed >>> 0;
+    return function () {
+        s |= 0; s = s + 0x6D2B79F5 | 0;
+        let t = Math.imul(s ^ s >>> 15, 1 | s);
+        t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+        return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
 }
 
 // ─── Build sequence interleaved ──────────────────────────────────────────────
@@ -382,6 +407,7 @@ async function main() {
     console.log(`  Umani:       ${opts.humans}`);
     console.log(`  Mostri:      ${opts.monsters}`);
     console.log(`  Ratio:       1:${(opts.humans / Math.max(opts.monsters, 1)).toFixed(1)}`);
+    console.log(`Seed globale:  ${opts.seed !== null ? opts.seed : '(casuale)'}`);
     console.log(`Output:        ${opts.output}\n`);
 
     registerFonts();
@@ -399,12 +425,17 @@ async function main() {
     // Costruisce sequenza intercalata
     const typeSequence = buildTypeSequence(opts.humans, opts.monsters);
 
+    // RNG: deterministico se --seed è fornito, altrimenti casuale
+    const rng = opts.seed !== null ? mulberry32(opts.seed) : null;
+
     let successCount = 0;
     let failCount = 0;
 
     for (let i = 0; i < typeSequence.length; i++) {
         const type = typeSequence[i];
-        const seed = Math.floor(Math.random() * 2147483647);
+        const seed = rng
+            ? Math.floor(rng() * 2147483647)
+            : Math.floor(Math.random() * 2147483647);
         const generator = type === 'monster' ? monsterGen : humanGen;
         const backstoryGen = type === 'monster' ? monsterBackstory : humanBackstory;
 
