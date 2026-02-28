@@ -29,6 +29,22 @@ bucket_name = "character-pixels"
 # URL pubblico del bucket R2 (Dashboard R2 → bucket → Settings → Public access)
 R2_PUBLIC_URL = "https://pub-1acdfd7164074cf183d04b5d9a918e38.r2.dev"
 
+# ─── Observability ───────────────────────────────────────────────────────────
+[observability]
+enabled = false
+head_sampling_rate = 1
+
+[observability.logs]
+enabled = true
+head_sampling_rate = 1
+persist = true
+invocation_logs = true
+
+[observability.traces]
+enabled = false
+persist = true
+head_sampling_rate = 1
+
 # ─── Secrets (NON inserire i valori qui) ─────────────────────────────────────
 # Imposta questi con i comandi:
 #   wrangler secret put META_ACCESS_TOKEN

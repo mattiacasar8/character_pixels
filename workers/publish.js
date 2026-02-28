@@ -59,6 +59,10 @@ export default {
             if (url.pathname === '/trigger')      { await runPublisher(env); return redirectTo(url, '/'); }
             if (url.pathname === '/reset-error')  { await resetError(env, url.searchParams.get('filename')); return redirectTo(url, '/'); }
             if (url.pathname === '/reset-bulk')   { const n = await resetBulk(env); return redirectTo(url, '/', `Reset ${n} voci`); }
+            if (url.pathname === '/publish-one')  { const msg = await publishOne(env, url.searchParams.get('filename')); return redirectTo(url, '/', msg); }
+            if (url.pathname === '/move-top')     { await moveTop(env, url.searchParams.get('filename')); return redirectTo(url, '/'); }
+            if (url.pathname === '/move-bottom')  { await moveBottom(env, url.searchParams.get('filename')); return redirectTo(url, '/'); }
+            if (url.pathname === '/remove')       { const fn = url.searchParams.get('filename'); await removeEntry(env, fn); return redirectTo(url, '/', `Rimosso: ${fn}`); }
             if (url.pathname === '/api/manifest') return handleManifestUpdate(request, env, url);
         }
 
@@ -225,6 +229,117 @@ async function resetBulk(env) {
     return count;
 }
 
+// ─── Per-entry operations ─────────────────────────────────────────────────────
+
+/**
+ * Pubblica immediatamente un video specifico (bypass ordine coda).
+ */
+async function publishOne(env, filename) {
+    if (!filename) return 'Nessun filename specificato';
+    let manifest;
+    try { manifest = await readManifest(env); } catch (err) { return `Errore: ${err.message}`; }
+    if (!manifest) return 'Manifest non disponibile';
+
+    const idx = manifest.findIndex(e => e.filename === filename);
+    if (idx === -1) return `Non trovato: ${filename}`;
+    const entry = manifest[idx];
+
+    const videoUrl = `${env.R2_PUBLIC_URL}/${entry.filename}`;
+
+    try {
+        let containerId = entry.container_id ?? null;
+
+        if (!containerId) {
+            let headRes;
+            try { headRes = await fetch(videoUrl, { method: 'HEAD' }); }
+            catch (fetchErr) { throw new Error(`Fetch HEAD fallita: ${fetchErr.message}`); }
+
+            if (!headRes.ok) throw new Error(`File non trovato su R2 (HTTP ${headRes.status}): ${entry.filename}`);
+
+            containerId = await createMediaContainer(env, videoUrl, entry.caption);
+            console.log(`[publish-one] Container creato: ${containerId}`);
+
+            manifest[idx].status       = 'container_created';
+            manifest[idx].container_id = containerId;
+            await writeManifest(env, manifest);
+        } else {
+            console.log(`[publish-one] Riprendo container esistente: ${containerId}`);
+        }
+
+        await waitForContainer(env, containerId);
+        const mediaId = await publishContainer(env, containerId);
+        console.log(`[publish-one] Pubblicato! Media ID: ${mediaId}`);
+
+        manifest[idx].status             = 'published';
+        manifest[idx].published_at       = new Date().toISOString();
+        manifest[idx].instagram_media_id = mediaId;
+        delete manifest[idx].container_id;
+        delete manifest[idx].error;
+        await writeManifest(env, manifest);
+
+        return `Pubblicato: ${entry.name ?? filename}`;
+
+    } catch (err) {
+        const isTimeout = err.message.startsWith('Timeout');
+        if (isTimeout && manifest[idx].status === 'container_created') {
+            return `Timeout per ${filename} — riprendo al prossimo trigger`;
+        }
+        manifest[idx].status = 'error';
+        manifest[idx].error  = err.message;
+        delete manifest[idx].container_id;
+        await writeManifest(env, manifest);
+        return `Errore: ${err.message}`;
+    }
+}
+
+/**
+ * Sposta un video in cima alla coda (indice 0 del manifest).
+ */
+async function moveTop(env, filename) {
+    if (!filename) return;
+    let manifest;
+    try { manifest = await readManifest(env); } catch { return; }
+    if (!manifest) return;
+
+    const idx = manifest.findIndex(e => e.filename === filename);
+    if (idx <= 0) return;
+
+    const [entry] = manifest.splice(idx, 1);
+    manifest.unshift(entry);
+    await writeManifest(env, manifest);
+}
+
+/**
+ * Sposta un video in fondo alla coda (ultimo indice del manifest).
+ */
+async function moveBottom(env, filename) {
+    if (!filename) return;
+    let manifest;
+    try { manifest = await readManifest(env); } catch { return; }
+    if (!manifest) return;
+
+    const idx = manifest.findIndex(e => e.filename === filename);
+    if (idx === -1 || idx === manifest.length - 1) return;
+
+    const [entry] = manifest.splice(idx, 1);
+    manifest.push(entry);
+    await writeManifest(env, manifest);
+}
+
+/**
+ * Rimuove un video dal manifest.
+ */
+async function removeEntry(env, filename) {
+    if (!filename) return;
+    let manifest;
+    try { manifest = await readManifest(env); } catch { return; }
+    if (!manifest) return;
+
+    const filtered = manifest.filter(e => e.filename !== filename);
+    if (filtered.length === manifest.length) return;
+    await writeManifest(env, filtered);
+}
+
 // ─── API handlers ──────────────────────────────────────────────────────────────
 
 /**
@@ -354,18 +469,31 @@ async function renderDashboard(env, url) {
         const typeClass = entry.type === 'monster' ? 'type-m' : 'type-h';
         const typeLabel = entry.type === 'monster' ? 'monster' : 'human';
 
-        const fnParam     = `filename=${encodeURIComponent(entry.filename)}`;
-        const resetAction = `/reset-error${keyParam ? keyParam + '&' + fnParam : '?' + fnParam}`;
-        const resetBtn    = s === 'error'
-            ? `<form method="POST" action="${resetAction}"><button class="btn btn-sm">Reset</button></form>`
+        const fn  = `filename=${encodeURIComponent(entry.filename)}`;
+        const sep = keyParam ? `${keyParam}&${fn}` : `?${fn}`;
+
+        const isActive = (s === 'pending' || s === 'ready' || s === 'error');
+
+        const publishBtn   = isActive
+            ? `<form method="POST" action="/publish-one${sep}"><button class="btn btn-sm btn-ps" title="Pubblica ora">▶ Pubblica</button></form>`
             : '';
+        const resetBtn     = s === 'error'
+            ? `<form method="POST" action="/reset-error${sep}"><button class="btn btn-sm">↺ Reset</button></form>`
+            : '';
+        const moveTopBtn   = isActive
+            ? `<form method="POST" action="/move-top${sep}"><button class="btn btn-sm" title="Porta in cima alla coda">↑ Prima</button></form>`
+            : '';
+        const moveBottomBtn = isActive
+            ? `<form method="POST" action="/move-bottom${sep}"><button class="btn btn-sm" title="Manda in fondo alla coda">↓ Ultima</button></form>`
+            : '';
+        const removeBtn    = `<form method="POST" action="/remove${sep}" onsubmit="return confirm('Rimuovere dal manifest: ${esc(entry.name ?? entry.filename)}?')"><button class="btn btn-sm btn-del" title="Rimuovi dal manifest">✕</button></form>`;
 
         return `<tr>
           <td class="n">${i + 1}</td>
           <td class="td-video"><video src="${src}" preload="metadata" controls playsinline></video></td>
-          <td><div class="char-name">${esc(entry.name ?? '-')}</div><span class="tbadge ${typeClass}">${typeLabel}</span></td>
-          <td><span class="badge ${badgeClass}">${badgeLabel}</span>${detail}</td>
-          <td>${resetBtn}</td>
+          <td class="td-name"><div class="char-name">${esc(entry.name ?? '-')}</div><span class="tbadge ${typeClass}">${typeLabel}</span></td>
+          <td class="td-status"><span class="badge ${badgeClass}">${badgeLabel}</span>${detail}</td>
+          <td class="td-actions"><div class="acts">${resetBtn}${publishBtn}${moveTopBtn}${moveBottomBtn}${removeBtn}</div></td>
         </tr>`;
     }).join('') : '';
 
@@ -376,10 +504,14 @@ async function renderDashboard(env, url) {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>CP Publisher</title>
+<title>Character Pixels · Dashboard</title>
 <style>${baseCSS()}
-td.td-video{width:180px;padding:6px 10px}
-td.td-video video{width:160px;aspect-ratio:16/9;border-radius:4px;background:#0a0a0a;display:block;object-fit:contain}
+td.td-video{width:84px;padding:4px 8px}
+td.td-video video{width:72px;aspect-ratio:9/16;border-radius:4px;background:#0a0a0a;display:block;object-fit:contain}
+td.td-name{padding:8px 10px}
+td.td-status{padding:8px 10px;min-width:140px}
+td.td-actions{padding:4px 6px;min-width:160px}
+.acts{display:flex;flex-wrap:wrap;gap:5px;align-items:center}
 </style>
 </head>
 <body>
@@ -389,6 +521,12 @@ td.td-video video{width:160px;aspect-ratio:16/9;border-radius:4px;background:#0a
 </div>
 <h1>Character Pixels · Publisher</h1>
 <div class="sub">${now.toLocaleString('it-IT', { timeZone: 'Europe/Rome' })} (CET) &nbsp;·&nbsp; UTC ${now.toISOString().slice(0, 19)}</div>
+<div class="quick-links">
+  <a href="https://dash.cloudflare.com" target="_blank" rel="noopener">Cloudflare ↗</a>
+  <a href="https://dash.cloudflare.com/?to=/:account/workers/services/view/character-pixels-publisher/production/observability/logs" target="_blank" rel="noopener">Worker Logs ↗</a>
+  <a href="https://developers.facebook.com/tools/explorer" target="_blank" rel="noopener">Graph API Explorer ↗</a>
+  <a href="https://www.instagram.com" target="_blank" rel="noopener">Instagram ↗</a>
+</div>
 
 ${manifestErr ? `<div class="err-banner">⚠ Errore lettura manifest: ${esc(manifestErr)}</div>` : ''}
 ${flash       ? `<div class="ok-banner">✓ ${esc(flash)}</div>` : ''}
@@ -430,7 +568,7 @@ ${stats ? `<div class="row">
 
 ${manifest
     ? `<table>
-        <thead><tr><th>#</th><th>Preview</th><th>Personaggio</th><th>Status</th><th></th></tr></thead>
+        <thead><tr><th>#</th><th>Preview</th><th>Personaggio</th><th>Status</th><th>Azioni</th></tr></thead>
         <tbody>${rows}</tbody>
        </table>`
     : '<div class="err-banner">Manifest non disponibile</div>'}
@@ -482,7 +620,7 @@ function renderBatchPage(env, url) {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>CP Batch Manager</title>
+<title>Character Pixels · Batch Manager</title>
 <style>${baseCSS()}
 /* ── Batch-specific styles ── */
 .sect{background:#141414;border:1px solid #222;border-radius:8px;padding:20px;margin-bottom:16px}
@@ -933,8 +1071,8 @@ h1{font-size:16px;color:#7c6af7;letter-spacing:.5px;margin-bottom:2px}
 .cron-card .val{font-size:22px;color:#7c6af7;font-variant-numeric:tabular-nums}
 .cron-card .abs{color:#555;font-size:11px;margin-top:4px}
 .cron-card .sched{color:#3a3a3a;font-size:11px;margin-top:2px}
-.next-card{display:flex;gap:14px;align-items:center;flex:2;min-width:300px}
-.next-card video{width:160px;aspect-ratio:16/9;border-radius:4px;background:#0a0a0a;flex-shrink:0;object-fit:contain}
+.next-card{display:flex;gap:14px;align-items:center;flex:2;min-width:240px}
+.next-card video{width:90px;aspect-ratio:9/16;border-radius:4px;background:#0a0a0a;flex-shrink:0;object-fit:contain}
 .next-card .next-info .lbl{font-size:10px;color:#555;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
 .next-card .next-info .next-name{font-size:15px;color:#ccc;font-weight:600;margin-bottom:4px}
 .next-card .next-info .next-none{font-size:13px;color:#3a3a3a;font-style:italic}
@@ -970,8 +1108,38 @@ td.n{color:#2e2e2e;width:30px;text-align:right;padding-right:14px}
 .det{font-size:11px;margin-top:3px}
 .mut{color:#444}
 .err-t{color:#e05252;opacity:.8;max-width:300px;word-break:break-word}
+/* Extra button variants */
+.btn-ps{background:rgba(124,106,247,.1);border-color:#3d3278;color:#9d8fff}
+.btn-ps:hover{background:rgba(124,106,247,.2);border-color:#7c6af7;color:#c0b5ff}
+.btn-del{border-color:#3a1a1a;color:#7a3a3a}
+.btn-del:hover{border-color:#e05252;color:#e05252}
+/* Quick links */
+.quick-links{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:20px}
+.quick-links a{font-size:11px;color:#3a3a3a;text-decoration:none;transition:color .15s}
+.quick-links a:hover{color:#7c6af7}
 /* Footer */
-.footer{color:#2e2e2e;font-size:11px;text-align:right;margin-top:24px}`;
+.footer{color:#2e2e2e;font-size:11px;text-align:right;margin-top:24px}
+/* ── Mobile card layout ── */
+@media(max-width:640px){
+  body{padding:16px 14px}
+  table{display:block}
+  thead{display:none}
+  tbody{display:block}
+  tbody tr{display:grid;grid-template-columns:84px 1fr;grid-template-rows:auto auto auto;gap:4px 10px;padding:12px 0;border-bottom:1px solid #1a1a1a}
+  tbody td{padding:0;border:none}
+  td.n{display:none}
+  td.td-video{grid-column:1;grid-row:1/3;align-self:start}
+  td.td-video video{width:72px}
+  td.td-name{grid-column:2;grid-row:1}
+  td.td-status{grid-column:2;grid-row:2}
+  td.td-actions{grid-column:1/3;grid-row:3;padding-top:6px}
+  .acts{display:flex;flex-wrap:wrap;gap:5px}
+  .err-t{max-width:none}
+  .row{gap:8px}
+  .card{padding:10px 14px}
+  .cron-card{min-width:0;flex:1 1 100%}
+  .next-card{flex:1 1 100%;min-width:0}
+}`;
 }
 
 // ─── Instagram API ────────────────────────────────────────────────────────────
