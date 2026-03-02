@@ -8,6 +8,16 @@ export class BackstoryGenerator {
     constructor() {
         this.shuffledPools = new Map();
         this.data = null; // Subclasses must set this
+        this._rng = null; // Optional SeededRandom for deterministic generation
+    }
+
+    /**
+     * Sets a SeededRandom instance for deterministic backstory generation.
+     * Pass null to revert to Math.random.
+     * @param {SeededRandom|null} rng
+     */
+    setRng(rng) {
+        this._rng = rng;
     }
 
     // --- CORE UTILITIES ---
@@ -19,13 +29,14 @@ export class BackstoryGenerator {
      * @returns {string} Resolved string with random choices made
      */
     resolve(template) {
+        const random = this._rng ? () => this._rng.next() : Math.random;
         let result = template;
         let safety = 10; // Prevent infinite loops
 
         while (result.includes('{') && safety > 0) {
             result = result.replace(/\{([^{}]+)\}/g, (match, content) => {
                 const options = content.split('|');
-                return options[Math.floor(Math.random() * options.length)];
+                return options[Math.floor(random() * options.length)];
             });
             safety--;
         }
@@ -39,9 +50,10 @@ export class BackstoryGenerator {
      * @returns {Array} New shuffled array (original unchanged)
      */
     shuffleArray(array) {
+        const random = this._rng ? () => this._rng.next() : Math.random;
         const shuffled = [...array];
         for (let i = shuffled.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
+            const j = Math.floor(random() * (i + 1));
             [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
         }
         return shuffled;
@@ -57,8 +69,10 @@ export class BackstoryGenerator {
     pick(array, poolName = null) {
         if (!array || array.length === 0) return "???";
 
+        const random = this._rng ? () => this._rng.next() : Math.random;
+
         if (!poolName) {
-            return array[Math.floor(Math.random() * array.length)];
+            return array[Math.floor(random() * array.length)];
         }
 
         let pool = this.shuffledPools.get(poolName);

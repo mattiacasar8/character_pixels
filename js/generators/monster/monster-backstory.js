@@ -30,7 +30,8 @@ export class MonsterBackstoryGenerator extends BackstoryGenerator {
             selectedPattern = patterns[patternKey];
         } else {
             const keys = Object.keys(patterns);
-            const randomKey = keys[Math.floor(Math.random() * keys.length)];
+            const random = this._rng ? () => this._rng.next() : Math.random;
+            const randomKey = keys[Math.floor(random() * keys.length)];
             selectedPattern = patterns[randomKey];
         }
 
@@ -80,7 +81,7 @@ export class MonsterBackstoryGenerator extends BackstoryGenerator {
     // Double Formation (dramatic)
     patternD(name) {
         const place = this.pick(this.data.places, this.poolNames.PLACES);
-        const start = `A ${place}, ${name}`;
+        const start = `Presso ${place}, ${name}`;
 
         const formation1 = this.resolve(this.pick(this.data.formationPhrases, this.poolNames.FORMATIONS));
         const formation2 = this.resolve(this.pick(this.data.formationPhrases, this.poolNames.FORMATIONS));
@@ -111,6 +112,6 @@ export class MonsterBackstoryGenerator extends BackstoryGenerator {
         const formation = this.resolve(this.pick(this.data.formationPhrases, this.poolNames.FORMATIONS));
         const current = this.resolve(this.pick(this.data.currentStates, this.poolNames.CURRENTS));
 
-        return `${name} ${skill}. A ${place}, ${formation}. ${this.capitalize(current)}.`;
+        return `${name} ${skill}. Presso ${place}, ${formation}. ${this.capitalize(current)}.`;
     }
 }

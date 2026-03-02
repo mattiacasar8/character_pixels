@@ -201,8 +201,10 @@ function registerFonts() {
 
 // ─── Character generation ─────────────────────────────────────────────────────
 
-function generateCharacter(generator, backstoryGenerator, seed) {
-    const params = generator.randomParamsInRange('standard', seed);
+const MONSTER_PRESETS = ['standard', 'short', 'tall', 'thin', 'bulky'];
+
+function generateCharacter(generator, backstoryGenerator, seed, preset = 'standard') {
+    const params = generator.randomParamsInRange(preset, seed);
     params.effects = { smoothing: true, lighting: true, outline: false };
     params.lightDirection = 'top-left';
     const character = generator.generate(params);
@@ -439,9 +441,14 @@ async function main() {
         const generator = type === 'monster' ? monsterGen : humanGen;
         const backstoryGen = type === 'monster' ? monsterBackstory : humanBackstory;
 
-        console.log(`[${i + 1}/${typeSequence.length}] ${type.toUpperCase()} — seed: ${seed}`);
+        // Monsters get a random body preset for variety; humans always use 'standard'
+        const preset = type === 'monster'
+            ? MONSTER_PRESETS[Math.abs(seed) % MONSTER_PRESETS.length]
+            : 'standard';
 
-        const character = generateCharacter(generator, backstoryGen, seed);
+        console.log(`[${i + 1}/${typeSequence.length}] ${type.toUpperCase()} [${preset}] — seed: ${seed}`);
+
+        const character = generateCharacter(generator, backstoryGen, seed, preset);
         console.log(`  Nome: ${character.name}`);
 
         const safeName = character.name.replace(/[^a-zA-Z0-9-]/g, '_');

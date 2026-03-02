@@ -402,7 +402,7 @@ export class HumanGenerator extends CharacterGenerator {
         }
 
         // Post-Process: Accessories
-        this.accessoryGenerator.drawAccessories(pixels, accessories, this.centerX, minY, this.canvasSize);
+        this.accessoryGenerator.drawAccessories(pixels, accessories, this.centerX, minY, this.canvasSize, bodyParts);
         // Special case for belt which needs colors
         this.accessoryGenerator.drawBelt(pixels, this.centerX, this.canvasSize, colors);
 

@@ -103,7 +103,8 @@ export class HumanBackstoryGenerator extends BackstoryGenerator {
             selectedPattern = patterns[patternKey];
         } else {
             const keys = Object.keys(patterns);
-            const randomKey = keys[Math.floor(Math.random() * keys.length)];
+            const random = this._rng ? () => this._rng.next() : Math.random;
+            const randomKey = keys[Math.floor(random() * keys.length)];
             selectedPattern = patterns[randomKey];
         }
 

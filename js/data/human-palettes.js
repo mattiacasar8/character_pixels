@@ -12,20 +12,50 @@ export const SKIN_TONES = [
 ];
 
 export const CLOTHING_COLORS = [
-    // Reds/Maroons
-    { r: 192, g: 57, b: 43 }, { r: 120, g: 40, b: 31 }, { r: 148, g: 49, b: 38 },
-    // Blues/Navys
-    { r: 41, g: 128, b: 185 }, { r: 33, g: 97, b: 140 }, { r: 44, g: 62, b: 80 }, { r: 27, g: 79, b: 114 },
-    // Greens/Forest
-    { r: 39, g: 174, b: 96 }, { r: 22, g: 160, b: 133 }, { r: 20, g: 90, b: 50 }, { r: 11, g: 83, b: 69 },
-    // Earthy/Browns
-    { r: 211, g: 84, b: 0 }, { r: 120, g: 66, b: 18 }, { r: 127, g: 140, b: 141 }, { r: 110, g: 44, b: 0 },
-    // Purples/Royal
-    { r: 142, g: 68, b: 173 }, { r: 155, g: 89, b: 182 }, { r: 74, g: 35, b: 90 },
+    // Reds/Maroons (desaturated medieval dyes)
+    { r: 140, g: 50, b: 40 },  // Madder red
+    { r: 120, g: 40, b: 31 },  // Dark maroon
+    { r: 148, g: 49, b: 38 },  // Brick red
+    { r: 100, g: 35, b: 30 },  // Dried blood
+
+    // Blues/Navys (woad & indigo tones)
+    { r: 55, g: 85, b: 110 },  // Woad blue
+    { r: 33, g: 97, b: 140 },  // Deep indigo
+    { r: 44, g: 62, b: 80 },   // Dark navy
+    { r: 27, g: 79, b: 114 },  // Steel blue
+    { r: 85, g: 95, b: 105 },  // Slate blue
+
+    // Greens/Forest (muted, natural dyes)
+    { r: 58, g: 107, b: 66 },  // Forest green
+    { r: 45, g: 90, b: 80 },   // Dark teal
+    { r: 20, g: 90, b: 50 },   // Deep green
+    { r: 11, g: 83, b: 69 },   // Dark pine
+    { r: 70, g: 75, b: 65 },   // Dark sage
+
+    // Earthy/Browns (natural, undyed fabrics)
+    { r: 140, g: 70, b: 35 },  // Burnt sienna
+    { r: 120, g: 66, b: 18 },  // Raw sienna
+    { r: 110, g: 44, b: 0 },   // Dark rust
+    { r: 90, g: 60, b: 40 },   // Dark leather
+    { r: 145, g: 120, b: 90 }, // Raw umber
+    { r: 160, g: 82, b: 45 },  // Sienna
+    { r: 175, g: 160, b: 140 },// Undyed wool
+    { r: 130, g: 110, b: 80 }, // Parchment
+
+    // Purples/Royal (rare, muted)
+    { r: 85, g: 50, b: 90 },   // Dark plum
+    { r: 95, g: 60, b: 100 },  // Muted plum
+    { r: 74, g: 35, b: 90 },   // Deep purple
+
     // Greys/Silvers
-    { r: 189, g: 195, b: 199 }, { r: 127, g: 140, b: 141 }, { r: 97, g: 106, b: 107 },
-    // Golds/Yellows
-    { r: 241, g: 196, b: 15 }, { r: 183, g: 149, b: 11 }
+    { r: 170, g: 170, b: 165 },// Pale grey
+    { r: 127, g: 140, b: 141 },// Medium grey
+    { r: 97, g: 106, b: 107 }, // Dark grey
+    { r: 110, g: 100, b: 85 }, // Warm grey
+
+    // Golds/Yellows (muted saffron tones)
+    { r: 168, g: 142, b: 72 }, // Saffron
+    { r: 150, g: 125, b: 50 }  // Dark gold
 ];
 
 export const HAIR_COLORS = [
