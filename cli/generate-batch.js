@@ -60,6 +60,7 @@ function parseArgs() {
         output: path.join(ROOT, 'output'),
         size: 50,
         seed: null,       // null = casuale per ogni personaggio
+        lang: 'ita',
     };
 
     for (let i = 0; i < args.length; i++) {
@@ -82,6 +83,9 @@ function parseArgs() {
                 break;
             case '--seed':
                 opts.seed = parseInt(args[++i], 10);
+                break;
+            case '--lang':
+                opts.lang = args[++i];
                 break;
             case '--help':
                 console.log(`
@@ -419,10 +423,10 @@ async function main() {
     const manifest = loadManifest(manifestPath);
 
     // Istanze generator
-    const humanGen = new HumanGenerator(opts.size);
-    const monsterGen = new MonsterGenerator(opts.size);
-    const humanBackstory = new HumanBackstoryGenerator();
-    const monsterBackstory = new MonsterBackstoryGenerator();
+    const humanGen = new HumanGenerator(opts.size, opts.lang);
+    const monsterGen = new MonsterGenerator(opts.size, opts.lang);
+    const humanBackstory = new HumanBackstoryGenerator(opts.lang);
+    const monsterBackstory = new MonsterBackstoryGenerator(opts.lang);
 
     // Costruisce sequenza intercalata
     const typeSequence = buildTypeSequence(opts.humans, opts.monsters);

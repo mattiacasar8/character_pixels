@@ -4,13 +4,17 @@
  * Extends BackstoryGenerator for shared utilities.
  */
 import { BackstoryGenerator } from '../backstory-generator.js';
-import { monsterBackstoryData, poolNames } from '../../data/monster-backstory-data.js';
+import { monsterBackstoryData as ita, poolNames as pn_ita } from '../../data/monster-backstory-data_ita.js';
+import { monsterBackstoryData as eng, poolNames as pn_eng } from '../../data/monster-backstory-data_eng.js';
+
+const DATA_BY_LANG = { ita, eng };
+const POOL_BY_LANG = { ita: pn_ita, eng: pn_eng };
 
 export class MonsterBackstoryGenerator extends BackstoryGenerator {
-    constructor() {
+    constructor(lang = 'ita') {
         super();
-        this.data = monsterBackstoryData;
-        this.poolNames = poolNames;
+        this.data = DATA_BY_LANG[lang] || DATA_BY_LANG.ita;
+        this.poolNames = POOL_BY_LANG[lang] || POOL_BY_LANG.ita;
     }
 
     // --- PATTERNS ---
@@ -40,6 +44,7 @@ export class MonsterBackstoryGenerator extends BackstoryGenerator {
 
     // Origin + Formation + Current
     patternA(name) {
+        const conn = this.data.patternConnectors;
         const place = this.pick(this.data.places, this.poolNames.PLACES);
         const originFunc = this.pick(this.data.originPhrases, this.poolNames.ORIGINS);
         const origin = this.resolve(originFunc(name, place));
@@ -48,7 +53,11 @@ export class MonsterBackstoryGenerator extends BackstoryGenerator {
         const connector = this.pick(this.data.currentConnectors);
         const current = this.resolve(this.pick(this.data.currentStates, this.poolNames.CURRENTS));
 
-        return `${origin}. ${this.capitalize(formation)}. ${connector} ${current}.`;
+        const formationSentence = conn.formationSubject
+            ? `${conn.formationSubject} ${formation}`
+            : this.capitalize(formation);
+
+        return `${origin}. ${formationSentence}. ${connector} ${current}.`;
     }
 
     // Origin + Skill + Reputation
@@ -80,8 +89,8 @@ export class MonsterBackstoryGenerator extends BackstoryGenerator {
 
     // Double Formation (dramatic)
     patternD(name) {
+        const conn = this.data.patternConnectors;
         const place = this.pick(this.data.places, this.poolNames.PLACES);
-        const start = `Presso ${place}, ${name}`;
 
         const formation1 = this.resolve(this.pick(this.data.formationPhrases, this.poolNames.FORMATIONS));
         const formation2 = this.resolve(this.pick(this.data.formationPhrases, this.poolNames.FORMATIONS));
@@ -89,11 +98,12 @@ export class MonsterBackstoryGenerator extends BackstoryGenerator {
         const connector = this.pick(this.data.currentConnectors);
         const current = this.resolve(this.pick(this.data.currentStates, this.poolNames.CURRENTS));
 
-        return `${start} ${formation1}. Poi ${formation2}. ${connector} ${current}.`;
+        return `${conn.patternD_intro(place, name)} ${formation1}. ${conn.patternD_mid} ${formation2}. ${connector} ${current}.`;
     }
 
     // Reputation-heavy
     patternE(name) {
+        const conn = this.data.patternConnectors;
         const repSource1 = this.pick(this.data.reputationSources, this.poolNames.REP_SOURCES);
         const repClaim1 = this.resolve(this.pick(this.data.reputationClaims, this.poolNames.REP_CLAIMS));
 
@@ -102,16 +112,21 @@ export class MonsterBackstoryGenerator extends BackstoryGenerator {
 
         const current = this.resolve(this.pick(this.data.currentStates, this.poolNames.CURRENTS));
 
-        return `${repSource1} ${name} ${repClaim1}. ${repSource2} ${repClaim2}. Intanto, ${current}.`;
+        const rep1 = conn.patternE_name_insert
+            ? `${repSource1} ${name} ${repClaim1}`
+            : `${repSource1} ${repClaim1}`;
+
+        return `${rep1}. ${repSource2} ${repClaim2}. ${conn.patternE_mid} ${current}.`;
     }
 
     // Skill + Formation
     patternF(name) {
+        const conn = this.data.patternConnectors;
         const skill = this.resolve(this.pick(this.data.skillPhrases, this.poolNames.SKILLS));
         const place = this.pick(this.data.places, this.poolNames.PLACES);
         const formation = this.resolve(this.pick(this.data.formationPhrases, this.poolNames.FORMATIONS));
         const current = this.resolve(this.pick(this.data.currentStates, this.poolNames.CURRENTS));
 
-        return `${name} ${skill}. Presso ${place}, ${formation}. ${this.capitalize(current)}.`;
+        return `${name} ${skill}. ${conn.patternF_intro(place)} ${formation}. ${this.capitalize(current)}.`;
     }
 }

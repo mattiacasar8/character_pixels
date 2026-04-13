@@ -90,6 +90,8 @@ const CAPTION_TEMPLATE = `\n—\n{name}\n—\n{backstory}\n—`;
 
 Le variabili disponibili sono `{name}` e `{backstory}`. Dopo la modifica rigenera il batch per applicare il nuovo formato.
 
+> **Lingua:** per generare caption in inglese aggiungi `--lang eng` al comando. Il default è `ita`.
+
 ---
 
 ## Parte 1 — Setup Instagram Business
@@ -346,6 +348,9 @@ node cli/generate-batch.js --total 100 --humans 90
 
 # Batch deterministico (stesso seed = stessi personaggi)
 node cli/generate-batch.js --total 120 --seed 42718301
+
+# Batch in inglese
+node cli/generate-batch.js --total 120 --lang eng
 ```
 
 I video vengono salvati in `output/` insieme a `manifest.json`. Ci vogliono circa 10–20 minuti per 120 video.

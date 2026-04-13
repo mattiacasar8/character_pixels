@@ -1,19 +1,20 @@
 import { CharacterGenerator } from '../../core/generator.js';
 import { MONSTER_PALETTES } from '../../data/monster-palettes.js';
-import { nameGenerator } from '../name-generator.js';
+import { NameGeneratorManager } from '../name-generator.js';
 import { BODY_PROPORTIONS, ANIMATION } from '../../config.js';
 import { SeededRandom } from '../../utils/random.js';
 import { createTrapezoid, createJoint, getTrapezoidBottom } from '../../utils/math.js';
 
 export class MonsterGenerator extends CharacterGenerator {
-    constructor(canvasSize = 50) {
+    constructor(canvasSize = 50, lang = 'ita') {
         super(canvasSize);
+        this.nameGen = new NameGeneratorManager(lang);
     }
 
     generate(params) {
         const characterData = super.generate(params);
 
-        characterData.name = nameGenerator.generate('monster');
+        characterData.name = this.nameGen.generate('monster');
         characterData.type = 'monster';
 
         return characterData;

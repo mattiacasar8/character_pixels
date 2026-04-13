@@ -601,7 +601,15 @@ export const data = {
     "Alla fine", "Col passare degli anni",
     "Da quando tutto e cambiato", "Dopo aver perso tutto",
     "Senza guardarsi indietro"
-  ]
+  ],
+
+  patternConnectors: {
+    patternD: (place, name) => `A ${place}, ${name}`,
+    patternD_mid: 'Poco dopo,',
+    patternE_intro: (name) => `Di ${name} si sa poco.`,
+    patternF_mid: (place) => `A ${place},`,
+    formationSubject: ''
+  }
 };
 
 // =============================================

@@ -23,12 +23,13 @@ class App {
         this.canvasSize = 50;
         this.characters = [];
         this.batchOptions = { preset: 'standard' };
+        this.lang = localStorage.getItem('cpg_lang') || 'ita';
 
         // Initialize generators
-        this.monsterGenerator = new MonsterGenerator(this.canvasSize);
-        this.humanGenerator = new HumanGenerator(this.canvasSize);
-        this.monsterBackstoryGenerator = new MonsterBackstoryGenerator();
-        this.humanBackstoryGenerator = new HumanBackstoryGenerator();
+        this.monsterGenerator = new MonsterGenerator(this.canvasSize, this.lang);
+        this.humanGenerator = new HumanGenerator(this.canvasSize, this.lang);
+        this.monsterBackstoryGenerator = new MonsterBackstoryGenerator(this.lang);
+        this.humanBackstoryGenerator = new HumanBackstoryGenerator(this.lang);
 
         // Initialize renderer
         this.characterRenderer = new CharacterRenderer(3, this.canvasSize);
@@ -97,10 +98,20 @@ class App {
 
     updateCanvasSize(newSize) {
         this.canvasSize = newSize;
-        this.monsterGenerator = new MonsterGenerator(this.canvasSize);
-        this.humanGenerator = new HumanGenerator(this.canvasSize);
+        this.monsterGenerator = new MonsterGenerator(this.canvasSize, this.lang);
+        this.humanGenerator = new HumanGenerator(this.canvasSize, this.lang);
         this.characterRenderer = new CharacterRenderer(3, this.canvasSize);
         this.regenerateCurrentCharacters();
+    }
+
+    setLanguage(lang) {
+        this.lang = lang;
+        localStorage.setItem('cpg_lang', lang);
+        this.monsterGenerator = new MonsterGenerator(this.canvasSize, lang);
+        this.humanGenerator = new HumanGenerator(this.canvasSize, lang);
+        this.monsterBackstoryGenerator = new MonsterBackstoryGenerator(lang);
+        this.humanBackstoryGenerator = new HumanBackstoryGenerator(lang);
+        this.generateCharacters(this.characters.length || 10);
     }
 
     // --- Loading Overlay ---

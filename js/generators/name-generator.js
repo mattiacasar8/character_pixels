@@ -7,9 +7,9 @@ import { HumanNameGenerator } from './human/human-names.js';
 import { MonsterNameGenerator } from './monster/monster-names.js';
 
 class NameGeneratorManager {
-    constructor() {
-        this.humanGenerator = new HumanNameGenerator();
-        this.monsterGenerator = new MonsterNameGenerator();
+    constructor(lang = 'ita') {
+        this.humanGenerator = new HumanNameGenerator(lang);
+        this.monsterGenerator = new MonsterNameGenerator(lang);
     }
 
     /**

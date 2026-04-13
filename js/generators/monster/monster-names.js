@@ -1,10 +1,14 @@
-import { monsterNameData } from '../../data/monster-names-data.js';
+import { monsterNameData as ita } from '../../data/monster-names-data_ita.js';
+import { monsterNameData as eng } from '../../data/monster-names-data_eng.js';
+
+const DATA_BY_LANG = { ita, eng };
 
 export class MonsterNameGenerator {
-    constructor() {
-        this.prefixes = monsterNameData.prefixes;
-        this.suffixes = monsterNameData.suffixes;
-        this.titles = monsterNameData.titles;
+    constructor(lang = 'ita') {
+        const d = DATA_BY_LANG[lang] || DATA_BY_LANG.ita;
+        this.prefixes = d.prefixes;
+        this.suffixes = d.suffixes;
+        this.titles = d.titles;
     }
 
     generate(rng = null) {

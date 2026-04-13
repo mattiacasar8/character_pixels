@@ -3,23 +3,24 @@ import { SKIN_TONES, CLOTHING_COLORS, HAIR_COLORS, EYE_COLORS, MOUTH_COLORS } fr
 import { SeededRandom } from '../../utils/random.js';
 import { createTrapezoid, createJoint, getTrapezoidBottom, isPointInPolygon } from '../../utils/math.js';
 import { FaceGenerator } from './face-generator.js';
-import { nameGenerator } from '../name-generator.js';
+import { NameGeneratorManager } from '../name-generator.js';
 import { processorManager } from '../../core/processors/ProcessorManager.js';
 import { ClothingGenerator } from './clothing-generator.js';
 import { AccessoryGenerator } from './accessory-generator.js';
 import { BODY_PROPORTIONS, ANIMATION } from '../../config.js';
 
 export class HumanGenerator extends CharacterGenerator {
-    constructor(canvasSize = 50) {
+    constructor(canvasSize = 50, lang = 'ita') {
         super(canvasSize);
         this.faceGenerator = new FaceGenerator();
         this.clothingGenerator = new ClothingGenerator();
         this.accessoryGenerator = new AccessoryGenerator();
+        this.nameGen = new NameGeneratorManager(lang);
     }
 
     generate(params) {
         const characterData = super.generate(params);
-        characterData.name = nameGenerator.generate();
+        characterData.name = this.nameGen.generate('human');
         characterData.type = 'human';
         return characterData;
     }

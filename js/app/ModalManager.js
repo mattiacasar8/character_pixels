@@ -84,7 +84,7 @@ export class ModalManager {
         if (!character) return;
 
         document.getElementById('modalTitle').textContent = character.name;
-        document.getElementById('modalBody').innerHTML = character.backstory || "Nessuna storia disponibile.";
+        document.getElementById('modalBody').innerHTML = character.backstory || (this.app.lang === 'eng' ? 'No story available.' : 'Nessuna storia disponibile.');
 
         // Update Play/Pause button
         const btn = document.getElementById('toggleAnimation');

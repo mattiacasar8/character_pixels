@@ -631,7 +631,16 @@ export const monsterBackstoryData = {
         "Nei giorni di nebbia", "Tra le rovine", "Nel silenzio della notte",
         "Ogni luna piena", "Quando nessuno guarda", "Nelle ore più buie",
         "Mentre il mondo dorme", "Fin da quel giorno"
-    ]
+    ],
+
+    patternConnectors: {
+        patternD_intro: (place, name) => `Presso ${place}, ${name}`,
+        patternD_mid: 'Poi',
+        patternE_mid: 'Intanto,',
+        patternE_name_insert: true,
+        patternF_intro: (place) => `Presso ${place},`,
+        formationSubject: ''
+    }
 };
 
 export const poolNames = {

@@ -2,13 +2,17 @@
  * Human Name Generator
  * Generates fantasy human names using prefix + suffix system with optional titles.
  */
-import { humanNameData } from '../../data/human-names-data.js';
+import { humanNameData as ita } from '../../data/human-names-data_ita.js';
+import { humanNameData as eng } from '../../data/human-names-data_eng.js';
+
+const DATA_BY_LANG = { ita, eng };
 
 export class HumanNameGenerator {
-    constructor() {
-        this.prefixes = humanNameData.prefixes;
-        this.suffixes = humanNameData.suffixes;
-        this.titles = humanNameData.titles;
+    constructor(lang = 'ita') {
+        const d = DATA_BY_LANG[lang] || DATA_BY_LANG.ita;
+        this.prefixes = d.prefixes;
+        this.suffixes = d.suffixes;
+        this.titles = d.titles;
     }
 
     generate(rng = null) {

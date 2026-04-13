@@ -86,6 +86,12 @@ node cli/export-video.js --count 10
 node cli/export-video.js --count 5 --type monster
 ```
 
+**In inglese:**
+```bash
+node cli/export-video.js --seed 12345 --lang eng
+node cli/export-video.js --count 10 --lang eng
+```
+
 **Shortcut npm:**
 ```bash
 npm run video -- --seed 12345
@@ -102,6 +108,7 @@ npm run video:batch -- --count 10
 | `--preset <name>` | `standard` | Preset corpo: standard, athletic, slim, stocky, tall |
 | `--output <dir>` | `./output` | Directory di output |
 | `--size <n>` | `50` | Dimensione canvas pixel (griglia interna) |
+| `--lang <lang>` | `ita` | Lingua: `ita` o `eng` |
 
 ### Output
 

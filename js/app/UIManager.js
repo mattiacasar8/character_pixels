@@ -16,6 +16,16 @@ export class UIManager {
         this.setupGeneratorType();  // This applies presets to sliders
         this.setupCheckboxes();
         this.setupButtons();
+        this.setupLanguageSelector();
+    }
+
+    setupLanguageSelector() {
+        const selector = document.getElementById('languageSelector');
+        if (!selector) return;
+        selector.value = this.app.lang || 'ita';
+        selector.addEventListener('change', (e) => {
+            this.app.setLanguage(e.target.value);
+        });
     }
 
     setupGeneratorType() {

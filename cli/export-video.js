@@ -55,6 +55,7 @@ function parseArgs() {
         preset: 'standard',
         output: path.join(ROOT, 'output'),
         size: 50,
+        lang: 'ita',
     };
 
     for (let i = 0; i < args.length; i++) {
@@ -77,6 +78,9 @@ function parseArgs() {
             case '--size':
                 opts.size = parseInt(args[++i], 10);
                 break;
+            case '--lang':
+                opts.lang = args[++i];
+                break;
             case '--help':
                 console.log(`Usage: node cli/export-video.js [options]
 
@@ -87,6 +91,7 @@ Options:
   --preset <name>     Body preset (default: standard)
   --output <dir>      Output directory (default: ./output)
   --size <n>          Canvas pixel size (default: 50)
+  --lang <lang>       Language: 'ita' or 'eng' (default: ita)
   --help              Show this help`);
                 process.exit(0);
         }
@@ -357,12 +362,12 @@ async function main() {
 
     // Create generator
     const generator = opts.type === 'monster'
-        ? new MonsterGenerator(opts.size)
-        : new HumanGenerator(opts.size);
+        ? new MonsterGenerator(opts.size, opts.lang)
+        : new HumanGenerator(opts.size, opts.lang);
 
     const backstoryGenerator = opts.type === 'monster'
-        ? new MonsterBackstoryGenerator()
-        : new HumanBackstoryGenerator();
+        ? new MonsterBackstoryGenerator(opts.lang)
+        : new HumanBackstoryGenerator(opts.lang);
 
     // Determine seeds
     let seeds = opts.seeds;
